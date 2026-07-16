@@ -8,26 +8,27 @@ export default async function EventosPage() {
   const events = await listPublishedEvents();
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">Eventos</h1>
-      <p className="mb-8 text-sm text-zinc-600">
-        Escolha uma noite de speed dating e garanta sua vaga.
-      </p>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-10 max-w-2xl">
+        <p className="eyebrow mb-3">Agenda</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Próximas noites
+        </h1>
+        <p className="mt-3 text-base leading-relaxed text-[var(--muted)]">
+          Escolha a data, garanta sua vaga e prepare o melhor assunto da semana.
+        </p>
+      </div>
 
       {events.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
-          <p className="text-base font-medium text-zinc-900">
+        <div className="surface-card px-6 py-16 text-center sm:px-10">
+          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
             Em breve novos encontros
           </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600">
-            Estamos preparando as próximas noites de speed dating. Volte em
-            breve ou crie sua conta para ficar pronta(o) quando as vagas
-            abrirem.
+          <p className="mx-auto mt-3 max-w-md text-sm leading-relaxed text-[var(--muted)]">
+            Estamos preparando as próximas noites. Crie sua conta para estar
+            pronta(o) quando as vagas abrirem.
           </p>
-          <Link
-            href="/cadastro"
-            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700"
-          >
+          <Link href="/cadastro" className="btn btn-primary mt-8">
             Criar conta
           </Link>
         </div>

@@ -1,23 +1,27 @@
 import type { Metadata } from "next";
-import { Geist, Geist_Mono } from "next/font/google";
-import { Footer } from "@/components/layout/footer";
+import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { Header } from "@/components/layout/header";
+import { Footer } from "@/components/layout/footer";
 import "./globals.css";
 
-const geistSans = Geist({
-  variable: "--font-geist-sans",
+const display = Cormorant_Garamond({
+  variable: "--font-display",
   subsets: ["latin"],
+  weight: ["400", "500", "600", "700"],
+  display: "swap",
 });
 
-const geistMono = Geist_Mono({
-  variable: "--font-geist-mono",
+const body = Outfit({
+  variable: "--font-body",
   subsets: ["latin"],
+  weight: ["300", "400", "500", "600", "700"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "SpeedDate BR — Speed dating de verdade",
+  title: "SpeedDate BR — Noites de speed dating",
   description:
-    "Eventos presenciais de speed dating no Brasil. Matches mútuos com WhatsApp liberado. 18+.",
+    "Eventos presenciais de speed dating no Brasil. Rodadas reais, votação no celular e matches mútuos com WhatsApp. 18+.",
 };
 
 export default function RootLayout({
@@ -26,13 +30,10 @@ export default function RootLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <html
-      lang="pt-BR"
-      className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
-    >
-      <body className="flex min-h-full flex-col bg-white text-zinc-900">
+    <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full`}>
+      <body className="page-glow flex min-h-full flex-col bg-[var(--paper)] text-[var(--ink)] antialiased">
         <Header />
-        {children}
+        <div className="flex flex-1 flex-col">{children}</div>
         <Footer />
       </body>
     </html>

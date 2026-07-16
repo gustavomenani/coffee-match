@@ -32,56 +32,76 @@ export default async function LoginPage({
   const hasError = !!params.error;
 
   return (
-    <main className="mx-auto flex min-h-full w-full max-w-md flex-col justify-center px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">Entrar</h1>
-      <p className="mb-8 text-sm text-zinc-600">
-        Acesse sua conta SpeedDate BR.
-      </p>
+    <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] shadow-[var(--shadow-soft)] lg:grid-cols-2">
+        <div className="hidden bg-[linear-gradient(165deg,#1c1014_0%,#2a1219_50%,#120b0e_100%)] p-10 text-[#f8f1ec] lg:flex lg:flex-col lg:justify-between">
+          <div>
+            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--champagne-light)]">
+              SpeedDate BR
+            </p>
+            <p className="font-display mt-6 text-4xl font-medium leading-tight">
+              Bem-vindo de volta à noite.
+            </p>
+          </div>
+          <p className="text-sm leading-relaxed text-[color-mix(in_srgb,#f8f1ec_62%,transparent)]">
+            Seus ingressos, votos e matches ficam guardados na sua conta.
+          </p>
+        </div>
 
-      {hasError ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          E-mail ou senha inválidos.
-        </p>
-      ) : null}
+        <div className="bg-[var(--paper-card)] p-8 sm:p-10">
+          <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]">
+            Entrar
+          </h1>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            Acesse sua conta para comprar e votar.
+          </p>
 
-      <form action={loginAction} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">E-mail</span>
-          <input
-            type="email"
-            name="email"
-            required
-            autoComplete="email"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+          {hasError ? (
+            <p className="mt-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              E-mail ou senha inválidos.
+            </p>
+          ) : null}
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">Senha</span>
-          <input
-            type="password"
-            name="password"
-            required
-            autoComplete="current-password"
-            minLength={1}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+          <form action={loginAction} className="mt-8 flex flex-col gap-4">
+            <label className="block">
+              <span className="label">E-mail</span>
+              <input
+                type="email"
+                name="email"
+                required
+                autoComplete="email"
+                className="field"
+              />
+            </label>
 
-        <button
-          type="submit"
-          className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Entrar
-        </button>
-      </form>
+            <label className="block">
+              <span className="label">Senha</span>
+              <input
+                type="password"
+                name="password"
+                required
+                autoComplete="current-password"
+                minLength={1}
+                className="field"
+              />
+            </label>
 
-      <p className="mt-6 text-center text-sm text-zinc-600">
-        Não tem conta?{" "}
-        <Link href="/cadastro" className="font-medium text-zinc-900 underline">
-          Cadastre-se
-        </Link>
-      </p>
+            <button type="submit" className="btn btn-primary mt-2 w-full">
+              Entrar
+            </button>
+          </form>
+
+          <p className="mt-8 text-center text-sm text-[var(--muted)]">
+            Não tem conta?{" "}
+            <Link
+              href="/cadastro"
+              className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
+            >
+              Cadastre-se
+            </Link>
+          </p>
+        </div>
+      </div>
     </main>
   );
 }

@@ -29,83 +29,80 @@ export default async function AdminEventosPage() {
   const events = await listAdminEvents();
 
   return (
-    <main className="mx-auto w-full max-w-4xl px-4 py-12">
-      <div className="mb-6 flex flex-wrap items-center justify-between gap-3">
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
         <div>
           <Link
             href="/admin"
-            className="mb-2 inline-block text-sm font-medium text-zinc-600 hover:text-zinc-900"
+            className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
           >
             ← Admin
           </Link>
-          <h1 className="text-2xl font-semibold text-zinc-900">Eventos</h1>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+            Eventos
+          </h1>
         </div>
-        <Link
-          href="/admin/eventos/novo"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
+        <Link href="/admin/eventos/novo" className="btn btn-primary">
           Novo evento
         </Link>
       </div>
 
       {events.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
-          <p className="text-base font-medium text-zinc-900">
+        <div className="surface-card px-6 py-16 text-center">
+          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
             Nenhum evento cadastrado
           </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600">
-            Crie o primeiro evento para publicar noites de speed dating e
-            vender ingressos.
+          <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--muted)]">
+            Crie o primeiro evento para publicar noites e vender ingressos.
           </p>
-          <Link
-            href="/admin/eventos/novo"
-            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
-          >
+          <Link href="/admin/eventos/novo" className="btn btn-primary mt-8">
             Criar evento
           </Link>
         </div>
       ) : (
-        <div className="overflow-x-auto rounded-xl border border-zinc-200">
+        <div className="surface-card overflow-x-auto">
           <table className="min-w-full text-left text-sm">
-            <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-500">
+            <thead className="border-b border-[var(--line)] bg-[var(--paper-deep)] text-xs uppercase tracking-wider text-[var(--muted)]">
               <tr>
-                <th className="px-4 py-3 font-medium">Título</th>
-                <th className="px-4 py-3 font-medium">Data</th>
-                <th className="px-4 py-3 font-medium">Cidade</th>
-                <th className="px-4 py-3 font-medium">Preço</th>
-                <th className="px-4 py-3 font-medium">Status</th>
-                <th className="px-4 py-3 font-medium">Ingressos</th>
-                <th className="px-4 py-3 font-medium" />
+                <th className="px-4 py-3 font-semibold">Título</th>
+                <th className="px-4 py-3 font-semibold">Data</th>
+                <th className="px-4 py-3 font-semibold">Cidade</th>
+                <th className="px-4 py-3 font-semibold">Preço</th>
+                <th className="px-4 py-3 font-semibold">Status</th>
+                <th className="px-4 py-3 font-semibold">Ingressos</th>
+                <th className="px-4 py-3 font-semibold" />
               </tr>
             </thead>
             <tbody>
               {events.map((event) => (
                 <tr
                   key={event.id}
-                  className="border-b border-zinc-100 last:border-0"
+                  className="border-b border-[var(--line)] last:border-0"
                 >
-                  <td className="px-4 py-3 font-medium text-zinc-900">
+                  <td className="px-4 py-4 font-medium text-[var(--ink)]">
                     {event.title}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-4 text-[var(--muted)]">
                     {formatDate(event.startsAt)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">{event.city}</td>
-                  <td className="px-4 py-3 text-zinc-600">
+                  <td className="px-4 py-4 text-[var(--muted)]">{event.city}</td>
+                  <td className="px-4 py-4 tabular text-[var(--ink-soft)]">
                     {formatBRL(event.priceCents)}
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
-                    {statusLabel[event.status] ?? event.status}
+                  <td className="px-4 py-4">
+                    <span className="badge badge-soft">
+                      {statusLabel[event.status] ?? event.status}
+                    </span>
                   </td>
-                  <td className="px-4 py-3 text-zinc-600">
-                    {event._count.tickets}
+                  <td className="px-4 py-4 tabular text-[var(--muted)]">
+                    {event._count?.tickets ?? "—"}
                   </td>
-                  <td className="px-4 py-3 text-right">
+                  <td className="px-4 py-4 text-right">
                     <Link
                       href={`/admin/eventos/${event.id}`}
-                      className="font-medium text-zinc-900 underline"
+                      className="font-semibold text-[var(--carmine)] hover:underline"
                     >
-                      Editar
+                      Abrir
                     </Link>
                   </td>
                 </tr>

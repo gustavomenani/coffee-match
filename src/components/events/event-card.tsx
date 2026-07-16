@@ -26,8 +26,11 @@ function formatBRL(cents: number) {
 function formatDate(value: Date | string) {
   const d = typeof value === "string" ? new Date(value) : value;
   return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "full",
-    timeStyle: "short",
+    weekday: "short",
+    day: "2-digit",
+    month: "short",
+    hour: "2-digit",
+    minute: "2-digit",
   }).format(d);
 }
 
@@ -43,26 +46,47 @@ export function EventCard({ event }: { event: EventCardData }) {
   return (
     <Link
       href={`/eventos/${event.slug}`}
-      className="block rounded-xl border border-zinc-200 bg-white p-5 shadow-sm transition hover:border-zinc-400 hover:shadow-md"
+      className="surface-card surface-card-hover group block overflow-hidden"
     >
-      <div className="mb-2 flex items-start justify-between gap-3">
-        <h2 className="text-lg font-semibold text-zinc-900">{event.title}</h2>
-        <span className="shrink-0 rounded-full bg-zinc-100 px-2.5 py-0.5 text-xs font-medium text-zinc-700">
-          {statusLabel[event.status] ?? event.status}
-        </span>
-      </div>
-      <p className="text-sm text-zinc-600">
-        {event.city} · {event.venue}
-      </p>
-      <p className="mt-1 text-sm text-zinc-600">{formatDate(event.startsAt)}</p>
-      <div className="mt-4 flex flex-wrap items-center justify-between gap-2">
-        <p className="text-base font-semibold text-zinc-900">
-          {formatBRL(event.priceCents)}
-        </p>
-        <p className="text-xs text-zinc-500">
-          Vagas: {Math.max(0, event.remainingMen)} H ·{" "}
-          {Math.max(0, event.remainingWomen)} M
-        </p>
+      <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-stretch sm:justify-between sm:p-7">
+        <div className="min-w-0 flex-1">
+          <div className="mb-3 flex flex-wrap items-center gap-2">
+            <span className="badge badge-live">
+              {statusLabel[event.status] ?? event.status}
+            </span>
+            <span className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
+              {event.city}
+            </span>
+          </div>
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--carmine)] sm:text-[1.7rem]">
+            {event.title}
+          </h2>
+          <p className="mt-2 text-sm text-[var(--muted)]">
+            {event.venue}
+          </p>
+          <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
+            {formatDate(event.startsAt)}
+          </p>
+        </div>
+
+        <div className="flex shrink-0 flex-col justify-between gap-4 border-t border-[var(--line)] pt-4 sm:min-w-[9.5rem] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+          <p className="font-display text-3xl font-semibold tabular tracking-tight text-[var(--ink)]">
+            {formatBRL(event.priceCents)}
+          </p>
+          <p className="text-xs leading-relaxed text-[var(--muted)]">
+            Vagas ·{" "}
+            <span className="font-semibold text-[var(--ink-soft)]">
+              {Math.max(0, event.remainingMen)} H
+            </span>{" "}
+            ·{" "}
+            <span className="font-semibold text-[var(--ink-soft)]">
+              {Math.max(0, event.remainingWomen)} M
+            </span>
+          </p>
+          <span className="text-sm font-semibold text-[var(--carmine)]">
+            Ver detalhes →
+          </span>
+        </div>
       </div>
     </Link>
   );
@@ -118,9 +142,11 @@ export function BuyTicketButton({
         disabled={disabled || loading}
         className="w-full sm:w-auto"
       >
-        {loading ? "Processando…" : "Comprar ingresso"}
+        {loading ? "Processando…" : "Garantir ingresso"}
       </Button>
-      {error ? <p className="text-sm text-red-600">{error}</p> : null}
+      {error ? (
+        <p className="text-sm font-medium text-[var(--danger)]">{error}</p>
+      ) : null}
     </div>
   );
 }

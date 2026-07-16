@@ -7,32 +7,42 @@ export default async function AdminDashboardPage() {
   await requireAdmin();
 
   return (
-    <main className="mx-auto w-full max-w-3xl px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">Admin</h1>
-      <p className="mb-8 text-sm text-zinc-600">
-        Painel SpeedDate BR — gestão de eventos e operação da noite.
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <p className="eyebrow mb-3">Operação</p>
+      <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+        Painel admin
+      </h1>
+      <p className="mt-3 max-w-xl text-base text-[var(--muted)]">
+        Publique noites, faça check-in e abra a votação — o coração da operação.
       </p>
 
-      <ul className="flex flex-col gap-3">
+      <ul className="mt-10 grid gap-4 sm:grid-cols-2">
         <li>
-          <Link
-            href="/admin/eventos"
-            className="block rounded-xl border border-zinc-200 bg-white px-5 py-4 shadow-sm transition hover:border-zinc-400"
-          >
-            <span className="font-medium text-zinc-900">Eventos</span>
-            <p className="mt-1 text-sm text-zinc-600">
-              Listar, criar e editar noites de speed dating.
+          <Link href="/admin/eventos" className="surface-card surface-card-hover block p-7">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+              Agenda
+            </p>
+            <span className="font-display mt-2 block text-2xl font-semibold text-[var(--ink)]">
+              Eventos
+            </span>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Listar, editar e acompanhar vagas.
             </p>
           </Link>
         </li>
         <li>
           <Link
             href="/admin/eventos/novo"
-            className="block rounded-xl border border-zinc-200 bg-white px-5 py-4 shadow-sm transition hover:border-zinc-400"
+            className="surface-card surface-card-hover block p-7"
           >
-            <span className="font-medium text-zinc-900">Novo evento</span>
-            <p className="mt-1 text-sm text-zinc-600">
-              Cadastrar data, local, capacidades e preço.
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+              Criar
+            </p>
+            <span className="font-display mt-2 block text-2xl font-semibold text-[var(--ink)]">
+              Nova noite
+            </span>
+            <p className="mt-2 text-sm text-[var(--muted)]">
+              Data, local, capacidades e preço.
             </p>
           </Link>
         </li>

@@ -10,13 +10,6 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
-const statusClass: Record<string, string> = {
-  pending: "border-amber-200 bg-amber-50 text-amber-800",
-  paid: "border-green-200 bg-green-50 text-green-800",
-  cancelled: "border-zinc-200 bg-zinc-50 text-zinc-600",
-  refunded: "border-red-200 bg-red-50 text-red-700",
-};
-
 export default async function MeusIngressosPage() {
   const session = await auth();
   if (!session?.user?.id) {
@@ -44,100 +37,79 @@ export default async function MeusIngressosPage() {
   });
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">
-        Meus ingressos
-      </h1>
-      <p className="mb-8 text-sm text-zinc-600">
-        Seus ingressos comprados e o status de cada um.
-      </p>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-10 max-w-2xl">
+        <p className="eyebrow mb-3">Carteira</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Meus ingressos
+        </h1>
+        <p className="mt-3 text-base text-[var(--muted)]">
+          QR da porta, votação e matches — tudo a partir daqui.
+        </p>
+      </div>
 
       {tickets.length === 0 ? (
-        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
-          <p className="text-base font-medium text-zinc-900">
+        <div className="surface-card px-6 py-16 text-center">
+          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
             Nenhum ingresso ainda
           </p>
-          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600">
-            Quando você comprar uma vaga, o ingresso e o status do pagamento
-            aparecem aqui.
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
+            Quando você garantir uma vaga, o ingresso e o QR aparecem aqui.
           </p>
-          <Link
-            href="/eventos"
-            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700"
-          >
-            Ver eventos
+          <Link href="/eventos" className="btn btn-primary mt-8">
+            Ver noites
           </Link>
         </div>
       ) : (
         <ul className="flex flex-col gap-4">
           {tickets.map((ticket) => (
-            <li
-              key={ticket.id}
-              className="rounded-lg border border-zinc-200 bg-white p-4 shadow-sm"
-            >
-              <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-                <h2 className="text-base font-medium text-zinc-900">
-                  {ticket.event.title}
-                </h2>
-                <span
-                  className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-                    statusClass[ticket.status] ?? statusClass.pending
-                  }`}
-                >
+            <li key={ticket.id} className="surface-card surface-card-hover p-6 sm:p-7">
+              <div className="flex flex-wrap items-start justify-between gap-3">
+                <div>
+                  <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+                    {ticket.event.title}
+                  </h2>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {ticket.event.venue} · {ticket.event.city}
+                  </p>
+                  <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
+                    {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+                  </p>
+                </div>
+                <span className="badge badge-soft">
                   {statusLabel[ticket.status] ?? ticket.status}
                 </span>
               </div>
-              <p className="text-sm text-zinc-600">
-                {ticket.event.venue} · {ticket.event.city}
-              </p>
-              <p className="mt-1 text-sm text-zinc-600">
-                {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
-              </p>
+
               {ticket.checkedInAt ? (
-                <p className="mt-2 text-xs font-medium text-green-700">
-                  Check-in realizado em{" "}
-                  {new Date(ticket.checkedInAt).toLocaleString("pt-BR")}
+                <p className="mt-4 text-xs font-semibold uppercase tracking-wider text-[var(--success)]">
+                  Check-in · {new Date(ticket.checkedInAt).toLocaleString("pt-BR")}
                 </p>
               ) : ticket.status === "paid" ? (
-                <p className="mt-2 text-xs text-zinc-500">
-                  Aguardando check-in no evento
+                <p className="mt-4 text-xs font-medium text-[var(--muted)]">
+                  Aguardando check-in na porta
                 </p>
               ) : null}
-              <div className="mt-3 flex flex-wrap gap-3 text-sm">
+
+              <div className="mt-5 flex flex-wrap gap-2">
                 <Link
                   href={`/meus-ingressos/${ticket.id}`}
-                  className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                  className="btn btn-primary !min-h-10 !px-4 !text-sm"
                 >
                   Ver ingresso e QR
                 </Link>
                 <Link
                   href={`/eventos/${ticket.event.slug}`}
-                  className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+                  className="btn btn-secondary !min-h-10 !px-4 !text-sm"
                 >
-                  Ver evento
+                  Evento
                 </Link>
-                {ticket.status === "pending" ? (
-                  <Link
-                    href={`/pagamento/pendente?ticket=${ticket.id}`}
-                    className="font-medium text-amber-800 underline-offset-2 hover:underline"
-                  >
-                    Ver pagamento
-                  </Link>
-                ) : null}
-                {ticket.status === "paid" ? (
-                  <Link
-                    href={`/pagamento/sucesso?ticket=${ticket.id}`}
-                    className="font-medium text-green-800 underline-offset-2 hover:underline"
-                  >
-                    Comprovante
-                  </Link>
-                ) : null}
                 {ticket.status === "paid" &&
                 ticket.checkedInAt &&
                 ticket.event.session?.status === "voting_open" ? (
                   <Link
                     href={`/evento/${ticket.event.id}/votar`}
-                    className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                    className="btn btn-secondary !min-h-10 !px-4 !text-sm"
                   >
                     Votar
                   </Link>
@@ -147,9 +119,9 @@ export default async function MeusIngressosPage() {
                 ticket.event.session?.status === "voting_closed" ? (
                   <Link
                     href={`/evento/${ticket.event.id}/matches`}
-                    className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                    className="btn btn-secondary !min-h-10 !px-4 !text-sm"
                   >
-                    Ver matches
+                    Matches
                   </Link>
                 ) : null}
               </div>

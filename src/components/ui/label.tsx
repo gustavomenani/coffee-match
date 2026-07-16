@@ -6,10 +6,7 @@ type Props = LabelHTMLAttributes<HTMLLabelElement> & {
 
 export function Label({ children, className = "", ...props }: Props) {
   return (
-    <label
-      className={`flex flex-col gap-1 text-sm ${className}`}
-      {...props}
-    >
+    <label className={`label ${className}`} {...props}>
       {children}
     </label>
   );

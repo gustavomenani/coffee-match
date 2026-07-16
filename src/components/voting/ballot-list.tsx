@@ -1,7 +1,11 @@
 "use client";
 
 import { useMemo, useState, useTransition } from "react";
-import { castVote, type BallotCandidate, type BallotVote } from "@/lib/actions/voting";
+import {
+  castVote,
+  type BallotCandidate,
+  type BallotVote,
+} from "@/lib/actions/voting";
 
 type Props = {
   eventId: string;
@@ -40,7 +44,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
 
   if (candidates.length === 0) {
     return (
-      <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-6 text-center text-base text-zinc-700">
+      <p className="surface-card px-4 py-10 text-center text-base text-[var(--muted)]">
         Nenhuma pessoa do outro gênero fez check-in ainda.
       </p>
     );
@@ -48,12 +52,15 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm text-zinc-600">
-        Votos registrados: {votedCount} de {candidates.length}
+      <p className="text-sm font-medium text-[var(--muted)]">
+        Votos ·{" "}
+        <span className="tabular text-[var(--ink)]">
+          {votedCount}/{candidates.length}
+        </span>
       </p>
 
       {error ? (
-        <p className="rounded-md border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+        <p className="rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
           {error}
         </p>
       ) : null}
@@ -66,7 +73,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
           return (
             <li
               key={person.id}
-              className="flex flex-col gap-3 rounded-xl border border-zinc-200 bg-white p-4 shadow-sm sm:flex-row sm:items-center sm:justify-between"
+              className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
             >
               <div className="flex items-center gap-3">
                 {person.photoUrl ? (
@@ -74,49 +81,54 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                   <img
                     src={person.photoUrl}
                     alt=""
-                    className="h-14 w-14 rounded-full object-cover"
+                    className="h-14 w-14 rounded-full object-cover outline outline-1 outline-[var(--line)]"
                   />
                 ) : (
-                  <div className="flex h-14 w-14 items-center justify-center rounded-full bg-zinc-200 text-lg font-semibold text-zinc-600">
+                  <div className="grid h-14 w-14 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] text-lg font-semibold text-white">
                     {person.name.slice(0, 1).toUpperCase()}
                   </div>
                 )}
                 <div>
-                  <p className="text-lg font-medium text-zinc-900">{person.name}</p>
+                  <p className="font-display text-xl font-semibold text-[var(--ink)]">
+                    {person.name}
+                  </p>
                   {current ? (
-                    <p className="text-sm text-zinc-500">
-                      Seu voto: {current === "yes" ? "Sim" : "Não"}
+                    <p className="text-sm text-[var(--muted)]">
+                      Seu voto:{" "}
+                      <span className="font-semibold text-[var(--ink-soft)]">
+                        {current === "yes" ? "Sim" : "Não"}
+                      </span>
                     </p>
                   ) : (
-                    <p className="text-sm text-zinc-400">Ainda não votou</p>
+                    <p className="text-sm text-[var(--muted)]">Ainda não votou</p>
                   )}
                 </div>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 sm:flex sm:w-auto">
+              <div className="grid grid-cols-2 gap-2 sm:flex">
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => onVote(person.id, "yes")}
-                  className={`min-h-12 min-w-[7rem] rounded-xl px-5 py-3 text-base font-semibold transition disabled:opacity-60 ${
+                  className={`btn tap-target !min-h-12 ${
                     current === "yes"
-                      ? "bg-emerald-600 text-white"
-                      : "bg-emerald-50 text-emerald-800 ring-1 ring-emerald-200 hover:bg-emerald-100"
+                      ? "btn-primary"
+                      : "btn-secondary"
                   }`}
                 >
-                  {busy && current !== "no" ? "..." : "Sim"}
+                  Sim
                 </button>
                 <button
                   type="button"
                   disabled={busy}
                   onClick={() => onVote(person.id, "no")}
-                  className={`min-h-12 min-w-[7rem] rounded-xl px-5 py-3 text-base font-semibold transition disabled:opacity-60 ${
+                  className={`btn tap-target !min-h-12 ${
                     current === "no"
-                      ? "bg-zinc-800 text-white"
-                      : "bg-zinc-100 text-zinc-800 ring-1 ring-zinc-200 hover:bg-zinc-200"
+                      ? "!bg-[var(--ink)] !text-white"
+                      : "btn-secondary"
                   }`}
                 >
-                  {busy && current === "no" ? "..." : "Não"}
+                  Não
                 </button>
               </div>
             </li>
