@@ -136,16 +136,6 @@ export default function Home() {
           </div>
         </div>
       </section>
-
-      <section className="border-t border-zinc-200 bg-zinc-50 px-4 py-8">
-        <div className="mx-auto max-w-3xl text-center text-sm text-zinc-600">
-          <p className="font-medium text-zinc-800">18+ apenas</p>
-          <p className="mt-1">
-            Eventos exclusivos para maiores de 18 anos. Participação exige
-            cadastro com data de nascimento e comportamento respeitoso.
-          </p>
-        </div>
-      </section>
     </div>
   );
 }
