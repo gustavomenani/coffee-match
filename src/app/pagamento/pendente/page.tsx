@@ -41,7 +41,7 @@ export default async function PagamentoPendentePage({
     : null;
 
   return (
-    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-xl">
         <p className="eyebrow mb-3">Checkout</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
@@ -49,9 +49,14 @@ export default async function PagamentoPendentePage({
         </h1>
 
         {!ticket ? (
-          <p className="mt-4 text-base text-[var(--muted)]">
-            Ingresso não encontrado. Verifique em Meus ingressos.
-          </p>
+          <div className="surface-card mt-8 px-6 py-12 text-center">
+            <p className="font-display text-2xl font-semibold text-[var(--ink)]">
+              Ingresso não encontrado
+            </p>
+            <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
+              Verifique em Meus ingressos ou volte para a lista de noites.
+            </p>
+          </div>
         ) : (
           <div className="surface-card mt-8 p-6 sm:p-7">
             {ticket.status === "paid" ? (

@@ -6,6 +6,7 @@ import {
   updateEventAction,
 } from "@/lib/actions/admin";
 import { prisma } from "@/lib/prisma";
+import { parseCuid } from "@/lib/security/ids";
 
 export const dynamic = "force-dynamic";
 
@@ -23,12 +24,14 @@ export default async function AdminEventoEditPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  await requireAdmin();
-  const { id } = await params;
+  const { membership } = await requireAdmin();
+  const { id: rawId } = await params;
   const query = await searchParams;
+  const id = parseCuid(rawId);
+  if (!id) notFound();
 
-  const event = await prisma.event.findUnique({
-    where: { id },
+  const event = await prisma.event.findFirst({
+    where: { id, organizationId: membership.organizationId },
     include: {
       session: true,
       tickets: {
@@ -47,20 +50,22 @@ export default async function AdminEventoEditPage({
   const boundUpdate = updateEventAction.bind(null, event.id);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
-      <Link
-        href="/admin/eventos"
-        className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
-      >
-        ← Eventos
-      </Link>
-      <p className="eyebrow mb-3">Admin</p>
-      <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
-        Editar evento
-      </h1>
-      <p className="mt-2 text-sm text-[var(--muted)]">{event.title}</p>
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-8 max-w-2xl">
+        <Link
+          href="/admin/eventos"
+          className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+        >
+          ← Eventos
+        </Link>
+        <p className="eyebrow mb-3">Admin</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Editar evento
+        </h1>
+        <p className="mt-2 text-base text-[var(--muted)]">{event.title}</p>
+      </div>
 
-      <div className="mb-8 mt-6 flex flex-wrap gap-3">
+      <div className="mb-8 flex flex-wrap gap-3">
         <Link
           href={`/admin/eventos/${event.id}/noite`}
           className="btn btn-secondary"
@@ -79,17 +84,17 @@ export default async function AdminEventoEditPage({
       </div>
 
       {query.error ? (
-        <p className="mb-4 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-4 max-w-2xl rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {query.error}
         </p>
       ) : null}
       {query.saved ? (
-        <p className="mb-4 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
+        <p className="mb-4 max-w-2xl rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
           Evento atualizado.
         </p>
       ) : null}
 
-      <div className="surface-card p-5 sm:p-6">
+      <div className="surface-card max-w-2xl p-5 sm:p-6">
         <EventForm
           action={boundUpdate}
           submitLabel="Salvar alterações"
@@ -111,16 +116,21 @@ export default async function AdminEventoEditPage({
 
       <section className="mt-12">
         <div className="gold-rule mb-8" />
-        <h2 className="font-display text-2xl font-semibold text-[var(--ink)]">
+        <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
           Ingressos pagos
         </h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
           Lista somente leitura. Check-in e votação ficam na operação da noite.
         </p>
         {event.tickets.length === 0 ? (
-          <p className="surface-card mt-4 px-4 py-8 text-center text-sm text-[var(--muted)]">
-            Nenhum ingresso pago ainda.
-          </p>
+          <div className="surface-card mt-4 px-6 py-12 text-center">
+            <p className="font-display text-xl font-semibold text-[var(--ink)]">
+              Nenhum ingresso pago
+            </p>
+            <p className="mx-auto mt-2 max-w-sm text-sm text-[var(--muted)]">
+              Quando houver vendas confirmadas, elas aparecem aqui.
+            </p>
+          </div>
         ) : (
           <div className="surface-card mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
@@ -162,7 +172,10 @@ export default async function AdminEventoEditPage({
         )}
         {event.session ? (
           <p className="mt-3 text-xs text-[var(--muted)]">
-            Sessão: {event.session.status}
+            Sessão:{" "}
+            <span className="badge badge-soft ml-1 align-middle">
+              {event.session.status}
+            </span>
           </p>
         ) : null}
       </section>

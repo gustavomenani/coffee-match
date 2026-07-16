@@ -34,7 +34,7 @@ export default async function MinhaContaPage({
   const params = await searchParams;
 
   return (
-    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-xl">
         <p className="eyebrow mb-3">Perfil</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">

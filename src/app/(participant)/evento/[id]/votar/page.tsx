@@ -20,10 +20,10 @@ export default async function VotarPage({
   if (!ballot.ok) {
     const phoneHint = ballot.code === "phone";
     return (
-      <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-lg">
           <p className="eyebrow mb-3">Urna digital</p>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
             Votação
           </h1>
           <div className="surface-card mt-8 border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-5 text-base text-[var(--ink-soft)]">
@@ -40,10 +40,10 @@ export default async function VotarPage({
   }
 
   return (
-    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto max-w-lg">
         <p className="eyebrow mb-3">Urna digital</p>
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
           Votação
         </h1>
         <p className="mt-2 text-sm font-medium text-[var(--ink-soft)]">
