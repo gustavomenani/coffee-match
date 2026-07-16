@@ -119,13 +119,18 @@ npm run build
 | `/cadastro` | Cadastro de participante |
 | `/pagamento/sucesso` | Retorno pós-pagamento (aprovado) |
 | `/pagamento/pendente` | Retorno pós-pagamento (pendente) |
+| `/termos` | Termos de uso |
+| `/privacidade` | Política de privacidade |
+| `/regras` | Regras do evento |
+| `/reembolso` | Política de reembolso |
 
 ### Participante (autenticado)
 
 | Rota | Descrição |
 |------|-----------|
-| `/minha-conta` | Perfil (WhatsApp, Instagram, etc.) |
-| `/meus-ingressos` | Ingressos do usuário |
+| `/minha-conta` | Perfil (WhatsApp, Instagram, foto local) |
+| `/meus-ingressos` | Lista de ingressos |
+| `/meus-ingressos/[ticketId]` | Ingresso + QR da porta e da votação |
 | `/evento/[id]/votar` | Cédula de votação (noite) |
 | `/evento/[id]/matches` | Matches mútuos + contatos |
 | `/evento/[id]/curtidas` | Quem curtiu você (não mútuo) |
