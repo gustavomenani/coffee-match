@@ -332,3 +332,47 @@ p,
 .night-band .muted {
   color: color-mix(in srgb, #f8f1ec 62%, transparent);
 }
+
+/* Print: ticket QR only */
+@media print {
+  body {
+    background: #fff !important;
+    color: #000 !important;
+  }
+
+  body > header,
+  body > footer,
+  header,
+  footer,
+  nav {
+    display: none !important;
+  }
+
+  .page-glow::before {
+    display: none !important;
+  }
+
+  .print-ticket {
+    max-width: none !important;
+    padding: 0 !important;
+    margin: 0 !important;
+  }
+
+  .print-ticket a,
+  .print-ticket .btn,
+  .print-ticket .no-print {
+    display: none !important;
+  }
+
+  .print-ticket .surface-card {
+    box-shadow: none !important;
+    border-color: #ccc !important;
+    break-inside: avoid;
+  }
+
+  .print-ticket img {
+    max-width: 220px !important;
+    print-color-adjust: exact;
+    -webkit-print-color-adjust: exact;
+  }
+}

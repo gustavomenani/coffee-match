@@ -68,8 +68,8 @@ export default async function TicketDetailPage({ params }: PageProps) {
     sessionStatus === "voting_closed";
 
   return (
-    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mb-8">
+    <main className="print-ticket page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="no-print mb-8">
         <Link
           href="/meus-ingressos"
           className="text-sm font-semibold text-[var(--muted)] underline-offset-2 transition-colors hover:text-[var(--carmine)] hover:underline"
@@ -185,7 +185,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
           </section>
         </div>
 
-        <div className="flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
+        <div className="no-print flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
           <Link
             href="/meus-ingressos"
             className="btn btn-secondary !min-h-10 !px-4 !text-sm"

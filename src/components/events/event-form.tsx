@@ -1,7 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-
 export type EventFormDefaults = {
   title?: string;
   slug?: string;
@@ -48,20 +44,21 @@ export function EventForm({
 
   return (
     <form action={action} className="flex flex-col gap-4">
-      <Label>
-        <span className="font-medium text-zinc-800">Título</span>
-        <Input
+      <label className="block">
+        <span className="label">Título</span>
+        <input
           name="title"
           required
           minLength={3}
           maxLength={120}
           defaultValue={defaults?.title ?? ""}
+          className="field"
         />
-      </Label>
+      </label>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Slug (URL)</span>
-        <Input
+      <label className="block">
+        <span className="label">Slug (URL)</span>
+        <input
           name="slug"
           required
           minLength={3}
@@ -69,91 +66,99 @@ export function EventForm({
           pattern="[a-z0-9\-]+"
           defaultValue={defaults?.slug ?? ""}
           placeholder="noite-paulista-2026-03"
+          className="field"
         />
-      </Label>
+      </label>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Local</span>
-        <Input
+      <label className="block">
+        <span className="label">Local</span>
+        <input
           name="venue"
           required
           minLength={2}
           maxLength={120}
           defaultValue={defaults?.venue ?? ""}
+          className="field"
         />
-      </Label>
+      </label>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Endereço</span>
-        <Input
+      <label className="block">
+        <span className="label">Endereço</span>
+        <input
           name="address"
           required
           minLength={5}
           maxLength={200}
           defaultValue={defaults?.address ?? ""}
+          className="field"
         />
-      </Label>
+      </label>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Cidade</span>
-        <Input
+      <label className="block">
+        <span className="label">Cidade</span>
+        <input
           name="city"
           required
           minLength={2}
           maxLength={80}
           defaultValue={defaults?.city ?? ""}
+          className="field"
         />
-      </Label>
+      </label>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Label>
-          <span className="font-medium text-zinc-800">Início</span>
-          <Input
+        <label className="block">
+          <span className="label">Início</span>
+          <input
             type="datetime-local"
             name="startsAt"
             required
             defaultValue={toDatetimeLocal(defaults?.startsAt)}
+            className="field"
           />
-        </Label>
-        <Label>
-          <span className="font-medium text-zinc-800">Término</span>
-          <Input
+        </label>
+        <label className="block">
+          <span className="label">Término</span>
+          <input
             type="datetime-local"
             name="endsAt"
             required
             defaultValue={toDatetimeLocal(defaults?.endsAt)}
+            className="field"
           />
-        </Label>
+        </label>
       </div>
 
       <div className="grid gap-4 sm:grid-cols-2">
-        <Label>
-          <span className="font-medium text-zinc-800">Capacidade homens</span>
-          <Input
+        <label className="block">
+          <span className="label">Capacidade homens</span>
+          <input
             type="number"
             name="capacityMen"
             required
             min={1}
             max={500}
             defaultValue={defaults?.capacityMen ?? 10}
+            className="field"
           />
-        </Label>
-        <Label>
-          <span className="font-medium text-zinc-800">Capacidade mulheres</span>
-          <Input
+        </label>
+        <label className="block">
+          <span className="label">Capacidade mulheres</span>
+          <input
             type="number"
             name="capacityWomen"
             required
             min={1}
             max={500}
             defaultValue={defaults?.capacityWomen ?? 10}
+            className="field"
           />
-        </Label>
+        </label>
       </div>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Preço (R$)</span>
-        <Input
+      <label className="block">
+        <span className="label">Preço (R$)</span>
+        <input
           type="number"
           name="priceReais"
           required
@@ -161,15 +166,16 @@ export function EventForm({
           step="0.01"
           defaultValue={priceReais}
           placeholder="89.90"
+          className="field"
         />
-      </Label>
+      </label>
 
-      <Label>
-        <span className="font-medium text-zinc-800">Status</span>
+      <label className="block">
+        <span className="label">Status</span>
         <select
           name="status"
           defaultValue={defaults?.status ?? "draft"}
-          className="w-full rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
+          className="field"
         >
           {statuses.map((s) => (
             <option key={s.value} value={s.value}>
@@ -177,11 +183,11 @@ export function EventForm({
             </option>
           ))}
         </select>
-      </Label>
+      </label>
 
-      <Button type="submit" className="mt-2">
+      <button type="submit" className="btn btn-primary mt-2">
         {submitLabel}
-      </Button>
+      </button>
     </form>
   );
 }
