@@ -84,6 +84,26 @@ export default async function PagamentoSucessoPage({
         </div>
       )}
 
+      {ticket?.status === "paid" ? (
+        <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-4">
+          <p className="text-sm font-semibold text-zinc-900">Próximos passos</p>
+          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-700">
+            <li>
+              Mostre este ingresso (ou a tela em{" "}
+              <Link
+                href="/meus-ingressos"
+                className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+              >
+                Meus ingressos
+              </Link>
+              ) no check-in.
+            </li>
+            <li>Chegue com alguns minutos de antecedência para o credenciamento.</li>
+            <li>Evento 18+ — leve um documento com foto se for pedido na entrada.</li>
+          </ol>
+        </div>
+      ) : null}
+
       <div className="flex flex-col gap-2 text-sm">
         <Link
           href="/meus-ingressos"

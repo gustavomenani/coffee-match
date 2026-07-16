@@ -98,6 +98,30 @@ export default async function EventoDetailPage({
           </p>
         )}
       </div>
+
+      <aside className="mt-8 space-y-3 rounded-xl border border-zinc-200 bg-zinc-50 px-4 py-4 text-sm text-zinc-600">
+        <p>
+          Evento 18+. Ao comprar, você concorda com as{" "}
+          <Link
+            href="/regras"
+            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+          >
+            regras de participação
+          </Link>
+          .
+        </p>
+        <p>
+          Política de reembolso: cancelamentos com antecedência seguem as
+          condições em{" "}
+          <Link
+            href="/reembolso"
+            className="font-medium text-zinc-900 underline-offset-2 hover:underline"
+          >
+            reembolso
+          </Link>
+          .
+        </p>
+      </aside>
     </main>
   );
 }

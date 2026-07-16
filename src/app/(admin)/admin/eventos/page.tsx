@@ -49,12 +49,21 @@ export default async function AdminEventosPage() {
       </div>
 
       {events.length === 0 ? (
-        <p className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
-          Nenhum evento cadastrado.{" "}
-          <Link href="/admin/eventos/novo" className="font-medium underline">
-            Criar o primeiro
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
+          <p className="text-base font-medium text-zinc-900">
+            Nenhum evento cadastrado
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600">
+            Crie o primeiro evento para publicar noites de speed dating e
+            vender ingressos.
+          </p>
+          <Link
+            href="/admin/eventos/novo"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-md bg-zinc-900 px-5 py-2.5 text-sm font-semibold text-white hover:bg-zinc-800"
+          >
+            Criar evento
           </Link>
-        </p>
+        </div>
       ) : (
         <div className="overflow-x-auto rounded-xl border border-zinc-200">
           <table className="min-w-full text-left text-sm">

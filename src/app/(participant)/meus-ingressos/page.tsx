@@ -53,13 +53,17 @@ export default async function MeusIngressosPage() {
       </p>
 
       {tickets.length === 0 ? (
-        <div className="rounded-lg border border-dashed border-zinc-300 px-4 py-10 text-center">
-          <p className="mb-4 text-sm text-zinc-600">
-            Você ainda não tem ingressos.
+        <div className="rounded-2xl border border-dashed border-zinc-300 bg-zinc-50 px-6 py-12 text-center">
+          <p className="text-base font-medium text-zinc-900">
+            Nenhum ingresso ainda
+          </p>
+          <p className="mx-auto mt-2 max-w-sm text-sm leading-relaxed text-zinc-600">
+            Quando você comprar uma vaga, o ingresso e o status do pagamento
+            aparecem aqui.
           </p>
           <Link
             href="/eventos"
-            className="inline-block rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
+            className="mt-6 inline-flex min-h-11 items-center justify-center rounded-full bg-rose-600 px-5 py-2.5 text-sm font-semibold text-white hover:bg-rose-700"
           >
             Ver eventos
           </Link>

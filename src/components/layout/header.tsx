@@ -17,7 +17,7 @@ export async function Header() {
           SpeedDate BR
         </Link>
 
-        <nav className="flex items-center gap-1 text-sm font-medium text-zinc-700 sm:gap-2">
+        <nav className="flex items-center gap-0.5 text-sm font-medium text-zinc-700 sm:gap-2">
           <Link
             href="/eventos"
             className="rounded-md px-2 py-2 hover:bg-zinc-100 hover:text-zinc-900 sm:px-3"
@@ -41,14 +41,23 @@ export async function Header() {
           ) : null}
 
           {session?.user ? (
-            <form action={logoutAction}>
-              <button
-                type="submit"
+            <>
+              <Link
+                href="/minha-conta"
                 className="rounded-md px-2 py-2 hover:bg-zinc-100 hover:text-zinc-900 sm:px-3"
               >
-                Sair
-              </button>
-            </form>
+                <span className="hidden sm:inline">Minha conta</span>
+                <span className="sm:hidden">Conta</span>
+              </Link>
+              <form action={logoutAction}>
+                <button
+                  type="submit"
+                  className="rounded-md px-2 py-2 hover:bg-zinc-100 hover:text-zinc-900 sm:px-3"
+                >
+                  Sair
+                </button>
+              </form>
+            </>
           ) : (
             <Link
               href="/login"
