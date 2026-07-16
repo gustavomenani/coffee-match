@@ -2,7 +2,7 @@
 
 import { useState } from "react";
 
-const MAX_BYTES = 400 * 1024;
+const MAX_BYTES = 90 * 1024;
 
 type Props = {
   defaultValue?: string | null;
@@ -25,7 +25,7 @@ export function PhotoField({ defaultValue }: Props) {
     }
 
     if (file.size > MAX_BYTES) {
-      setError("Imagem muito grande. Use no máximo 400KB.");
+      setError("Imagem muito grande. Use no máximo 90KB.");
       e.target.value = "";
       return;
     }
@@ -38,7 +38,7 @@ export function PhotoField({ defaultValue }: Props) {
         return;
       }
       if (dataUrl.length > 600_000) {
-        setError("Imagem muito grande. Use no máximo 400KB.");
+        setError("Imagem muito grande. Use no máximo 90KB.");
         return;
       }
       setPhotoUrl(dataUrl);
@@ -96,7 +96,7 @@ export function PhotoField({ defaultValue }: Props) {
         <p className="text-xs text-[var(--danger)]">{error}</p>
       ) : (
         <p className="text-xs text-[var(--muted)]">
-          Máximo 400KB. JPEG, PNG ou WebP.
+          Máximo 90KB. JPEG, PNG ou WebP.
         </p>
       )}
     </div>

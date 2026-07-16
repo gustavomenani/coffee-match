@@ -1,29 +1,16 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { computeMutualMatches } from "@/lib/domain/matching";
+import { requireAdmin } from "@/lib/authz";
+import { auditLog } from "@/lib/audit";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-async function requireAdmin() {
-  const session = await auth();
-  if (!session?.user?.id) {
-    throw new Error("Não autenticado.");
-  }
-  if (session.user.role !== "admin") {
-    throw new Error("Acesso negado.");
-  }
-  return session;
-}
-
 export async function checkInTicket(ticketId: string): Promise<ActionResult> {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Acesso negado." };
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
 
   const ticket = await prisma.ticket.findFirst({
     where: { id: ticketId, status: "paid" },
@@ -41,22 +28,25 @@ export async function checkInTicket(ticketId: string): Promise<ActionResult> {
     data: { checkedInAt: new Date() },
   });
 
+  await auditLog({
+    actorId: admin.user.id,
+    action: "ticket.check_in",
+    meta: { ticketId, eventId: ticket.eventId },
+  });
+
   revalidatePath(`/admin/eventos/${ticket.eventId}/noite`);
   return { ok: true };
 }
 
 export async function checkInByTicketId(
   eventId: string,
-  ticketId: string,
+  ticketId: string
 ): Promise<ActionResult> {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Acesso negado." };
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
 
   const id = ticketId.trim();
-  if (!id) {
+  if (!id || id.length > 64) {
     return { ok: false, error: "Informe o código do ingresso." };
   }
 
@@ -79,18 +69,26 @@ export async function checkInByTicketId(
     data: { checkedInAt: new Date() },
   });
 
+  await auditLog({
+    actorId: admin.user.id,
+    action: "ticket.check_in",
+    meta: { ticketId: id, eventId, via: "code" },
+  });
+
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   return { ok: true };
 }
 
 export async function openVoting(eventId: string): Promise<ActionResult> {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Acesso negado." };
-  }
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
 
-  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organizationId: admin.membership.organizationId,
+    },
+  });
   if (!event) {
     return { ok: false, error: "Evento não encontrado." };
   }
@@ -115,16 +113,29 @@ export async function openVoting(eventId: string): Promise<ActionResult> {
     }),
   ]);
 
+  await auditLog({
+    actorId: admin.user.id,
+    action: "voting.open",
+    meta: { eventId },
+  });
+
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
   return { ok: true };
 }
 
 export async function closeVoting(eventId: string): Promise<ActionResult> {
-  try {
-    await requireAdmin();
-  } catch (e) {
-    return { ok: false, error: e instanceof Error ? e.message : "Acesso negado." };
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organizationId: admin.membership.organizationId,
+    },
+  });
+  if (!event) {
+    return { ok: false, error: "Evento não encontrado." };
   }
 
   const session = await prisma.eventSession.findUnique({ where: { eventId } });
@@ -141,7 +152,7 @@ export async function closeVoting(eventId: string): Promise<ActionResult> {
       fromUserId: v.fromUserId,
       toUserId: v.toUserId,
       interest: v.interest,
-    })),
+    }))
   );
 
   await prisma.$transaction(async (tx) => {
@@ -165,7 +176,14 @@ export async function closeVoting(eventId: string): Promise<ActionResult> {
     });
   });
 
+  await auditLog({
+    actorId: admin.user.id,
+    action: "voting.close",
+    meta: { eventId, matchCount: pairs.length },
+  });
+
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
+  revalidatePath(`/evento/${eventId}/matches`);
   return { ok: true };
 }

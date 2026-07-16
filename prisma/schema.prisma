@@ -159,3 +159,14 @@ model Match {
 
   @@unique([sessionId, userAId, userBId])
 }
+
+model AuditLog {
+  id        String   @id @default(cuid())
+  actorId   String?
+  action    String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  @@index([action, createdAt])
+  @@index([actorId, createdAt])
+}

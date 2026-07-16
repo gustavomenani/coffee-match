@@ -3,6 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canViewResults } from "@/lib/domain/eligibility";
+import { requireAdmin } from "@/lib/authz";
 
 export type MatchContact = {
   matchId: string;
@@ -158,16 +159,20 @@ export async function getWhoLikedMe(eventId: string): Promise<WhoLikedMeResult> 
 export async function getAdminSessionMatches(
   eventId: string
 ): Promise<AdminMatchesResult> {
-  const session = await auth();
-  if (!session?.user?.id) return { ok: false, error: "Não autenticado." };
-  if (session.user.role !== "admin") {
-    return { ok: false, error: "Acesso restrito a administradores." };
+  const admin = await requireAdmin();
+  if (!admin.ok) {
+    return { ok: false, error: admin.error };
   }
 
-  const eventSession = await prisma.eventSession.findUnique({
-    where: { eventId },
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organizationId: admin.membership.organizationId,
+    },
+    include: { session: true },
   });
-  if (!eventSession) return { ok: false, error: "Sessão não encontrada." };
+  if (!event?.session) return { ok: false, error: "Sessão não encontrada." };
+  const eventSession = event.session;
 
   const matches = await prisma.match.findMany({
     where: { sessionId: eventSession.id },

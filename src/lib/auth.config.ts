@@ -5,7 +5,12 @@ export const authConfig = {
   pages: {
     signIn: "/login",
   },
-  session: { strategy: "jwt" },
+  session: {
+    strategy: "jwt",
+    // Shorter sessions reduce window if role is demoted in DB
+    maxAge: 8 * 60 * 60,
+    updateAge: 60 * 60,
+  },
   providers: [],
   callbacks: {
     authorized({ auth, request }) {

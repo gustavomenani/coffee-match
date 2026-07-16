@@ -1,13 +1,28 @@
 import { MercadoPagoConfig, Preference } from "mercadopago";
+import { appBaseUrl, isProduction } from "@/lib/env";
 
 export function getMpClient() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
   if (!token) throw new Error("MERCADOPAGO_ACCESS_TOKEN missing");
+  if (isProduction() && token.startsWith("TEST-DEV-BYPASS")) {
+    throw new Error("Dev bypass token forbidden in production");
+  }
   return new MercadoPagoConfig({ accessToken: token });
 }
 
+/**
+ * Dev-only free checkout. Hard-blocked in production.
+ * Requires ALLOW_DEV_BYPASS=1 and non-production NODE_ENV.
+ */
 export function isMpDevBypass(): boolean {
-  const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
+  if (isProduction()) return false;
+
+  const allow =
+    process.env.ALLOW_DEV_BYPASS === "1" ||
+    process.env.ALLOW_DEV_BYPASS === "true";
+  const token = process.env.MERCADOPAGO_ACCESS_TOKEN ?? "";
+
+  if (!allow) return false;
   return !token || token.startsWith("TEST-DEV-BYPASS");
 }
 
@@ -18,7 +33,7 @@ export async function createTicketPreference(input: {
   payerEmail: string;
 }) {
   const preference = new Preference(getMpClient());
-  const appUrl = process.env.NEXT_PUBLIC_APP_URL ?? "http://localhost:3000";
+  const appUrl = appBaseUrl();
   const result = await preference.create({
     body: {
       items: [

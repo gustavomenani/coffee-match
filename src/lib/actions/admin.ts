@@ -2,29 +2,28 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
+import {
+  requireAdmin as requireAdminAuthz,
+  requireAdminOrThrow,
+} from "@/lib/authz";
+import { auditLog } from "@/lib/audit";
 
 export type ActionResult =
   | { ok: true; id?: string }
   | { ok: false; error: string };
 
+/** Page/server helper — always re-checks role in DB via authz. */
 export async function requireAdmin() {
-  const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
-    throw new Error("Não autorizado.");
-  }
-
-  const membership = await prisma.organizationMember.findFirst({
-    where: { userId: session.user.id },
-    include: { organization: true },
-  });
-  if (!membership) {
-    throw new Error("Admin sem organização.");
-  }
-
-  return { session, membership };
+  const result = await requireAdminOrThrow();
+  return {
+    session: { user: result.user },
+    membership: {
+      organizationId: result.membership.organizationId,
+      organization: result.membership.organization,
+    },
+  };
 }
 
 function parseEventForm(formData: FormData) {
@@ -52,7 +51,7 @@ function parseEventForm(formData: FormData) {
 }
 
 export async function createEvent(formData: FormData): Promise<ActionResult> {
-  const { membership } = await requireAdmin();
+  const { membership, session } = await requireAdmin();
   const parsed = parseEventForm(formData);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos." };
@@ -106,6 +105,12 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     },
   });
 
+  await auditLog({
+    actorId: session.user.id,
+    action: "event.create",
+    meta: { eventId: event.id, slug: event.slug },
+  });
+
   revalidatePath("/eventos");
   revalidatePath("/admin/eventos");
   revalidatePath("/admin");
@@ -116,7 +121,7 @@ export async function updateEvent(
   id: string,
   formData: FormData
 ): Promise<ActionResult> {
-  await requireAdmin();
+  const { session, membership } = await requireAdmin();
   const parsed = parseEventForm(formData);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos." };
@@ -132,7 +137,9 @@ export async function updateEvent(
     return { ok: false, error: "Término deve ser após o início." };
   }
 
-  const current = await prisma.event.findUnique({ where: { id } });
+  const current = await prisma.event.findFirst({
+    where: { id, organizationId: membership.organizationId },
+  });
   if (!current) {
     return { ok: false, error: "Evento não encontrado." };
   }
@@ -163,6 +170,12 @@ export async function updateEvent(
     },
   });
 
+  await auditLog({
+    actorId: session.user.id,
+    action: "event.update",
+    meta: { eventId: id, slug: data.slug },
+  });
+
   revalidatePath("/eventos");
   revalidatePath(`/eventos/${data.slug}`);
   revalidatePath("/admin/eventos");
@@ -172,8 +185,9 @@ export async function updateEvent(
 }
 
 export async function listAdminEvents() {
-  await requireAdmin();
+  const { membership } = await requireAdmin();
   return prisma.event.findMany({
+    where: { organizationId: membership.organizationId },
     orderBy: { startsAt: "desc" },
     include: {
       _count: { select: { tickets: true } },
