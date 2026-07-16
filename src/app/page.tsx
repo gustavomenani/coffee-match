@@ -1,4 +1,8 @@
 import Link from "next/link";
+import { EventCard } from "@/components/events/event-card";
+import { listPublishedEvents } from "@/lib/actions/events";
+
+export const dynamic = "force-dynamic";
 
 const features = [
   {
@@ -44,7 +48,9 @@ const steps = [
   },
 ] as const;
 
-export default function Home() {
+export default async function Home() {
+  const events = (await listPublishedEvents()).slice(0, 3);
+
   return (
     <div className="flex flex-1 flex-col">
       {/* Hero */}
@@ -109,8 +115,50 @@ export default function Home() {
         </div>
       </section>
 
-      {/* Features */}
+      {/* Próximas noites */}
       <section className="px-4 py-4 sm:px-6">
+        <div className="mx-auto max-w-6xl">
+          <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="eyebrow mb-3">Agenda</p>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+                Próximas noites
+              </h2>
+            </div>
+            {events.length > 0 ? (
+              <Link
+                href="/eventos"
+                className="text-sm font-semibold text-[var(--carmine)] hover:underline"
+              >
+                Ver todas →
+              </Link>
+            ) : null}
+          </div>
+
+          {events.length === 0 ? (
+            <p className="text-sm leading-relaxed text-[var(--muted)]">
+              Agenda em breve.{" "}
+              <Link
+                href="/eventos"
+                className="font-semibold text-[var(--carmine)] hover:underline"
+              >
+                Ver eventos
+              </Link>
+            </p>
+          ) : (
+            <ul className="flex flex-col gap-4">
+              {events.map((event) => (
+                <li key={event.id}>
+                  <EventCard event={event} />
+                </li>
+              ))}
+            </ul>
+          )}
+        </div>
+      </section>
+
+      {/* Features */}
+      <section className="mt-12 px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
