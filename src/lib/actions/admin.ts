@@ -68,13 +68,13 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   }
 
   const org =
-    membership.organization.slug === "speeddate-br"
+    membership.organization.slug === "coffee-match"
       ? membership.organization
       : await prisma.organization.findUnique({
-          where: { slug: "speeddate-br" },
+          where: { slug: "coffee-match" },
         });
   if (!org) {
-    return { ok: false, error: "Organização speeddate-br não encontrada." };
+    return { ok: false, error: "Organização Coffee Match não encontrada." };
   }
 
   const existing = await prisma.event.findUnique({

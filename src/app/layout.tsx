@@ -20,9 +20,13 @@ const body = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "SpeedDate BR — Noites de speed dating",
+  title: "Coffee Match — Conectando pessoas, uma xícara por vez",
   description:
-    "Eventos presenciais de speed dating no Brasil. Rodadas reais, votação no celular e matches mútuos com WhatsApp. 18+.",
+    "Coffee Match: noites presenciais de speed dating no Brasil. Rodadas reais, votação no celular e matches mútuos. 18+.",
+  icons: {
+    icon: "/logo.jpeg",
+    apple: "/logo.jpeg",
+  },
 };
 
 export default function RootLayout({

@@ -5,29 +5,72 @@ const prisma = new PrismaClient();
 
 async function main() {
   const org = await prisma.organization.upsert({
-    where: { slug: "speeddate-br" },
-    update: {},
+    where: { slug: "coffee-match" },
+    update: { name: "Coffee Match" },
     create: {
-      name: "SpeedDate BR",
-      slug: "speeddate-br",
+      name: "Coffee Match",
+      slug: "coffee-match",
     },
   });
 
-  const passwordHash = await bcrypt.hash("admin123456", 10);
+  // Migrate legacy org slug if present
+  const legacy = await prisma.organization.findUnique({
+    where: { slug: "speeddate-br" },
+  });
+  if (legacy && legacy.id !== org.id) {
+    await prisma.event.updateMany({
+      where: { organizationId: legacy.id },
+      data: { organizationId: org.id },
+    });
+    await prisma.organizationMember.updateMany({
+      where: { organizationId: legacy.id },
+      data: { organizationId: org.id },
+    });
+  }
+
+  const passwordHash = await bcrypt.hash("admin123456", 12);
 
   const admin = await prisma.user.upsert({
-    where: { email: "admin@speeddate.local" },
-    update: {},
-    create: {
-      email: "admin@speeddate.local",
+    where: { email: "admin@coffeematch.local" },
+    update: {
+      name: "Admin Coffee Match",
       passwordHash,
-      name: "Admin",
+      role: Role.admin,
+    },
+    create: {
+      email: "admin@coffeematch.local",
+      passwordHash,
+      name: "Admin Coffee Match",
       phone: "11999999999",
       gender: Gender.male,
       birthDate: new Date("1990-01-01"),
       role: Role.admin,
     },
   });
+
+  // Keep old admin email working if already seeded
+  const oldAdmin = await prisma.user.findUnique({
+    where: { email: "admin@speeddate.local" },
+  });
+  if (oldAdmin) {
+    await prisma.user.update({
+      where: { id: oldAdmin.id },
+      data: { role: Role.admin, passwordHash },
+    });
+    await prisma.organizationMember.upsert({
+      where: {
+        organizationId_userId: {
+          organizationId: org.id,
+          userId: oldAdmin.id,
+        },
+      },
+      update: {},
+      create: {
+        organizationId: org.id,
+        userId: oldAdmin.id,
+      },
+    });
+  }
 
   await prisma.organizationMember.upsert({
     where: {
@@ -48,28 +91,21 @@ async function main() {
   startsAt.setHours(20, 0, 0, 0);
   const endsAt = new Date(startsAt.getTime() + 3 * 60 * 60 * 1000);
 
-  const demoEvent = await prisma.event.upsert({
+  const event = await prisma.event.upsert({
     where: { slug: "noite-demo-sp" },
     update: {
-      organizationId: org.id,
       title: "Noite Demo São Paulo",
-      venue: "Rooftop Paulista",
-      address: "Av. Paulista, 1000 — Bela Vista",
-      city: "São Paulo",
+      organizationId: org.id,
+      status: EventStatus.published,
       startsAt,
       endsAt,
-      capacityMen: 20,
-      capacityWomen: 20,
-      priceCents: 8900,
-      currency: "BRL",
-      status: EventStatus.published,
     },
     create: {
       organizationId: org.id,
       title: "Noite Demo São Paulo",
       slug: "noite-demo-sp",
-      venue: "Rooftop Paulista",
-      address: "Av. Paulista, 1000 — Bela Vista",
+      venue: "Café & Bar Centro",
+      address: "Rua Augusta, 1000",
       city: "São Paulo",
       startsAt,
       endsAt,
@@ -78,21 +114,21 @@ async function main() {
       priceCents: 8900,
       currency: "BRL",
       status: EventStatus.published,
+      session: { create: { status: "not_started" } },
     },
   });
 
-  const existingSession = await prisma.eventSession.findUnique({
-    where: { eventId: demoEvent.id },
+  await prisma.eventSession.upsert({
+    where: { eventId: event.id },
+    update: {},
+    create: {
+      eventId: event.id,
+      status: "not_started",
+    },
   });
 
-  if (!existingSession) {
-    await prisma.eventSession.create({
-      data: { eventId: demoEvent.id },
-    });
-  }
-
   console.log("Seeded org", org.slug, "admin", admin.email);
-  console.log("Seeded demo event", demoEvent.slug, demoEvent.startsAt.toISOString());
+  console.log("Seeded demo event", event.slug, startsAt.toISOString());
 }
 
 main()

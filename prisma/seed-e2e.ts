@@ -10,10 +10,10 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 export const E2E = {
-  adminEmail: "admin@speeddate.local",
+  adminEmail: "admin@coffeematch.local",
   adminPassword: "admin123456",
-  manEmail: "man@e2e.speeddate.local",
-  womanEmail: "woman@e2e.speeddate.local",
+  manEmail: "man@e2e.coffeematch.local",
+  womanEmail: "woman@e2e.coffeematch.local",
   participantPassword: "e2e123456",
   eventSlug: "e2e-smoke-night",
   manPhone: "11911112222",
@@ -36,11 +36,11 @@ export type E2eFixture = {
 /** Reset and create fixtures for the night-flow smoke test. */
 export async function seedE2eFixtures(): Promise<E2eFixture> {
   const org = await prisma.organization.upsert({
-    where: { slug: "speeddate-br" },
+    where: { slug: "coffee-match" },
     update: {},
     create: {
-      name: "SpeedDate BR",
-      slug: "speeddate-br",
+      name: "Coffee Match",
+      slug: "coffee-match",
     },
   });
 

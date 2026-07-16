@@ -3,9 +3,9 @@ import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
 
 export const metadata: Metadata = {
-  title: "Regras do evento — SpeedDate BR",
+  title: "Regras do evento — Coffee Match",
   description:
-    "Regras de check-in, respeito, votação e matches mútuos nos eventos SpeedDate BR.",
+    "Regras de check-in, respeito, votação e matches mútuos nos eventos Coffee Match.",
 };
 
 export default function RegrasPage() {

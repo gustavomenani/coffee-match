@@ -34,17 +34,21 @@ export default async function LoginPage({
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-12 sm:px-6 sm:py-16">
       <div className="mx-auto grid w-full max-w-5xl overflow-hidden rounded-[var(--radius-lg)] border border-[var(--line)] shadow-[var(--shadow-soft)] lg:grid-cols-2">
-        <div className="hidden bg-[linear-gradient(165deg,#1c1014_0%,#2a1219_50%,#120b0e_100%)] p-10 text-[#f8f1ec] lg:flex lg:flex-col lg:justify-between">
+        <div className="hidden bg-[linear-gradient(165deg,#1a100c_0%,#2a1a12_50%,#120c09_100%)] p-10 text-[#f5e6d3] lg:flex lg:flex-col lg:justify-between">
           <div>
-            <p className="text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[var(--champagne-light)]">
-              SpeedDate BR
-            </p>
+            {/* eslint-disable-next-line @next/next/no-img-element */}
+            <img
+              src="/logo.jpeg"
+              alt=""
+              className="h-20 w-20 rounded-full object-cover ring-2 ring-[color-mix(in_srgb,var(--champagne)_35%,transparent)]"
+            />
             <p className="font-display mt-6 text-4xl font-medium leading-tight">
-              Bem-vindo de volta à noite.
+              Bem-vindo de volta ao{" "}
+              <span className="text-[var(--champagne)]">Coffee Match</span>.
             </p>
           </div>
-          <p className="text-sm leading-relaxed text-[color-mix(in_srgb,#f8f1ec_62%,transparent)]">
-            Seus ingressos, votos e matches ficam guardados na sua conta.
+          <p className="text-sm leading-relaxed text-[color-mix(in_srgb,#f5e6d3_65%,transparent)]">
+            Ingressos, votos e matches — tudo na sua conta. Uma xícara por vez.
           </p>
         </div>
 

@@ -3,9 +3,9 @@ import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
 
 export const metadata: Metadata = {
-  title: "Política de reembolso — SpeedDate BR",
+  title: "Política de reembolso — Coffee Match",
   description:
-    "Quando e como solicitar reembolso de ingressos SpeedDate BR.",
+    "Quando e como solicitar reembolso de ingressos Coffee Match.",
 };
 
 export default function ReembolsoPage() {

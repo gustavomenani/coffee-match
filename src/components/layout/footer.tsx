@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { Logo } from "@/components/brand/logo";
 
 const links = [
   { href: "/termos", label: "Termos" },
@@ -13,12 +14,10 @@ export function Footer() {
       <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
         <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
           <div className="max-w-md space-y-3">
-            <p className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
-              SpeedDate BR
-            </p>
+            <Logo href="/" size="md" />
             <p className="text-sm leading-relaxed text-[var(--muted)]">
-              Noites presenciais de speed dating com rodadas reais, votação no
-              celular e matches mútuos. Química sem o caos do app.
+              Conectando pessoas, uma xícara por vez. Noites presenciais de speed
+              dating com rodadas reais, votação no celular e matches mútuos.
             </p>
             <span className="badge badge-18">Somente 18+</span>
           </div>
@@ -31,7 +30,7 @@ export function Footer() {
               <Link
                 key={link.href}
                 href={link.href}
-                className="transition-colors hover:text-[var(--carmine)]"
+                className="transition-colors hover:text-[var(--coffee)]"
               >
                 {link.label}
               </Link>
@@ -42,7 +41,7 @@ export function Footer() {
         <div className="gold-rule my-8" />
 
         <p className="text-xs text-[var(--muted)]">
-          © {new Date().getFullYear()} SpeedDate BR · Eventos presenciais · Brasil
+          © {new Date().getFullYear()} Coffee Match · Eventos presenciais · Brasil
         </p>
       </div>
     </footer>

@@ -57,14 +57,17 @@ export default async function Home() {
       <section className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
-            <p className="eyebrow mb-5">Noites de speed dating · Brasil</p>
+            <p className="eyebrow mb-5">Coffee Match · Brasil</p>
             <h1 className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
-              Encontros de verdade.{" "}
-              <span className="italic text-[var(--carmine)]">Sem scroll.</span>
+              Conectando pessoas.{" "}
+              <span className="italic text-[var(--coffee)]">
+                Uma xícara por vez.
+              </span>
             </h1>
             <p className="pretty mt-6 max-w-lg text-base leading-relaxed text-[var(--muted)] sm:text-lg">
-              Uma noite, várias conversas, matches mútuos no fim. O SpeedDate BR
-              organiza o evento — você só precisa aparecer com presença.
+              Noites de speed dating com o clima de um bom café: conversas reais,
+              rodadas curtas e matches mútuos no fim. Você só precisa aparecer
+              com presença.
             </p>
             <div className="mt-9 flex flex-col gap-3 sm:flex-row sm:items-center">
               <Link href="/eventos" className="btn btn-primary">
@@ -79,26 +82,29 @@ export default async function Home() {
             </p>
           </div>
 
-          {/* Signature visual: table vignette */}
+          {/* Brand card with logo */}
           <div className="relative mx-auto w-full max-w-md lg:max-w-none">
             <div
               aria-hidden
-              className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_50%_40%,color-mix(in_srgb,var(--champagne)_35%,transparent),transparent_65%)] blur-2xl"
+              className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_50%_40%,color-mix(in_srgb,var(--champagne)_40%,transparent),transparent_65%)] blur-2xl"
             />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[linear-gradient(165deg,#1c1014_0%,#2a1219_45%,#120b0e_100%)] p-7 shadow-[var(--shadow-lift)] sm:p-9">
-              <div className="flex items-center justify-between text-[0.7rem] font-semibold uppercase tracking-[0.18em] text-[color-mix(in_srgb,#f8f1ec_55%,transparent)]">
-                <span>Mesa 07</span>
-                <span className="text-[var(--champagne-light)]">7 min</span>
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[linear-gradient(165deg,#1a100c_0%,#2a1a12_45%,#120c09_100%)] p-7 shadow-[var(--shadow-lift)] sm:p-9">
+              <div className="flex flex-col items-center text-center">
+                {/* eslint-disable-next-line @next/next/no-img-element */}
+                <img
+                  src="/logo.jpeg"
+                  alt="Coffee Match"
+                  className="h-40 w-40 rounded-full object-cover shadow-[0_16px_40px_rgba(0,0,0,0.45)] ring-2 ring-[color-mix(in_srgb,var(--champagne)_40%,transparent)] sm:h-48 sm:w-48"
+                />
+                <p className="font-display mt-6 text-3xl font-medium text-[#f5e6d3] sm:text-4xl">
+                  Coffee <span className="text-[var(--champagne)]">Match</span>
+                </p>
+                <p className="mt-2 max-w-xs text-sm leading-relaxed tracking-wide text-[color-mix(in_srgb,#f5e6d3_70%,transparent)]">
+                  Conectando pessoas, uma xícara por vez.
+                </p>
               </div>
-              <div className="gold-rule my-5 opacity-70" />
-              <p className="font-display text-3xl font-medium leading-snug text-[#f8f1ec] sm:text-4xl">
-                “Olá. Me conta o que te trouxe até aqui esta noite.”
-              </p>
-              <p className="mt-4 text-sm leading-relaxed text-[color-mix(in_srgb,#f8f1ec_62%,transparent)]">
-                Luz baixa. Tempo contado. Nenhuma notificação competindo com a
-                conversa.
-              </p>
-              <div className="mt-8 grid grid-cols-3 gap-3">
+              <div className="gold-rule my-6 opacity-70" />
+              <div className="grid grid-cols-3 gap-3">
                 {["Rodadas", "Votos", "Matches"].map((label) => (
                   <div
                     key={label}

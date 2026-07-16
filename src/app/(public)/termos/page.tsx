@@ -3,8 +3,8 @@ import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
 
 export const metadata: Metadata = {
-  title: "Termos de uso — SpeedDate BR",
-  description: "Termos de uso da plataforma SpeedDate BR de speed dating presencial.",
+  title: "Termos de uso — Coffee Match",
+  description: "Termos de uso da plataforma Coffee Match de speed dating presencial.",
 };
 
 export default function TermosPage() {
@@ -17,7 +17,7 @@ export default function TermosPage() {
         <h2>1. Aceitação</h2>
         <p>
           Ao criar conta, comprar ingresso ou participar de um evento da
-          SpeedDate BR, você concorda com estes Termos de Uso e com as{" "}
+          Coffee Match, você concorda com estes Termos de Uso e com as{" "}
           <Link href="/regras">Regras do evento</Link>.
         </p>
       </section>
@@ -35,7 +35,7 @@ export default function TermosPage() {
       <section className="space-y-2">
         <h2>3. Natureza do serviço</h2>
         <p>
-          A SpeedDate BR organiza eventos presenciais de speed dating: rodadas
+          A Coffee Match organiza eventos presenciais de speed dating: rodadas
           curtas de conversa, votação no celular e divulgação de matches
           mútuos. Não garantimos encontros românticos, número de matches nem
           resultados específicos.
@@ -78,7 +78,7 @@ export default function TermosPage() {
       <section className="space-y-2">
         <h2>7. Limitação de responsabilidade</h2>
         <p>
-          A SpeedDate BR não se responsabiliza por condutas de participantes
+          A Coffee Match não se responsabiliza por condutas de participantes
           fora do controle da organização, por interações após o evento nem
           por indisponibilidades temporárias da plataforma. Em qualquer caso,
           a responsabilidade da organização limita-se, no máximo, ao valor

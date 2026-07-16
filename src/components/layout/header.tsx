@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
+import { Logo } from "@/components/brand/logo";
 
 async function logoutAction() {
   "use server";
@@ -13,22 +14,7 @@ export async function Header() {
   return (
     <header className="sticky top-0 z-50 border-b border-[var(--line)] bg-[color-mix(in_srgb,var(--paper)_82%,transparent)] backdrop-blur-xl">
       <div className="mx-auto flex h-[4.25rem] w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
-        <Link href="/" className="group flex items-center gap-2.5">
-          <span
-            aria-hidden
-            className="grid h-9 w-9 place-items-center rounded-full bg-gradient-to-br from-[var(--carmine-hot)] to-[var(--carmine-deep)] text-sm font-semibold text-white shadow-[0_8px_20px_color-mix(in_srgb,var(--carmine)_35%,transparent)]"
-          >
-            S
-          </span>
-          <span className="leading-tight">
-            <span className="font-display block text-[1.35rem] font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--carmine)]">
-              SpeedDate
-            </span>
-            <span className="block text-[0.65rem] font-semibold uppercase tracking-[0.22em] text-[var(--muted)]">
-              Brasil · 18+
-            </span>
-          </span>
-        </Link>
+        <Logo size="md" priority />
 
         <nav className="flex items-center gap-0.5 text-sm font-medium text-[var(--ink-soft)] sm:gap-1">
           <Link
@@ -71,7 +57,10 @@ export async function Header() {
               </form>
             </>
           ) : (
-            <Link href="/login" className="btn btn-primary ml-1 !min-h-10 !px-4 !text-sm">
+            <Link
+              href="/login"
+              className="btn btn-primary ml-1 !min-h-10 !px-4 !text-sm"
+            >
               Entrar
             </Link>
           )}

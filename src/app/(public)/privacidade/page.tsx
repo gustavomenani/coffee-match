@@ -3,8 +3,8 @@ import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
 
 export const metadata: Metadata = {
-  title: "Privacidade — SpeedDate BR",
-  description: "Política de privacidade da SpeedDate BR: quais dados coletamos e como usamos.",
+  title: "Privacidade — Coffee Match",
+  description: "Política de privacidade da Coffee Match: quais dados coletamos e como usamos.",
 };
 
 export default function PrivacidadePage() {
@@ -16,7 +16,7 @@ export default function PrivacidadePage() {
       <section className="space-y-2">
         <h2>1. Quem somos</h2>
         <p>
-          A SpeedDate BR opera a plataforma e os eventos de speed dating
+          A Coffee Match opera a plataforma e os eventos de speed dating
           descritos nestes documentos. Esta política explica quais dados
           pessoais tratamos e para quais finalidades.
         </p>

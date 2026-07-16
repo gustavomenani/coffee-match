@@ -28,7 +28,7 @@ async function logout(page: Page) {
 
 test.describe.configure({ mode: "serial" });
 
-test.describe("SpeedDate night smoke", () => {
+test.describe("Coffee Match night smoke", () => {
   let fixture: E2eFixture;
 
   test.beforeAll(async () => {
@@ -103,11 +103,11 @@ test.describe("SpeedDate night smoke", () => {
 
     try {
       const org = await prisma.organization.findUniqueOrThrow({
-        where: { slug: "speeddate-br" },
+        where: { slug: "coffee-match" },
       });
       const passwordHash = await bcrypt.hash("buy123456", 10);
       await prisma.user.upsert({
-        where: { email: "buyer@e2e.speeddate.local" },
+        where: { email: "buyer@e2e.coffeematch.local" },
         update: {
           passwordHash,
           phone: "11955556666",
@@ -116,7 +116,7 @@ test.describe("SpeedDate night smoke", () => {
           name: "E2E Buyer",
         },
         create: {
-          email: "buyer@e2e.speeddate.local",
+          email: "buyer@e2e.coffeematch.local",
           passwordHash,
           name: "E2E Buyer",
           phone: "11955556666",
@@ -161,7 +161,7 @@ test.describe("SpeedDate night smoke", () => {
         where: { eventId: event.id },
       });
 
-      await login(page, "buyer@e2e.speeddate.local", "buy123456");
+      await login(page, "buyer@e2e.coffeematch.local", "buy123456");
       await page.goto(`/eventos/${slug}`);
       await page
         .getByRole("button", { name: /Garantir ingresso|Comprar ingresso/i })
