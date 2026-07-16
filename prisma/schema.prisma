@@ -1,0 +1,161 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+enum Role {
+  participant
+  admin
+}
+
+enum Gender {
+  male
+  female
+}
+
+enum EventStatus {
+  draft
+  published
+  sold_out
+  live
+  closed
+}
+
+enum TicketStatus {
+  pending
+  paid
+  cancelled
+  refunded
+}
+
+enum SessionStatus {
+  not_started
+  voting_open
+  voting_closed
+}
+
+enum Interest {
+  yes
+  no
+}
+
+model Organization {
+  id        String   @id @default(cuid())
+  name      String
+  slug      String   @unique
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+  events    Event[]
+  members   OrganizationMember[]
+}
+
+model OrganizationMember {
+  id             String       @id @default(cuid())
+  organizationId String
+  userId         String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  user           User         @relation(fields: [userId], references: [id])
+  createdAt      DateTime     @default(now())
+
+  @@unique([organizationId, userId])
+}
+
+model User {
+  id           String    @id @default(cuid())
+  email        String    @unique
+  passwordHash String
+  name         String
+  phone        String
+  gender       Gender
+  birthDate    DateTime
+  photoUrl     String?
+  instagram    String?
+  role         Role      @default(participant)
+  createdAt    DateTime  @default(now())
+  updatedAt    DateTime  @updatedAt
+  tickets      Ticket[]
+  votesFrom    Vote[]    @relation("VotesFrom")
+  votesTo      Vote[]    @relation("VotesTo")
+  memberships  OrganizationMember[]
+}
+
+model Event {
+  id             String       @id @default(cuid())
+  organizationId String
+  organization   Organization @relation(fields: [organizationId], references: [id])
+  title          String
+  slug           String       @unique
+  venue          String
+  address        String
+  city           String
+  startsAt       DateTime
+  endsAt         DateTime
+  capacityMen    Int
+  capacityWomen  Int
+  priceCents     Int
+  currency       String       @default("BRL")
+  status         EventStatus  @default(draft)
+  createdAt      DateTime     @default(now())
+  updatedAt      DateTime     @updatedAt
+  tickets        Ticket[]
+  session        EventSession?
+}
+
+model Ticket {
+  id          String       @id @default(cuid())
+  eventId     String
+  userId      String
+  event       Event        @relation(fields: [eventId], references: [id])
+  user        User         @relation(fields: [userId], references: [id])
+  status      TicketStatus @default(pending)
+  mpPaymentId String?      @unique
+  checkedInAt DateTime?
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([eventId, status])
+  @@index([userId])
+}
+
+model EventSession {
+  id             String        @id @default(cuid())
+  eventId        String        @unique
+  event          Event         @relation(fields: [eventId], references: [id])
+  status         SessionStatus @default(not_started)
+  votingOpensAt  DateTime?
+  votingClosesAt DateTime?
+  votes          Vote[]
+  matches        Match[]
+  createdAt      DateTime      @default(now())
+  updatedAt      DateTime      @updatedAt
+}
+
+model Vote {
+  id         String       @id @default(cuid())
+  sessionId  String
+  fromUserId String
+  toUserId   String
+  interest   Interest
+  session    EventSession @relation(fields: [sessionId], references: [id])
+  fromUser   User         @relation("VotesFrom", fields: [fromUserId], references: [id])
+  toUser     User         @relation("VotesTo", fields: [toUserId], references: [id])
+  createdAt  DateTime     @default(now())
+  updatedAt  DateTime     @updatedAt
+
+  @@unique([sessionId, fromUserId, toUserId])
+}
+
+model Match {
+  id        String       @id @default(cuid())
+  sessionId String
+  userAId   String
+  userBId   String
+  session   EventSession @relation(fields: [sessionId], references: [id])
+  createdAt DateTime     @default(now())
+
+  @@unique([sessionId, userAId, userBId])
+}
