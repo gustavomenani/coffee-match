@@ -73,12 +73,13 @@ export async function listPublishedEvents(): Promise<EventWithSpots[]> {
     orderBy: { startsAt: "asc" },
   });
 
-  const result: EventWithSpots[] = [];
-  for (const event of events) {
-    const occ = await getOccupancy(event.id);
-    result.push(withSpots(event, occ));
-  }
-  return result;
+  // Parallel occupancy (avoid N+1 sequential)
+  return Promise.all(
+    events.map(async (event) => {
+      const occ = await getOccupancy(event.id);
+      return withSpots(event, occ);
+    })
+  );
 }
 
 export async function getEventBySlug(

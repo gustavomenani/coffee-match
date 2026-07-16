@@ -61,6 +61,7 @@ export function EventCard({ event }: { event: EventCardData }) {
       href={`/eventos/${event.slug}`}
       className="surface-card surface-card-hover group block overflow-hidden"
     >
+      <div className="h-1.5 w-full bg-gradient-to-r from-[var(--coffee-deep)] via-[var(--coffee)] to-[var(--champagne)]" />
       <div className="flex flex-col gap-5 p-6 sm:flex-row sm:items-stretch sm:justify-between sm:p-7">
         <div className="min-w-0 flex-1">
           <div className="mb-3 flex flex-wrap items-center gap-2">
@@ -72,32 +73,34 @@ export function EventCard({ event }: { event: EventCardData }) {
               {event.city}
             </span>
           </div>
-          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--carmine)] sm:text-[1.7rem]">
+          <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)] transition-colors group-hover:text-[var(--coffee)] sm:text-[1.7rem]">
             {event.title}
           </h2>
-          <p className="mt-2 text-sm text-[var(--muted)]">
-            {event.venue}
-          </p>
+          <p className="mt-2 text-sm text-[var(--muted)]">{event.venue}</p>
           <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
             {formatDate(event.startsAt)}
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-col justify-between gap-4 border-t border-[var(--line)] pt-4 sm:min-w-[9.5rem] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
+        <div className="flex shrink-0 flex-col justify-between gap-4 border-t border-[var(--line)] pt-4 sm:min-w-[10rem] sm:border-l sm:border-t-0 sm:pl-6 sm:pt-0">
           <p className="font-display text-3xl font-semibold tabular tracking-tight text-[var(--ink)]">
             {formatBRL(event.priceCents)}
           </p>
-          <p className="text-xs leading-relaxed text-[var(--muted)]">
-            Vagas ·{" "}
-            <span className="font-semibold text-[var(--ink-soft)]">
-              {Math.max(0, event.remainingMen)} H
-            </span>{" "}
-            ·{" "}
-            <span className="font-semibold text-[var(--ink-soft)]">
-              {Math.max(0, event.remainingWomen)} M
-            </span>
-          </p>
-          <span className="text-sm font-semibold text-[var(--carmine)]">
+          <div className="space-y-1 text-xs leading-relaxed text-[var(--muted)]">
+            <p>
+              Homens ·{" "}
+              <span className="font-semibold tabular text-[var(--ink-soft)]">
+                {Math.max(0, event.remainingMen)}
+              </span>
+            </p>
+            <p>
+              Mulheres ·{" "}
+              <span className="font-semibold tabular text-[var(--ink-soft)]">
+                {Math.max(0, event.remainingWomen)}
+              </span>
+            </p>
+          </div>
+          <span className="text-sm font-semibold text-[var(--coffee)] transition-transform group-hover:translate-x-0.5">
             Ver detalhes →
           </span>
         </div>

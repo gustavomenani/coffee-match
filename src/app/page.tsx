@@ -77,9 +77,20 @@ export default async function Home() {
                 Criar conta grátis
               </Link>
             </div>
-            <p className="mt-5 text-xs font-medium uppercase tracking-[0.14em] text-[var(--muted)]">
-              18+ · Pix e cartão · WhatsApp no match
-            </p>
+            <ul className="mt-8 flex flex-wrap gap-x-5 gap-y-2 text-xs font-semibold uppercase tracking-[0.12em] text-[var(--muted)]">
+              <li className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--coffee)]" />
+                18+
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--coffee)]" />
+                Pix e cartão
+              </li>
+              <li className="flex items-center gap-1.5">
+                <span className="h-1.5 w-1.5 rounded-full bg-[var(--coffee)]" />
+                Match mútuo
+              </li>
+            </ul>
           </div>
 
           {/* Brand card with logo */}

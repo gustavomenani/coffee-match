@@ -121,6 +121,7 @@ model Ticket {
 
   @@index([eventId, status])
   @@index([userId])
+  @@index([eventId, userId, status])
 }
 
 model EventSession {
