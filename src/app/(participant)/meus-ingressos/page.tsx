@@ -101,6 +101,12 @@ export default async function MeusIngressosPage() {
               ) : null}
               <div className="mt-3 flex flex-wrap gap-3 text-sm">
                 <Link
+                  href={`/meus-ingressos/${ticket.id}`}
+                  className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                >
+                  Ver ingresso e QR
+                </Link>
+                <Link
                   href={`/eventos/${ticket.event.slug}`}
                   className="font-medium text-zinc-900 underline-offset-2 hover:underline"
                 >
