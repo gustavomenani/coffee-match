@@ -47,102 +47,111 @@ export default async function AdminEventoEditPage({
   const boundUpdate = updateEventAction.bind(null, event.id);
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12">
+    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
       <Link
         href="/admin/eventos"
-        className="mb-4 inline-block text-sm font-medium text-zinc-600 hover:text-zinc-900"
+        className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
       >
         ← Eventos
       </Link>
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">
+      <p className="eyebrow mb-3">Admin</p>
+      <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
         Editar evento
       </h1>
-      <p className="mb-4 text-sm text-zinc-600">{event.title}</p>
+      <p className="mt-2 text-sm text-[var(--muted)]">{event.title}</p>
 
-      <div className="mb-6 flex flex-wrap gap-3 text-sm">
+      <div className="mb-8 mt-6 flex flex-wrap gap-3">
         <Link
           href={`/admin/eventos/${event.id}/noite`}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 font-medium text-zinc-900 hover:bg-zinc-50"
+          className="btn btn-secondary"
         >
           Operação da noite
         </Link>
         <Link
           href={`/admin/eventos/${event.id}/matches`}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 font-medium text-zinc-900 hover:bg-zinc-50"
+          className="btn btn-secondary"
         >
           Matches
         </Link>
-        <Link
-          href={`/eventos/${event.slug}`}
-          className="rounded-md border border-zinc-300 bg-white px-3 py-1.5 font-medium text-zinc-900 hover:bg-zinc-50"
-        >
+        <Link href={`/eventos/${event.slug}`} className="btn btn-ghost">
           Ver página pública
         </Link>
       </div>
 
       {query.error ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="mb-4 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
           {query.error}
         </p>
       ) : null}
       {query.saved ? (
-        <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
+        <p className="mb-4 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-2 text-sm text-emerald-800">
           Evento atualizado.
         </p>
       ) : null}
 
-      <EventForm
-        action={boundUpdate}
-        submitLabel="Salvar alterações"
-        defaults={{
-          title: event.title,
-          slug: event.slug,
-          venue: event.venue,
-          address: event.address,
-          city: event.city,
-          startsAt: event.startsAt.toISOString(),
-          endsAt: event.endsAt.toISOString(),
-          capacityMen: event.capacityMen,
-          capacityWomen: event.capacityWomen,
-          priceCents: event.priceCents,
-          status: event.status,
-        }}
-      />
+      <div className="surface-card p-5 sm:p-6">
+        <EventForm
+          action={boundUpdate}
+          submitLabel="Salvar alterações"
+          defaults={{
+            title: event.title,
+            slug: event.slug,
+            venue: event.venue,
+            address: event.address,
+            city: event.city,
+            startsAt: event.startsAt.toISOString(),
+            endsAt: event.endsAt.toISOString(),
+            capacityMen: event.capacityMen,
+            capacityWomen: event.capacityWomen,
+            priceCents: event.priceCents,
+            status: event.status,
+          }}
+        />
+      </div>
 
-      <section className="mt-12 border-t border-zinc-200 pt-8">
-        <h2 className="mb-1 text-lg font-semibold text-zinc-900">
+      <section className="mt-12">
+        <div className="gold-rule mb-8" />
+        <h2 className="font-display text-2xl font-semibold text-[var(--ink)]">
           Ingressos pagos
         </h2>
-        <p className="mb-4 text-sm text-zinc-600">
+        <p className="mt-1 text-sm text-[var(--muted)]">
           Lista somente leitura. Check-in e votação ficam na operação da noite.
         </p>
         {event.tickets.length === 0 ? (
-          <p className="text-sm text-zinc-500">Nenhum ingresso pago ainda.</p>
+          <p className="surface-card mt-4 px-4 py-8 text-center text-sm text-[var(--muted)]">
+            Nenhum ingresso pago ainda.
+          </p>
         ) : (
-          <div className="overflow-x-auto rounded-xl border border-zinc-200">
+          <div className="surface-card mt-4 overflow-x-auto">
             <table className="min-w-full text-left text-sm">
-              <thead className="border-b border-zinc-200 bg-zinc-50 text-xs uppercase text-zinc-500">
+              <thead className="border-b border-[var(--line)] bg-[var(--paper-deep)] text-xs uppercase tracking-wider text-[var(--muted)]">
                 <tr>
-                  <th className="px-3 py-2 font-medium">Nome</th>
-                  <th className="px-3 py-2 font-medium">E-mail</th>
-                  <th className="px-3 py-2 font-medium">Gênero</th>
-                  <th className="px-3 py-2 font-medium">Telefone</th>
-                  <th className="px-3 py-2 font-medium">Valor</th>
+                  <th className="px-3 py-2 font-semibold">Nome</th>
+                  <th className="px-3 py-2 font-semibold">E-mail</th>
+                  <th className="px-3 py-2 font-semibold">Gênero</th>
+                  <th className="px-3 py-2 font-semibold">Telefone</th>
+                  <th className="px-3 py-2 font-semibold">Valor</th>
                 </tr>
               </thead>
               <tbody>
                 {event.tickets.map((t) => (
                   <tr
                     key={t.id}
-                    className="border-b border-zinc-100 last:border-0"
+                    className="border-b border-[var(--line)] last:border-0"
                   >
-                    <td className="px-3 py-2 text-zinc-900">{t.user.name}</td>
-                    <td className="px-3 py-2 text-zinc-600">{t.user.email}</td>
-                    <td className="px-3 py-2 text-zinc-600">
+                    <td className="px-3 py-3 font-medium text-[var(--ink)]">
+                      {t.user.name}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {t.user.email}
+                    </td>
+                    <td className="px-3 py-3 text-[var(--muted)]">
                       {t.user.gender === "male" ? "H" : "M"}
                     </td>
-                    <td className="px-3 py-2 text-zinc-600">{t.user.phone}</td>
-                    <td className="px-3 py-2 text-zinc-600">
+                    <td className="px-3 py-3 text-[var(--muted)]">
+                      {t.user.phone}
+                    </td>
+                    <td className="px-3 py-3 tabular text-[var(--ink-soft)]">
                       {formatBRL(event.priceCents)}
                     </td>
                   </tr>
@@ -152,7 +161,7 @@ export default async function AdminEventoEditPage({
           </div>
         )}
         {event.session ? (
-          <p className="mt-3 text-xs text-zinc-500">
+          <p className="mt-3 text-xs text-[var(--muted)]">
             Sessão: {event.session.status}
           </p>
         ) : null}

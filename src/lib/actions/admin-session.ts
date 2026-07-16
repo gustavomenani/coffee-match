@@ -32,12 +32,54 @@ export async function checkInTicket(ticketId: string): Promise<ActionResult> {
     return { ok: false, error: "Ingresso pago não encontrado." };
   }
 
+  if (ticket.checkedInAt) {
+    return { ok: true };
+  }
+
   await prisma.ticket.update({
     where: { id: ticketId },
     data: { checkedInAt: new Date() },
   });
 
   revalidatePath(`/admin/eventos/${ticket.eventId}/noite`);
+  return { ok: true };
+}
+
+export async function checkInByTicketId(
+  eventId: string,
+  ticketId: string,
+): Promise<ActionResult> {
+  try {
+    await requireAdmin();
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Acesso negado." };
+  }
+
+  const id = ticketId.trim();
+  if (!id) {
+    return { ok: false, error: "Informe o código do ingresso." };
+  }
+
+  const ticket = await prisma.ticket.findFirst({
+    where: { id, eventId, status: "paid" },
+  });
+  if (!ticket) {
+    return {
+      ok: false,
+      error: "Ingresso pago não encontrado para este evento.",
+    };
+  }
+
+  if (ticket.checkedInAt) {
+    return { ok: true };
+  }
+
+  await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: { checkedInAt: new Date() },
+  });
+
+  revalidatePath(`/admin/eventos/${eventId}/noite`);
   return { ok: true };
 }
 

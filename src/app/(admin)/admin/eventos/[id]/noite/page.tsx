@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
@@ -106,43 +107,59 @@ export default async function NoitePage({
   const canClose = sessionStatus === "voting_open";
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12">
-      <h1 className="mb-1 text-2xl font-semibold text-zinc-900">Noite do evento</h1>
-      <p className="mb-2 text-base font-medium text-zinc-800">{event.title}</p>
-      <p className="mb-6 text-sm text-zinc-600">
-        Status da sessão:{" "}
-        <span className="font-semibold">{sessionLabel(sessionStatus)}</span>
+    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+      <Link
+        href={`/admin/eventos/${eventId}`}
+        className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+      >
+        ← Evento
+      </Link>
+      <p className="eyebrow mb-3">Operação da noite</p>
+      <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+        {event.title}
+      </h1>
+      <p className="mt-3 text-sm text-[var(--muted)]">
+        Sessão:{" "}
+        <span className="font-semibold text-[var(--ink)]">
+          {sessionLabel(sessionStatus)}
+        </span>
         {" · "}
-        Evento: <span className="font-semibold">{event.status}</span>
+        Evento:{" "}
+        <span className="font-semibold text-[var(--ink)]">{event.status}</span>
       </p>
 
       {query.error ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+        <p className="mt-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
           {query.error}
         </p>
       ) : null}
 
       {query.ok === "open" ? (
-        <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-3 text-sm text-green-800">
+        <p className="mt-5 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
           Votação aberta com sucesso.
         </p>
       ) : null}
 
       {query.ok === "close" ? (
-        <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-3 text-sm text-green-800">
+        <p className="mt-5 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
           Votação encerrada. Matches mútuos calculados.
         </p>
       ) : null}
 
-      <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900">Controle da votação</h2>
-        <div className="flex flex-col gap-3 sm:flex-row">
+      <section className="surface-card mt-10 p-5 sm:p-6">
+        <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
+          Controle da votação
+        </h2>
+        <p className="mt-1 text-sm text-[var(--muted)]">
+          Abra quando todos tiverem feito check-in. Encerrar calcula os matches.
+        </p>
+        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
           <form action={openVotingAction}>
             <input type="hidden" name="eventId" value={eventId} />
             <button
               type="submit"
               disabled={!canOpen}
-              className="min-h-12 w-full rounded-xl bg-emerald-600 px-6 py-3 text-base font-semibold text-white transition hover:bg-emerald-700 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+              className="btn btn-primary w-full !min-h-12 sm:w-auto"
             >
               Abrir votação
             </button>
@@ -152,17 +169,25 @@ export default async function NoitePage({
             <button
               type="submit"
               disabled={!canClose}
-              className="min-h-12 w-full rounded-xl bg-zinc-900 px-6 py-3 text-base font-semibold text-white transition hover:bg-zinc-800 disabled:cursor-not-allowed disabled:opacity-40 sm:w-auto"
+              className="btn btn-secondary w-full !min-h-12 sm:w-auto"
             >
               Encerrar votação
             </button>
           </form>
+          <Link
+            href={`/admin/eventos/${eventId}/matches`}
+            className="btn btn-ghost w-full !min-h-12 sm:w-auto"
+          >
+            Ver matches
+          </Link>
         </div>
       </section>
 
-      <section>
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900">Check-in</h2>
-        <CheckInList tickets={rows} />
+      <section className="mt-10">
+        <h2 className="mb-4 font-display text-xl font-semibold text-[var(--ink)]">
+          Check-in
+        </h2>
+        <CheckInList eventId={eventId} tickets={rows} />
       </section>
     </main>
   );
