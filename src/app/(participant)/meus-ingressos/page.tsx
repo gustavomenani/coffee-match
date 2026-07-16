@@ -36,6 +36,7 @@ export default async function MeusIngressosPage() {
           startsAt: true,
           endsAt: true,
           status: true,
+          session: { select: { status: true } },
         },
       },
     },
@@ -119,6 +120,26 @@ export default async function MeusIngressosPage() {
                     className="font-medium text-green-800 underline-offset-2 hover:underline"
                   >
                     Comprovante
+                  </Link>
+                ) : null}
+                {ticket.status === "paid" &&
+                ticket.checkedInAt &&
+                ticket.event.session?.status === "voting_open" ? (
+                  <Link
+                    href={`/evento/${ticket.event.id}/votar`}
+                    className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                  >
+                    Votar
+                  </Link>
+                ) : null}
+                {ticket.status === "paid" &&
+                ticket.checkedInAt &&
+                ticket.event.session?.status === "voting_closed" ? (
+                  <Link
+                    href={`/evento/${ticket.event.id}/matches`}
+                    className="font-medium text-rose-700 underline-offset-2 hover:underline"
+                  >
+                    Ver matches
                   </Link>
                 ) : null}
               </div>

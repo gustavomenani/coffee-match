@@ -89,6 +89,7 @@ export function BuyTicketButton({
         body: JSON.stringify({ eventId }),
       });
       const data = (await res.json().catch(() => ({}))) as {
+        initPoint?: string;
         url?: string;
         error?: string;
       };
@@ -96,8 +97,9 @@ export function BuyTicketButton({
         setError(data.error ?? "Não foi possível iniciar o checkout.");
         return;
       }
-      if (data.url) {
-        window.location.href = data.url;
+      const payUrl = data.initPoint ?? data.url;
+      if (payUrl) {
+        window.location.href = payUrl;
         return;
       }
       setError("Checkout sem URL de pagamento.");
