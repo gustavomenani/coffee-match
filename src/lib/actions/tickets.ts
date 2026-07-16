@@ -135,7 +135,11 @@ export async function getMyTickets() {
   });
 }
 
-export async function getTicketForUser(ticketId: string) {
+export async function getTicketForUser(rawTicketId: string) {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const ticketId = parseCuid(rawTicketId);
+  if (!ticketId) return null;
+
   const session = await auth();
   if (!session?.user?.id) return null;
 

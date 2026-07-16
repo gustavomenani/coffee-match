@@ -17,7 +17,11 @@ export async function checkInTicket(rawTicketId: string): Promise<ActionResult> 
   if (!admin.ok) return admin;
 
   const ticket = await prisma.ticket.findFirst({
-    where: { id: ticketId, status: "paid" },
+    where: {
+      id: ticketId,
+      status: "paid",
+      event: { organizationId: admin.membership.organizationId },
+    },
   });
   if (!ticket) {
     return { ok: false, error: "Ingresso pago não encontrado." };
@@ -57,7 +61,12 @@ export async function checkInByTicketId(
   if (!admin.ok) return admin;
 
   const ticket = await prisma.ticket.findFirst({
-    where: { id, eventId, status: "paid" },
+    where: {
+      id,
+      eventId,
+      status: "paid",
+      event: { organizationId: admin.membership.organizationId },
+    },
   });
   if (!ticket) {
     return {

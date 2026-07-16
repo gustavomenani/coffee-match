@@ -6,6 +6,7 @@ import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
+import { parseCuid } from "@/lib/security/ids";
 
 export type ActionResult =
   | { ok: true; id?: string }
@@ -115,10 +116,15 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
 }
 
 export async function updateEvent(
-  id: string,
+  rawId: string,
   formData: FormData
 ): Promise<ActionResult> {
   const { session, membership } = await requireAdmin();
+  const id = parseCuid(rawId);
+  if (!id) {
+    return { ok: false, error: "Evento inválido." };
+  }
+
   const parsed = parseEventForm(formData);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos." };

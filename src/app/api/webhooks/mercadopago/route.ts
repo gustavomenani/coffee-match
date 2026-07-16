@@ -46,8 +46,9 @@ export async function POST(req: NextRequest) {
   try {
     const client = new MercadoPagoConfig({ accessToken: token });
     const payment = await new Payment(client).get({ id: paymentId });
-    const ticketId = payment.external_reference;
-    if (!ticketId || typeof ticketId !== "string") {
+    const { parseCuid } = await import("@/lib/security/ids");
+    const ticketId = parseCuid(payment.external_reference);
+    if (!ticketId) {
       return NextResponse.json({ ok: true });
     }
 
@@ -56,6 +57,8 @@ export async function POST(req: NextRequest) {
         where: { mpPaymentId: String(paymentId) },
       });
       if (existingByPayment) {
+        // Already paid via this payment — keep sold_out in sync
+        await syncEventSoldOutStatus(existingByPayment.eventId);
         return NextResponse.json({ ok: true });
       }
 

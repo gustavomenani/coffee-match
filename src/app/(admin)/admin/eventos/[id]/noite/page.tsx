@@ -1,15 +1,16 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
-import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toDataUrl } from "@/lib/qr";
+import { requireAdmin } from "@/lib/actions/admin";
 import { closeVoting, openVoting } from "@/lib/actions/admin-session";
 import {
   CheckInList,
   type CheckInTicketRow,
 } from "@/components/admin/checkin-list";
 import { CopyButton } from "@/components/ui/copy-button";
+import { parseCuid } from "@/lib/security/ids";
 
 async function openVotingAction(formData: FormData) {
   "use server";
@@ -57,16 +58,16 @@ export default async function NoitePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
-  const session = await auth();
-  if (!session?.user?.id || session.user.role !== "admin") {
-    redirect("/login");
+  const { membership } = await requireAdmin();
+  const { id: rawEventId } = await params;
+  const query = await searchParams;
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) {
+    redirect("/admin/eventos");
   }
 
-  const { id: eventId } = await params;
-  const query = await searchParams;
-
-  const event = await prisma.event.findUnique({
-    where: { id: eventId },
+  const event = await prisma.event.findFirst({
+    where: { id: eventId, organizationId: membership.organizationId },
     include: {
       session: true,
       tickets: {
