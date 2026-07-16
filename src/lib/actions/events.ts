@@ -84,6 +84,7 @@ export async function listPublishedEvents(): Promise<EventWithSpots[]> {
 export async function getEventBySlug(
   slug: string
 ): Promise<EventWithSpots | null> {
+  if (!/^[a-z0-9-]{3,80}$/.test(slug)) return null;
   const event = await prisma.event.findUnique({ where: { slug } });
   if (!event) return null;
   if (!["published", "sold_out", "live", "closed"].includes(event.status)) {

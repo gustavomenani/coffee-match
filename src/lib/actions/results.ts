@@ -41,8 +41,9 @@ function toWhatsappUrl(phone: string): string {
 }
 
 async function loadEligibleTicket(eventId: string, userId: string) {
+  // Prefer paid ticket — never pick a random pending/cancelled row first
   const ticket = await prisma.ticket.findFirst({
-    where: { eventId, userId },
+    where: { eventId, userId, status: "paid" },
     include: {
       event: {
         include: { session: true },
@@ -52,7 +53,11 @@ async function loadEligibleTicket(eventId: string, userId: string) {
   return ticket;
 }
 
-export async function getMyMatches(eventId: string): Promise<MyMatchesResult> {
+export async function getMyMatches(rawEventId: string): Promise<MyMatchesResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "Não autenticado." };
 
@@ -112,7 +117,11 @@ export async function getMyMatches(eventId: string): Promise<MyMatchesResult> {
   return { ok: true, matches: result };
 }
 
-export async function getWhoLikedMe(eventId: string): Promise<WhoLikedMeResult> {
+export async function getWhoLikedMe(rawEventId: string): Promise<WhoLikedMeResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
   const session = await auth();
   if (!session?.user?.id) return { ok: false, error: "Não autenticado." };
 
@@ -157,8 +166,12 @@ export async function getWhoLikedMe(eventId: string): Promise<WhoLikedMeResult> 
 }
 
 export async function getAdminSessionMatches(
-  eventId: string
+  rawEventId: string
 ): Promise<AdminMatchesResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
   const admin = await requireAdmin();
   if (!admin.ok) {
     return { ok: false, error: admin.error };

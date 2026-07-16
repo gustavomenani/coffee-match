@@ -101,6 +101,7 @@ export async function POST(req: NextRequest) {
         initPoint: `/pagamento/sucesso?ticket=${existing.id}`,
       });
     }
+    // continue to MP preference for existing pending
     try {
       const preference = await createTicketPreference({
         ticketId: existing.id,
@@ -133,13 +134,36 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const ticket = await prisma.ticket.create({
-    data: {
+  // Re-check race: another request may have paid meanwhile
+  const raced = await prisma.ticket.findFirst({
+    where: {
       eventId: event.id,
       userId: user.id,
-      status: "pending",
+      status: "paid",
     },
   });
+  if (raced) {
+    return NextResponse.json(
+      { error: "Você já possui ingresso para este evento." },
+      { status: 409 }
+    );
+  }
+
+  let ticket;
+  try {
+    ticket = await prisma.ticket.create({
+      data: {
+        eventId: event.id,
+        userId: user.id,
+        status: "pending",
+      },
+    });
+  } catch {
+    return NextResponse.json(
+      { error: "Não foi possível criar o ingresso. Tente de novo." },
+      { status: 409 }
+    );
+  }
 
   await syncEventSoldOutStatus(event.id);
 
@@ -148,6 +172,7 @@ export async function POST(req: NextRequest) {
       where: { id: ticket.id },
       data: { status: "paid" },
     });
+    await syncEventSoldOutStatus(event.id);
     return NextResponse.json({
       initPoint: `/pagamento/sucesso?ticket=${ticket.id}`,
     });

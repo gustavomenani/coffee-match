@@ -66,8 +66,14 @@ export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
 }
 
 export async function cancelPendingTicket(
-  ticketId: string
+  rawTicketId: string
 ): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const ticketId = parseCuid(rawTicketId);
+  if (!ticketId) {
+    return { ok: false, error: "Ingresso inválido." };
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Não autenticado." };

@@ -8,7 +8,11 @@ import { auditLog } from "@/lib/audit";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
-export async function checkInTicket(ticketId: string): Promise<ActionResult> {
+export async function checkInTicket(rawTicketId: string): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const ticketId = parseCuid(rawTicketId);
+  if (!ticketId) return { ok: false, error: "Ingresso inválido." };
+
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 
@@ -39,16 +43,18 @@ export async function checkInTicket(ticketId: string): Promise<ActionResult> {
 }
 
 export async function checkInByTicketId(
-  eventId: string,
-  ticketId: string
+  rawEventId: string,
+  rawTicketId: string
 ): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  const id = parseCuid(rawTicketId.trim());
+  if (!eventId || !id) {
+    return { ok: false, error: "Código de ingresso inválido." };
+  }
+
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
-
-  const id = ticketId.trim();
-  if (!id || id.length > 64) {
-    return { ok: false, error: "Informe o código do ingresso." };
-  }
 
   const ticket = await prisma.ticket.findFirst({
     where: { id, eventId, status: "paid" },
@@ -79,7 +85,11 @@ export async function checkInByTicketId(
   return { ok: true };
 }
 
-export async function openVoting(eventId: string): Promise<ActionResult> {
+export async function openVoting(rawEventId: string): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 
@@ -124,7 +134,11 @@ export async function openVoting(eventId: string): Promise<ActionResult> {
   return { ok: true };
 }
 
-export async function closeVoting(eventId: string): Promise<ActionResult> {
+export async function closeVoting(rawEventId: string): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 

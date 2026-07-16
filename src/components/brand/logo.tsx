@@ -34,12 +34,9 @@ export function Logo({
           alt="Coffee Match"
           width={s.img}
           height={s.img}
-          className="object-cover"
-          style={{
-            width: s.box,
-            height: s.box,
-          }}
+          className="h-full w-full object-cover"
           priority={priority}
+          unoptimized
         />
       </span>
       {showWordmark ? (

@@ -33,9 +33,23 @@ export async function castVote(input: {
   toUserId: string;
   interest: "yes" | "no";
 }): Promise<ActionResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(input.eventId);
+  const toUserId = parseCuid(input.toUserId);
+  if (!eventId || !toUserId) {
+    return { ok: false, error: "Dados inválidos." };
+  }
+  if (input.interest !== "yes" && input.interest !== "no") {
+    return { ok: false, error: "Voto inválido." };
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Não autenticado." };
+  }
+
+  if (session.user.id === toUserId) {
+    return { ok: false, error: "Voto inválido." };
   }
 
   const user = await prisma.user.findUnique({ where: { id: session.user.id } });
@@ -44,10 +58,10 @@ export async function castVote(input: {
   }
 
   const ticket = await prisma.ticket.findFirst({
-    where: { eventId: input.eventId, userId: user.id, status: "paid" },
+    where: { eventId, userId: user.id, status: "paid" },
   });
   const eventSession = await prisma.eventSession.findUnique({
-    where: { eventId: input.eventId },
+    where: { eventId },
   });
 
   if (
@@ -63,14 +77,14 @@ export async function castVote(input: {
     return { ok: false, error: "Você não pode votar agora." };
   }
 
-  const target = await prisma.user.findUnique({ where: { id: input.toUserId } });
+  const target = await prisma.user.findUnique({ where: { id: toUserId } });
   if (!target || target.gender !== oppositeGender(user.gender)) {
     return { ok: false, error: "Voto inválido." };
   }
 
   const targetTicket = await prisma.ticket.findFirst({
     where: {
-      eventId: input.eventId,
+      eventId,
       userId: target.id,
       status: "paid",
       checkedInAt: { not: null },
@@ -97,11 +111,17 @@ export async function castVote(input: {
     update: { interest: input.interest },
   });
 
-  revalidatePath(`/evento/${input.eventId}/votar`);
+  revalidatePath(`/evento/${eventId}/votar`);
   return { ok: true };
 }
 
-export async function getBallot(eventId: string): Promise<BallotResult> {
+export async function getBallot(rawEventId: string): Promise<BallotResult> {
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) {
+    return { ok: false, error: "Evento não encontrado." };
+  }
+
   const session = await auth();
   if (!session?.user?.id) {
     return { ok: false, error: "Faça login para votar.", code: "auth" };

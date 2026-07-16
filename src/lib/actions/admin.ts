@@ -4,10 +4,7 @@ import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
 import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
-import {
-  requireAdmin as requireAdminAuthz,
-  requireAdminOrThrow,
-} from "@/lib/authz";
+import { requireAdminOrThrow } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 
 export type ActionResult =
