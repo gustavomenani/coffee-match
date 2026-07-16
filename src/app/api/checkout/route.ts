@@ -7,11 +7,19 @@ import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
+import { rateLimit } from "@/lib/rate-limit";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
   if (!session?.user?.id) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
+  }
+
+  if (!rateLimit(`checkout:${session.user.id}`, 10, 60_000)) {
+    return NextResponse.json(
+      { error: "Muitas tentativas. Aguarde um momento." },
+      { status: 429 }
+    );
   }
 
   const body = await req.json().catch(() => null);

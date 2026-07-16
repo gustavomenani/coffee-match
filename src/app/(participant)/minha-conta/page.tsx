@@ -2,6 +2,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { updateProfile } from "@/lib/actions/profile";
+import { PhotoField } from "@/components/profile/photo-field";
 
 async function profileAction(formData: FormData) {
   "use server";
@@ -90,16 +91,7 @@ export default async function MinhaContaPage({
           />
         </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">URL da foto</span>
-          <input
-            type="url"
-            name="photoUrl"
-            defaultValue={user.photoUrl ?? ""}
-            placeholder="https://..."
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+        <PhotoField defaultValue={user.photoUrl} />
 
         <button
           type="submit"

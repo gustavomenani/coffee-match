@@ -10,6 +10,14 @@ import { revalidatePath } from "next/cache";
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export async function registerUser(formData: FormData): Promise<ActionResult> {
+  const acceptTerms = formData.get("acceptTerms");
+  if (acceptTerms !== "1" && acceptTerms !== "on") {
+    return {
+      ok: false,
+      error: "É necessário aceitar os Termos e a Política de Privacidade.",
+    };
+  }
+
   const parsed = registerSchema.safeParse({
     name: formData.get("name"),
     email: formData.get("email"),

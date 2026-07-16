@@ -112,6 +112,29 @@ export default async function CadastroPage({
           />
         </label>
 
+        <label className="flex items-start gap-2 text-sm text-zinc-700">
+          <input
+            type="checkbox"
+            name="acceptTerms"
+            value="1"
+            required
+            className="mt-1 h-4 w-4 rounded border-zinc-300"
+          />
+          <span>
+            Li e aceito os{" "}
+            <Link href="/termos" className="font-medium text-zinc-900 underline">
+              Termos
+            </Link>{" "}
+            e a{" "}
+            <Link
+              href="/privacidade"
+              className="font-medium text-zinc-900 underline"
+            >
+              Política de Privacidade
+            </Link>
+          </span>
+        </label>
+
         <button
           type="submit"
           className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"

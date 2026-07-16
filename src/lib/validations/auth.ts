@@ -18,5 +18,15 @@ export const profileUpdateSchema = z.object({
   name: z.string().min(2).max(100),
   phone: z.string().min(10).max(20),
   instagram: z.string().max(100).optional().or(z.literal("")),
-  photoUrl: z.string().url().optional().or(z.literal("")),
+  photoUrl: z
+    .string()
+    .max(600_000)
+    .refine(
+      (v) =>
+        v === "" ||
+        v.startsWith("https://") ||
+        v.startsWith("http://") ||
+        v.startsWith("data:image/"),
+      { message: "URL de foto inválida" }
+    ),
 });
