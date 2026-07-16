@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { toDataUrl } from "@/lib/qr";
 import { closeVoting, openVoting } from "@/lib/actions/admin-session";
 import {
   CheckInList,
@@ -106,8 +107,15 @@ export default async function NoitePage({
     sessionStatus === "voting_closed";
   const canClose = sessionStatus === "voting_open";
 
+  const appUrl =
+    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
+    "http://localhost:3000";
+  const votingUrl = `${appUrl}/evento/${eventId}/votar`;
+  const votingQr = await toDataUrl(votingUrl);
+  const checkedInCount = rows.filter((r) => r.checkedInAt).length;
+
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <Link
         href={`/admin/eventos/${eventId}`}
         className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
@@ -146,42 +154,87 @@ export default async function NoitePage({
         </p>
       ) : null}
 
-      <section className="surface-card mt-10 p-5 sm:p-6">
-        <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
-          Controle da votação
-        </h2>
-        <p className="mt-1 text-sm text-[var(--muted)]">
-          Abra quando todos tiverem feito check-in. Encerrar calcula os matches.
-        </p>
-        <div className="mt-5 flex flex-col gap-3 sm:flex-row">
-          <form action={openVotingAction}>
-            <input type="hidden" name="eventId" value={eventId} />
-            <button
-              type="submit"
-              disabled={!canOpen}
-              className="btn btn-primary w-full !min-h-12 sm:w-auto"
-            >
-              Abrir votação
-            </button>
-          </form>
-          <form action={closeVotingAction}>
-            <input type="hidden" name="eventId" value={eventId} />
-            <button
-              type="submit"
-              disabled={!canClose}
-              className="btn btn-secondary w-full !min-h-12 sm:w-auto"
-            >
-              Encerrar votação
-            </button>
-          </form>
-          <Link
-            href={`/admin/eventos/${eventId}/matches`}
-            className="btn btn-ghost w-full !min-h-12 sm:w-auto"
-          >
-            Ver matches
-          </Link>
+      <div className="mt-8 grid gap-4 sm:grid-cols-3">
+        <div className="surface-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            Pagos
+          </p>
+          <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">
+            {rows.length}
+          </p>
         </div>
-      </section>
+        <div className="surface-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            Check-in
+          </p>
+          <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">
+            {checkedInCount}
+          </p>
+        </div>
+        <div className="surface-card p-5">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            Faltam
+          </p>
+          <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">
+            {Math.max(0, rows.length - checkedInCount)}
+          </p>
+        </div>
+      </div>
+
+      <div className="mt-10 grid gap-6 lg:grid-cols-[1.1fr_0.9fr]">
+        <section className="surface-card p-5 sm:p-6">
+          <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
+            Controle da votação
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Abra quando todos tiverem feito check-in. Encerrar calcula os matches.
+          </p>
+          <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
+            <form action={openVotingAction}>
+              <input type="hidden" name="eventId" value={eventId} />
+              <button
+                type="submit"
+                disabled={!canOpen}
+                className="btn btn-primary w-full !min-h-12 sm:w-auto"
+              >
+                Abrir votação
+              </button>
+            </form>
+            <form action={closeVotingAction}>
+              <input type="hidden" name="eventId" value={eventId} />
+              <button
+                type="submit"
+                disabled={!canClose}
+                className="btn btn-secondary w-full !min-h-12 sm:w-auto"
+              >
+                Encerrar votação
+              </button>
+            </form>
+            <Link
+              href={`/admin/eventos/${eventId}/matches`}
+              className="btn btn-ghost w-full !min-h-12 sm:w-auto"
+            >
+              Ver matches
+            </Link>
+          </div>
+        </section>
+
+        <section className="surface-card flex flex-col items-center p-5 text-center sm:p-6">
+          <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
+            QR da votação
+          </h2>
+          <p className="mt-1 text-sm text-[var(--muted)]">
+            Mostre na tela ou imprima para as mesas.
+          </p>
+          {/* eslint-disable-next-line @next/next/no-img-element */}
+          <img
+            src={votingQr}
+            alt="QR code da votação"
+            className="mt-4 h-48 w-48 rounded-[var(--radius-sm)] bg-white p-2 outline outline-1 outline-[var(--line)]"
+          />
+          <p className="mt-3 break-all text-xs text-[var(--muted)]">{votingUrl}</p>
+        </section>
+      </div>
 
       <section className="mt-10">
         <h2 className="mb-4 font-display text-xl font-semibold text-[var(--ink)]">
