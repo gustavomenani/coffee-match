@@ -1,9 +1,11 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Cormorant_Garamond, Outfit } from "next/font/google";
 import { Header } from "@/components/layout/header";
 import { Footer } from "@/components/layout/footer";
 import { MobileDock } from "@/components/layout/mobile-dock";
+import { JsonLd } from "@/components/seo/json-ld";
 import { auth } from "@/lib/auth";
+import { SITE, absoluteUrl, orgId, websiteId } from "@/lib/seo";
 import "./globals.css";
 
 const display = Cormorant_Garamond({
@@ -20,40 +22,126 @@ const body = Outfit({
   display: "swap",
 });
 
+export const viewport: Viewport = {
+  themeColor: [
+    { media: "(prefers-color-scheme: light)", color: "#faf6f1" },
+    { media: "(prefers-color-scheme: dark)", color: "#1a100c" },
+  ],
+  width: "device-width",
+  initialScale: 1,
+  maximumScale: 5,
+};
+
 export const metadata: Metadata = {
-  metadataBase: new URL(
-    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
-  ),
+  metadataBase: new URL(absoluteUrl()),
   title: {
-    default: "Coffee Match — Conectando pessoas, uma xícara por vez",
-    template: "%s | Coffee Match",
+    default: `${SITE.name} — ${SITE.tagline}`,
+    template: `%s | ${SITE.name}`,
   },
-  description:
-    "Coffee Match: noites presenciais de speed dating no Brasil. Rodadas reais, votação no celular e matches mútuos. 18+.",
+  description: SITE.description,
+  applicationName: SITE.name,
+  authors: [{ name: SITE.name, url: absoluteUrl() }],
+  creator: SITE.name,
+  publisher: SITE.name,
+  category: "dating",
+  keywords: [...SITE.keywords],
+  generator: undefined,
+  referrer: "origin-when-cross-origin",
+  formatDetection: {
+    email: false,
+    address: false,
+    telephone: false,
+  },
   icons: {
-    icon: "/logo.jpeg",
-    apple: "/logo.jpeg",
+    icon: [{ url: "/logo.jpeg", type: "image/jpeg" }],
+    apple: [{ url: "/logo.jpeg", type: "image/jpeg" }],
+    shortcut: "/logo.jpeg",
+  },
+  manifest: "/manifest.webmanifest",
+  alternates: {
+    canonical: absoluteUrl("/"),
+    languages: {
+      "pt-BR": absoluteUrl("/"),
+    },
   },
   openGraph: {
     type: "website",
-    locale: "pt_BR",
-    siteName: "Coffee Match",
-    title: "Coffee Match",
-    description:
-      "Conectando pessoas, uma xícara por vez. Speed dating presencial com matches mútuos.",
-    images: [{ url: "/logo.jpeg", width: 512, height: 512, alt: "Coffee Match" }],
+    locale: SITE.locale,
+    url: absoluteUrl("/"),
+    siteName: SITE.name,
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    images: [
+      {
+        url: absoluteUrl("/logo.jpeg"),
+        width: 1200,
+        height: 1200,
+        alt: `${SITE.name} logo`,
+        type: "image/jpeg",
+      },
+    ],
   },
   twitter: {
-    card: "summary",
-    title: "Coffee Match",
-    description: "Conectando pessoas, uma xícara por vez.",
-    images: ["/logo.jpeg"],
+    card: "summary_large_image",
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+    images: [absoluteUrl("/logo.jpeg")],
   },
   robots: {
     index: true,
     follow: true,
+    googleBot: {
+      index: true,
+      follow: true,
+      "max-image-preview": "large",
+      "max-snippet": -1,
+      "max-video-preview": -1,
+    },
+  },
+  other: {
+    "geo.region": "BR",
+    "content-language": "pt-BR",
   },
 };
+
+const globalJsonLd = [
+  {
+    "@context": "https://schema.org",
+    "@type": "Organization",
+    "@id": orgId(),
+    name: SITE.name,
+    legalName: SITE.legalName,
+    url: absoluteUrl("/"),
+    logo: {
+      "@type": "ImageObject",
+      url: absoluteUrl("/logo.jpeg"),
+      width: 512,
+      height: 512,
+    },
+    image: absoluteUrl("/logo.jpeg"),
+    description: SITE.description,
+    slogan: SITE.tagline,
+    areaServed: {
+      "@type": "Country",
+      name: "Brasil",
+    },
+    knowsAbout: [
+      "speed dating",
+      "encontros presenciais",
+      "eventos para solteiros",
+    ],
+  },
+  {
+    "@context": "https://schema.org",
+    "@type": "WebSite",
+    "@id": websiteId(),
+    name: SITE.name,
+    url: absoluteUrl("/"),
+    description: SITE.description,
+    inLanguage: SITE.language,
+    publisher: { "@id": orgId() },
+  },
+];
 
 export default async function RootLayout({
   children,
@@ -70,6 +158,7 @@ export default async function RootLayout({
           showDock ? "has-mobile-dock" : ""
         }`}
       >
+        <JsonLd data={globalJsonLd} />
         <Header />
         <div className="flex flex-1 flex-col animate-rise">{children}</div>
         <Footer />

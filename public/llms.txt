@@ -1,0 +1,28 @@
+# Coffee Match
+
+> Coffee Match organiza noites presenciais de speed dating no Brasil.
+> Tagline: Conectando pessoas, uma xícara por vez.
+> Público: maiores de 18 anos.
+
+## Site
+- Home: /
+- Agenda de eventos: /eventos
+- Evento individual: /eventos/{slug}
+- Regras: /regras
+- Termos: /termos
+- Privacidade: /privacidade
+- Reembolso: /reembolso
+
+## Produto
+- Rodadas presenciais curtas (estilo speed dating)
+- Votação de interesse no celular após as rodadas
+- Match mútuo libera WhatsApp / Instagram
+- Check-in na porta do evento
+- Pagamento de ingresso online (Pix / cartão via Mercado Pago)
+
+## Idioma
+- Português do Brasil (pt-BR)
+
+## Contato / marca
+- Nome: Coffee Match
+- País: Brasil

@@ -1,8 +1,47 @@
 import Link from "next/link";
+import type { Metadata } from "next";
 import { EventCard } from "@/components/events/event-card";
 import { listPublishedEvents } from "@/lib/actions/events";
+import { JsonLd } from "@/components/seo/json-ld";
+import { SITE, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
+
+export const metadata: Metadata = {
+  title: {
+    absolute: `${SITE.name} — ${SITE.tagline}`,
+  },
+  description: SITE.description,
+  alternates: { canonical: absoluteUrl("/") },
+  openGraph: {
+    url: absoluteUrl("/"),
+    title: `${SITE.name} — ${SITE.tagline}`,
+    description: SITE.description,
+  },
+};
+
+const faqs = [
+  {
+    q: "Preciso baixar um app?",
+    a: "Não. O site Coffee Match funciona no celular. No dia do evento, você usa o QR para votar.",
+  },
+  {
+    q: "E se eu não tiver match?",
+    a: "Acontece. Você ainda conheceu gente ao vivo — e pode ver quem te curtiu, sem liberar contato sem reciprocidade.",
+  },
+  {
+    q: "Posso cancelar o ingresso?",
+    a: "Pedidos pendentes podem ser cancelados na área de ingressos. Pagos seguem a política de reembolso do Coffee Match.",
+  },
+  {
+    q: "É seguro?",
+    a: "Check-in na porta, votação privada e contato só em match mútuo. Eventos 18+ com regras de conduta.",
+  },
+  {
+    q: "O que é speed dating no Coffee Match?",
+    a: "São rodadas presenciais curtas em bar ou restaurante. Depois das conversas, você vota no celular. Só matches mútuos liberam WhatsApp.",
+  },
+] as const;
 
 const features = [
   {
@@ -51,19 +90,36 @@ const steps = [
 export default async function Home() {
   const events = (await listPublishedEvents()).slice(0, 3);
 
+  const faqJsonLd = {
+    "@context": "https://schema.org",
+    "@type": "FAQPage",
+    mainEntity: faqs.map((f) => ({
+      "@type": "Question",
+      name: f.q,
+      acceptedAnswer: {
+        "@type": "Answer",
+        text: f.a,
+      },
+    })),
+  };
+
   return (
     <div className="flex flex-1 flex-col">
+      <JsonLd data={faqJsonLd} />
+      <h1 className="sr-only">
+        Coffee Match — speed dating presencial no Brasil
+      </h1>
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="eyebrow mb-5">Coffee Match · Brasil</p>
-            <h1 className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
+            <p className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
               Conectando pessoas.{" "}
               <span className="italic text-[var(--coffee)]">
                 Uma xícara por vez.
               </span>
-            </h1>
+            </p>
             <p className="pretty mt-6 max-w-lg text-base leading-relaxed text-[var(--muted)] sm:text-lg">
               Noites de speed dating com o clima de um bom café: conversas reais,
               rodadas curtas e matches mútuos no fim. Você só precisa aparecer
@@ -276,24 +332,7 @@ export default async function Home() {
             Antes de sentar à mesa
           </h2>
           <dl className="mt-8 space-y-3">
-            {[
-              {
-                q: "Preciso baixar um app?",
-                a: "Não. O site funciona no celular. No dia, você usa o QR para votar.",
-              },
-              {
-                q: "E se eu não tiver match?",
-                a: "Acontece. Você ainda conheceu gente ao vivo — e pode ver quem te curtiu (sem liberar contato sem reciprocidade).",
-              },
-              {
-                q: "Posso cancelar o ingresso?",
-                a: "Pedidos pendentes podem ser cancelados na área de ingressos. Pagos seguem a política de reembolso.",
-              },
-              {
-                q: "É seguro?",
-                a: "Check-in na porta, votação privada e contato só em match mútuo. Eventos 18+ com regras de conduta.",
-              },
-            ].map((item) => (
+            {faqs.map((item) => (
               <div key={item.q} className="surface-card px-5 py-4 sm:px-6 sm:py-5">
                 <dt className="font-semibold text-[var(--ink)]">{item.q}</dt>
                 <dd className="mt-2 text-sm leading-relaxed text-[var(--muted)]">

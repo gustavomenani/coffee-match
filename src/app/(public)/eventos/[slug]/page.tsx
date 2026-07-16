@@ -3,7 +3,8 @@ import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
 import { getEventBySlug } from "@/lib/actions/events";
-import { appBaseUrl } from "@/lib/env";
+import { JsonLd } from "@/components/seo/json-ld";
+import { absoluteUrl, SITE, orgId } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,15 +15,54 @@ export async function generateMetadata({
 }): Promise<Metadata> {
   const { slug } = await params;
   const event = await getEventBySlug(slug);
-  if (!event) return { title: "Evento | Coffee Match" };
+  if (!event) {
+    return {
+      title: "Evento não encontrado",
+      robots: { index: false, follow: false },
+    };
+  }
+
+  const title = `${event.title} — speed dating em ${event.city}`;
+  const description = `Speed dating presencial no Coffee Match: ${event.title} em ${event.venue}, ${event.city}. ${formatBRL(event.priceCents)}. Matches mútuos com WhatsApp. 18+.`;
+  const url = absoluteUrl(`/eventos/${event.slug}`);
+
   return {
-    title: `${event.title} | Coffee Match`,
-    description: `Speed dating em ${event.city} · ${event.venue}. Coffee Match — conectando pessoas, uma xícara por vez.`,
+    title,
+    description,
+    keywords: [
+      event.title,
+      event.city,
+      "speed dating",
+      "Coffee Match",
+      "encontros presenciais",
+      event.venue,
+    ],
+    alternates: { canonical: url },
     openGraph: {
-      title: event.title,
-      description: `${event.venue}, ${event.city}`,
-      images: [{ url: "/logo.jpeg" }],
       type: "website",
+      locale: "pt_BR",
+      url,
+      siteName: SITE.name,
+      title,
+      description,
+      images: [
+        {
+          url: absoluteUrl("/logo.jpeg"),
+          width: 1200,
+          height: 1200,
+          alt: `${event.title} | Coffee Match`,
+        },
+      ],
+    },
+    twitter: {
+      card: "summary_large_image",
+      title,
+      description,
+      images: [absoluteUrl("/logo.jpeg")],
+    },
+    robots: {
+      index: true,
+      follow: true,
     },
   };
 }
@@ -61,55 +101,109 @@ export default async function EventoDetailPage({
     event.status === "published" &&
     (event.remainingMen > 0 || event.remainingWomen > 0);
 
-  const base = appBaseUrl();
-  const jsonLd = {
-    "@context": "https://schema.org",
-    "@type": "Event",
-    name: event.title,
-    startDate: event.startsAt.toISOString(),
-    endDate: event.endsAt.toISOString(),
-    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
-    eventStatus: "https://schema.org/EventScheduled",
-    location: {
-      "@type": "Place",
-      name: event.venue,
-      address: {
-        "@type": "PostalAddress",
-        streetAddress: event.address,
-        addressLocality: event.city,
-        addressCountry: "BR",
+  const url = absoluteUrl(`/eventos/${event.slug}`);
+  const eventStatus =
+    event.status === "sold_out"
+      ? "https://schema.org/EventScheduled"
+      : event.status === "closed"
+        ? "https://schema.org/EventCancelled"
+        : "https://schema.org/EventScheduled";
+
+  const jsonLd = [
+    {
+      "@context": "https://schema.org",
+      "@type": "BreadcrumbList",
+      itemListElement: [
+        {
+          "@type": "ListItem",
+          position: 1,
+          name: "Início",
+          item: absoluteUrl("/"),
+        },
+        {
+          "@type": "ListItem",
+          position: 2,
+          name: "Eventos",
+          item: absoluteUrl("/eventos"),
+        },
+        {
+          "@type": "ListItem",
+          position: 3,
+          name: event.title,
+          item: url,
+        },
+      ],
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "Event",
+      name: event.title,
+      description: `Noite de speed dating Coffee Match em ${event.city}. Rodadas presenciais, votação no celular e matches mútuos. Evento 18+.`,
+      startDate: event.startsAt.toISOString(),
+      endDate: event.endsAt.toISOString(),
+      eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+      eventStatus,
+      image: [absoluteUrl("/logo.jpeg")],
+      url,
+      location: {
+        "@type": "Place",
+        name: event.venue,
+        address: {
+          "@type": "PostalAddress",
+          streetAddress: event.address,
+          addressLocality: event.city,
+          addressCountry: "BR",
+        },
       },
-    },
-    organizer: {
-      "@type": "Organization",
-      name: "Coffee Match",
-      url: base,
-    },
-    offers: {
-      "@type": "Offer",
-      price: (event.priceCents / 100).toFixed(2),
-      priceCurrency: "BRL",
-      availability:
-        canBuy
+      organizer: {
+        "@type": "Organization",
+        "@id": orgId(),
+        name: SITE.name,
+        url: absoluteUrl("/"),
+      },
+      performer: {
+        "@type": "Organization",
+        name: SITE.name,
+      },
+      offers: {
+        "@type": "Offer",
+        url,
+        price: (event.priceCents / 100).toFixed(2),
+        priceCurrency: "BRL",
+        availability: canBuy
           ? "https://schema.org/InStock"
           : "https://schema.org/SoldOut",
-      url: `${base}/eventos/${event.slug}`,
+        validFrom: new Date().toISOString(),
+      },
+      isAccessibleForFree: false,
+      inLanguage: "pt-BR",
     },
-    image: `${base}/logo.jpeg`,
-  };
+  ];
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <script
-        type="application/ld+json"
-        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
-      />
-      <Link
-        href="/eventos"
-        className="mb-8 inline-flex text-sm font-semibold text-[var(--muted)] transition-colors hover:text-[var(--carmine)]"
-      >
-        ← Voltar à agenda
-      </Link>
+      <JsonLd data={jsonLd} />
+
+      <nav aria-label="Breadcrumb" className="mb-6 text-sm text-[var(--muted)]">
+        <ol className="flex flex-wrap items-center gap-1.5">
+          <li>
+            <Link href="/" className="font-medium hover:text-[var(--coffee)]">
+              Início
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li>
+            <Link
+              href="/eventos"
+              className="font-medium hover:text-[var(--coffee)]"
+            >
+              Eventos
+            </Link>
+          </li>
+          <li aria-hidden>/</li>
+          <li className="font-semibold text-[var(--ink-soft)]">{event.title}</li>
+        </ol>
+      </nav>
 
       <div className="grid gap-8 lg:grid-cols-[1.2fr_0.8fr]">
         <div>
@@ -124,6 +218,12 @@ export default async function EventoDetailPage({
           <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
             {event.title}
           </h1>
+          <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--muted)]">
+            Noite de <strong className="text-[var(--ink-soft)]">speed dating</strong>{" "}
+            organizada pelo Coffee Match em {event.city}. Conversas presenciais,
+            votação no celular e contato liberado só em match mútuo. Evento{" "}
+            <strong className="text-[var(--ink-soft)]">18+</strong>.
+          </p>
 
           <dl className="mt-10 space-y-6">
             <div className="surface-card p-5">
@@ -131,9 +231,14 @@ export default async function EventoDetailPage({
                 Quando
               </dt>
               <dd className="mt-2 text-base text-[var(--ink-soft)]">
-                {formatDate(event.startsAt)}
+                <time dateTime={event.startsAt.toISOString()}>
+                  {formatDate(event.startsAt)}
+                </time>
                 <span className="mt-1 block text-sm text-[var(--muted)]">
-                  até {formatDate(event.endsAt)}
+                  até{" "}
+                  <time dateTime={event.endsAt.toISOString()}>
+                    {formatDate(event.endsAt)}
+                  </time>
                 </span>
               </dd>
             </div>
@@ -142,7 +247,9 @@ export default async function EventoDetailPage({
                 Local
               </dt>
               <dd className="mt-2 text-base text-[var(--ink-soft)]">
-                <span className="font-semibold text-[var(--ink)]">{event.venue}</span>
+                <span className="font-semibold text-[var(--ink)]">
+                  {event.venue}
+                </span>
                 <br />
                 {event.address}, {event.city}
               </dd>
@@ -181,14 +288,14 @@ export default async function EventoDetailPage({
 
         <aside className="lg:sticky lg:top-28 lg:self-start">
           <div className="surface-card overflow-hidden">
-            <div className="border-b border-[var(--line)] bg-[linear-gradient(165deg,#1c1014,#2a1219)] px-6 py-7 text-[#f8f1ec]">
+            <div className="border-b border-[var(--line)] bg-[linear-gradient(165deg,#1a100c,#2a1a12)] px-6 py-7 text-[#f5e6d3]">
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[var(--champagne-light)]">
                 Ingresso
               </p>
               <p className="font-display mt-2 text-4xl font-semibold tabular">
                 {formatBRL(event.priceCents)}
               </p>
-              <p className="mt-2 text-sm text-[color-mix(in_srgb,#f8f1ec_65%,transparent)]">
+              <p className="mt-2 text-sm text-[color-mix(in_srgb,#f5e6d3_65%,transparent)]">
                 Pagamento com Pix ou cartão
               </p>
             </div>
@@ -209,7 +316,7 @@ export default async function EventoDetailPage({
                   Ao comprar, você concorda com as{" "}
                   <Link
                     href="/regras"
-                    className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
+                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
                   >
                     regras
                   </Link>
@@ -219,7 +326,7 @@ export default async function EventoDetailPage({
                   Condições de{" "}
                   <Link
                     href="/reembolso"
-                    className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
+                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
                   >
                     reembolso
                   </Link>
