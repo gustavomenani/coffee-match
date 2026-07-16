@@ -30,9 +30,10 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const eventId = body?.eventId as string | undefined;
-  if (!eventId || typeof eventId !== "string") {
-    return NextResponse.json({ error: "eventId obrigatório." }, { status: 400 });
+  const { parseCuid } = await import("@/lib/security/ids");
+  const eventId = parseCuid(body?.eventId);
+  if (!eventId) {
+    return NextResponse.json({ error: "eventId inválido." }, { status: 400 });
   }
 
   const user = await prisma.user.findUnique({

@@ -9,6 +9,12 @@ import { requireUser } from "@/lib/authz";
 import { sanitizePhotoInput } from "@/lib/security/photo";
 import { auditLog } from "@/lib/audit";
 import { rateLimit } from "@/lib/rate-limit";
+import {
+  cleanEmail,
+  cleanInstagram,
+  cleanPhone,
+  cleanText,
+} from "@/lib/security/sanitize";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -46,7 +52,7 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "É necessário ter 18 anos ou mais." };
   }
 
-  const email = parsed.data.email.toLowerCase();
+  const email = cleanEmail(parsed.data.email);
   if (!rateLimit(`register:${email}`, 5, 60 * 60_000)) {
     return { ok: false, error: "Muitas tentativas para este e-mail." };
   }
@@ -54,13 +60,18 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
   const exists = await prisma.user.findUnique({ where: { email } });
   if (exists) return { ok: false, error: "E-mail já cadastrado." };
 
+  const phone = cleanPhone(parsed.data.phone);
+  if (phone.replace(/\D/g, "").length < 10) {
+    return { ok: false, error: "Telefone inválido." };
+  }
+
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
   const user = await prisma.user.create({
     data: {
-      name: parsed.data.name.trim(),
+      name: cleanText(parsed.data.name, 100),
       email,
       passwordHash,
-      phone: parsed.data.phone.replace(/\s+/g, ""),
+      phone,
       gender: parsed.data.gender,
       birthDate: birth,
     },
@@ -90,12 +101,21 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   const photo = sanitizePhotoInput(parsed.data.photoUrl || "");
   if (!photo.ok) return { ok: false, error: photo.error };
 
+  const phone = cleanPhone(parsed.data.phone);
+  if (phone.replace(/\D/g, "").length < 10) {
+    return { ok: false, error: "Telefone inválido." };
+  }
+  const ig = cleanInstagram(parsed.data.instagram || "");
+  if (parsed.data.instagram && !ig) {
+    return { ok: false, error: "Instagram inválido." };
+  }
+
   await prisma.user.update({
     where: { id: authz.user.id },
     data: {
-      name: parsed.data.name.trim(),
-      phone: parsed.data.phone.replace(/\s+/g, ""),
-      instagram: parsed.data.instagram?.replace(/^@/, "") || null,
+      name: cleanText(parsed.data.name, 100),
+      phone,
+      instagram: ig,
       photoUrl: photo.value,
     },
   });

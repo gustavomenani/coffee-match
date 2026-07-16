@@ -65,22 +65,24 @@ model OrganizationMember {
 }
 
 model User {
-  id           String    @id @default(cuid())
-  email        String    @unique
-  passwordHash String
-  name         String
-  phone        String
-  gender       Gender
-  birthDate    DateTime
-  photoUrl     String?
-  instagram    String?
-  role         Role      @default(participant)
-  createdAt    DateTime  @default(now())
-  updatedAt    DateTime  @updatedAt
-  tickets      Ticket[]
-  votesFrom    Vote[]    @relation("VotesFrom")
-  votesTo      Vote[]    @relation("VotesTo")
-  memberships  OrganizationMember[]
+  id               String    @id @default(cuid())
+  email            String    @unique
+  passwordHash     String
+  name             String
+  phone            String
+  gender           Gender
+  birthDate        DateTime
+  photoUrl         String?
+  instagram        String?
+  role             Role      @default(participant)
+  failedLoginCount Int       @default(0)
+  lockedUntil      DateTime?
+  createdAt        DateTime  @default(now())
+  updatedAt        DateTime  @updatedAt
+  tickets          Ticket[]
+  votesFrom        Vote[]    @relation("VotesFrom")
+  votesTo          Vote[]    @relation("VotesTo")
+  memberships      OrganizationMember[]
 }
 
 model Event {

@@ -20,12 +20,37 @@ const body = Outfit({
 });
 
 export const metadata: Metadata = {
-  title: "Coffee Match — Conectando pessoas, uma xícara por vez",
+  metadataBase: new URL(
+    process.env.NEXT_PUBLIC_APP_URL || "http://localhost:3000"
+  ),
+  title: {
+    default: "Coffee Match — Conectando pessoas, uma xícara por vez",
+    template: "%s | Coffee Match",
+  },
   description:
     "Coffee Match: noites presenciais de speed dating no Brasil. Rodadas reais, votação no celular e matches mútuos. 18+.",
   icons: {
     icon: "/logo.jpeg",
     apple: "/logo.jpeg",
+  },
+  openGraph: {
+    type: "website",
+    locale: "pt_BR",
+    siteName: "Coffee Match",
+    title: "Coffee Match",
+    description:
+      "Conectando pessoas, uma xícara por vez. Speed dating presencial com matches mútuos.",
+    images: [{ url: "/logo.jpeg", width: 512, height: 512, alt: "Coffee Match" }],
+  },
+  twitter: {
+    card: "summary",
+    title: "Coffee Match",
+    description: "Conectando pessoas, uma xícara por vez.",
+    images: ["/logo.jpeg"],
+  },
+  robots: {
+    index: true,
+    follow: true,
   },
 };
 

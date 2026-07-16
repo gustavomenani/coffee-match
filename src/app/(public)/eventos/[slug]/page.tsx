@@ -1,9 +1,31 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
 import { getEventBySlug } from "@/lib/actions/events";
+import { appBaseUrl } from "@/lib/env";
 
 export const dynamic = "force-dynamic";
+
+export async function generateMetadata({
+  params,
+}: {
+  params: Promise<{ slug: string }>;
+}): Promise<Metadata> {
+  const { slug } = await params;
+  const event = await getEventBySlug(slug);
+  if (!event) return { title: "Evento | Coffee Match" };
+  return {
+    title: `${event.title} | Coffee Match`,
+    description: `Speed dating em ${event.city} · ${event.venue}. Coffee Match — conectando pessoas, uma xícara por vez.`,
+    openGraph: {
+      title: event.title,
+      description: `${event.venue}, ${event.city}`,
+      images: [{ url: "/logo.jpeg" }],
+      type: "website",
+    },
+  };
+}
 
 function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", {
@@ -39,8 +61,49 @@ export default async function EventoDetailPage({
     event.status === "published" &&
     (event.remainingMen > 0 || event.remainingWomen > 0);
 
+  const base = appBaseUrl();
+  const jsonLd = {
+    "@context": "https://schema.org",
+    "@type": "Event",
+    name: event.title,
+    startDate: event.startsAt.toISOString(),
+    endDate: event.endsAt.toISOString(),
+    eventAttendanceMode: "https://schema.org/OfflineEventAttendanceMode",
+    eventStatus: "https://schema.org/EventScheduled",
+    location: {
+      "@type": "Place",
+      name: event.venue,
+      address: {
+        "@type": "PostalAddress",
+        streetAddress: event.address,
+        addressLocality: event.city,
+        addressCountry: "BR",
+      },
+    },
+    organizer: {
+      "@type": "Organization",
+      name: "Coffee Match",
+      url: base,
+    },
+    offers: {
+      "@type": "Offer",
+      price: (event.priceCents / 100).toFixed(2),
+      priceCurrency: "BRL",
+      availability:
+        canBuy
+          ? "https://schema.org/InStock"
+          : "https://schema.org/SoldOut",
+      url: `${base}/eventos/${event.slug}`,
+    },
+    image: `${base}/logo.jpeg`,
+  };
+
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <script
+        type="application/ld+json"
+        dangerouslySetInnerHTML={{ __html: JSON.stringify(jsonLd) }}
+      />
       <Link
         href="/eventos"
         className="mb-8 inline-flex text-sm font-semibold text-[var(--muted)] transition-colors hover:text-[var(--carmine)]"

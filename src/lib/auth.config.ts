@@ -1,5 +1,7 @@
 import type { NextAuthConfig } from "next-auth";
 
+const isProd = process.env.NODE_ENV === "production";
+
 export const authConfig = {
   trustHost: true,
   pages: {
@@ -7,9 +9,21 @@ export const authConfig = {
   },
   session: {
     strategy: "jwt",
-    // Shorter sessions reduce window if role is demoted in DB
     maxAge: 8 * 60 * 60,
     updateAge: 60 * 60,
+  },
+  cookies: {
+    sessionToken: {
+      name: isProd
+        ? "__Secure-authjs.session-token"
+        : "authjs.session-token",
+      options: {
+        httpOnly: true,
+        sameSite: "lax",
+        path: "/",
+        secure: isProd,
+      },
+    },
   },
   providers: [],
   callbacks: {
