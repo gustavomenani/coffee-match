@@ -49,12 +49,12 @@ export default async function EventosPage() {
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       {itemList ? <JsonLd data={itemList} /> : null}
-      <div className="mb-10 max-w-2xl">
+      <div className="mb-12 max-w-2xl">
         <p className="eyebrow mb-3">Agenda</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
           Próximas noites de speed dating
         </h1>
-        <p className="mt-3 text-base leading-relaxed text-[var(--muted)]">
+        <p className="mt-4 text-base leading-relaxed text-[var(--muted)]">
           Escolha a data, garanta sua vaga no Coffee Match e prepare o melhor
           assunto da semana. Eventos presenciais 18+ com matches mútuos.
         </p>
@@ -74,7 +74,7 @@ export default async function EventosPage() {
           </Link>
         </div>
       ) : (
-        <ul className="flex flex-col gap-4">
+        <ul className="flex flex-col gap-5">
           {events.map((event) => (
             <li key={event.id}>
               <EventCard event={event} />

@@ -22,7 +22,11 @@ export default async function CadastroPage({
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="surface-card relative p-8 sm:p-10">
+      <div className="surface-card relative overflow-hidden p-8 shadow-[var(--shadow-lift)] sm:p-10">
+        <div
+          aria-hidden
+          className="pointer-events-none absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--coffee-deep),var(--coffee-hot),var(--champagne))]"
+        />
         <p className="eyebrow mb-3">Conta</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
           Criar conta
@@ -134,21 +138,15 @@ export default async function CadastroPage({
               name="acceptTerms"
               value="1"
               required
-              className="mt-1 h-4 w-4 rounded border-[var(--line-strong)] accent-[var(--carmine)]"
+              className="mt-1 h-4 w-4 rounded border-[var(--line-strong)] accent-[var(--coffee)]"
             />
             <span>
               Li e aceito os{" "}
-              <Link
-                href="/termos"
-                className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
-              >
+              <Link href="/termos" className="link-coffee font-semibold">
                 Termos
               </Link>{" "}
               e a{" "}
-              <Link
-                href="/privacidade"
-                className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
-              >
+              <Link href="/privacidade" className="link-coffee font-semibold">
                 Política de Privacidade
               </Link>
             </span>
@@ -161,10 +159,7 @@ export default async function CadastroPage({
 
         <p className="mt-8 text-center text-sm text-[var(--muted)]">
           Já tem conta?{" "}
-          <Link
-            href="/login"
-            className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
-          >
+          <Link href="/login" className="link-coffee font-semibold">
             Entrar
           </Link>
         </p>

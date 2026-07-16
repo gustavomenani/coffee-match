@@ -10,10 +10,14 @@ const links = [
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-[var(--line)] bg-[var(--paper-deep)]">
-      <div className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6">
-        <div className="flex flex-col gap-8 sm:flex-row sm:items-end sm:justify-between">
-          <div className="max-w-md space-y-3">
+    <footer className="mt-auto border-t border-[var(--line)] bg-[linear-gradient(180deg,var(--paper-deep)_0%,color-mix(in_srgb,var(--cream)_55%,var(--paper-deep))_100%)]">
+      <div
+        aria-hidden
+        className="h-px w-full bg-[linear-gradient(90deg,transparent_0%,color-mix(in_srgb,var(--coffee)_30%,transparent)_20%,var(--champagne)_50%,color-mix(in_srgb,var(--coffee)_30%,transparent)_80%,transparent_100%)]"
+      />
+      <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
+        <div className="flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+          <div className="max-w-md space-y-4">
             <Logo href="/" size="md" />
             <p className="text-sm leading-relaxed text-[var(--muted)]">
               Conectando pessoas, uma xícara por vez. Noites presenciais de speed
@@ -23,7 +27,7 @@ export function Footer() {
           </div>
 
           <nav
-            className="flex flex-wrap gap-x-5 gap-y-2 text-sm font-medium text-[var(--ink-soft)]"
+            className="flex flex-wrap gap-x-6 gap-y-2.5 text-sm font-medium text-[var(--ink-soft)]"
             aria-label="Legal"
           >
             {links.map((link) => (
@@ -38,9 +42,9 @@ export function Footer() {
           </nav>
         </div>
 
-        <div className="gold-rule my-8" />
+        <div className="gold-rule my-9" />
 
-        <p className="text-xs text-[var(--muted)]">
+        <p className="text-xs tracking-wide text-[var(--muted)]">
           © {new Date().getFullYear()} Coffee Match · Eventos presenciais · Brasil
         </p>
       </div>
