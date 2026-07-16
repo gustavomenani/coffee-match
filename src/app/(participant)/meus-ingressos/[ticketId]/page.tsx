@@ -11,13 +11,6 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
-const statusClass: Record<string, string> = {
-  pending: "border-amber-200 bg-amber-50 text-amber-800",
-  paid: "border-green-200 bg-green-50 text-green-800",
-  cancelled: "border-zinc-200 bg-zinc-50 text-zinc-600",
-  refunded: "border-red-200 bg-red-50 text-red-700",
-};
-
 type PageProps = {
   params: Promise<{ ticketId: string }>;
 };
@@ -75,138 +68,158 @@ export default async function TicketDetailPage({ params }: PageProps) {
     sessionStatus === "voting_closed";
 
   return (
-    <main className="mx-auto w-full max-w-2xl px-4 py-12">
-      <div className="mb-6">
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-8">
         <Link
           href="/meus-ingressos"
-          className="text-sm font-medium text-zinc-600 underline-offset-2 hover:text-zinc-900 hover:underline"
+          className="text-sm font-semibold text-[var(--muted)] underline-offset-2 transition-colors hover:text-[var(--carmine)] hover:underline"
         >
           ← Voltar para meus ingressos
         </Link>
       </div>
 
-      <div className="mb-2 flex flex-wrap items-start justify-between gap-2">
-        <h1 className="text-2xl font-semibold text-zinc-900">
-          {ticket.event.title}
-        </h1>
-        <span
-          className={`rounded-full border px-2.5 py-0.5 text-xs font-medium ${
-            statusClass[ticket.status] ?? statusClass.pending
-          }`}
-        >
-          {statusLabel[ticket.status] ?? ticket.status}
-        </span>
-      </div>
+      {/* Premium ticket card */}
+      <article className="surface-card overflow-hidden">
+        <div className="border-b border-[var(--line)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--carmine)_8%,var(--paper-card)),var(--paper-card))] px-6 py-7 sm:px-8 sm:py-9">
+          <div className="flex flex-wrap items-start justify-between gap-3">
+            <div>
+              <p className="eyebrow mb-3">Ingresso</p>
+              <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+                {ticket.event.title}
+              </h1>
+            </div>
+            <span className="badge badge-soft">
+              {statusLabel[ticket.status] ?? ticket.status}
+            </span>
+          </div>
 
-      <div className="mb-8 space-y-1 text-sm text-zinc-600">
-        <p>
-          <span className="font-medium text-zinc-800">Data:</span>{" "}
-          {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
-        </p>
-        <p>
-          <span className="font-medium text-zinc-800">Local:</span>{" "}
-          {ticket.event.venue}
-        </p>
-        <p>
-          <span className="font-medium text-zinc-800">Endereço:</span>{" "}
-          {ticket.event.address}
-          {ticket.event.city ? ` · ${ticket.event.city}` : ""}
-        </p>
-        {ticket.checkedInAt ? (
-          <p className="pt-1 text-sm font-medium text-green-700">
-            Check-in realizado em{" "}
-            {new Date(ticket.checkedInAt).toLocaleString("pt-BR")}
-          </p>
-        ) : ticket.status === "paid" ? (
-          <p className="pt-1 text-sm text-zinc-500">
-            Aguardando check-in no evento
-          </p>
-        ) : null}
-      </div>
+          <div className="mt-6 grid gap-3 text-sm sm:grid-cols-2">
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Data
+              </p>
+              <p className="mt-1 font-medium text-[var(--ink-soft)]">
+                {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+              </p>
+            </div>
+            <div>
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Local
+              </p>
+              <p className="mt-1 font-medium text-[var(--ink-soft)]">
+                {ticket.event.venue}
+              </p>
+            </div>
+            <div className="sm:col-span-2">
+              <p className="text-xs font-semibold uppercase tracking-wider text-[var(--muted)]">
+                Endereço
+              </p>
+              <p className="mt-1 font-medium text-[var(--ink-soft)]">
+                {ticket.event.address}
+                {ticket.event.city ? ` · ${ticket.event.city}` : ""}
+              </p>
+            </div>
+          </div>
 
-      <p className="mb-8 rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-3 text-sm text-zinc-700">
-        Apresente o QR de entrada na porta do evento. O QR de votação facilita o
-        acesso à urna digital após o check-in.
-      </p>
+          {ticket.checkedInAt ? (
+            <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--success)]">
+              Check-in · {new Date(ticket.checkedInAt).toLocaleString("pt-BR")}
+            </p>
+          ) : ticket.status === "paid" ? (
+            <p className="mt-5 text-xs font-medium text-[var(--muted)]">
+              Aguardando check-in no evento
+            </p>
+          ) : null}
+        </div>
 
-      <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900">
-          QR de entrada
-        </h2>
-        <p className="mb-4 text-sm text-zinc-600">
-          Mostre este código na entrada para o check-in.
-        </p>
-        <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={doorQr}
-            alt="QR code de entrada do ingresso"
-            width={280}
-            height={280}
-            className="h-auto w-full max-w-[280px]"
-          />
-          <p className="mt-3 break-all text-center font-mono text-xs text-zinc-500">
-            {ticket.id}
+        <div className="px-6 py-5 sm:px-8">
+          <p className="rounded-[var(--radius-sm)] bg-[var(--paper-deep)] px-4 py-3 text-sm leading-relaxed text-[var(--ink-soft)]">
+            Apresente o QR de entrada na porta do evento. O QR de votação
+            facilita o acesso à urna digital após o check-in.
           </p>
         </div>
-      </section>
 
-      <section className="mb-10">
-        <h2 className="mb-3 text-lg font-semibold text-zinc-900">
-          QR de votação
-        </h2>
-        <p className="mb-4 text-sm text-zinc-600">
-          Escaneie para abrir a página de votação do evento.
-        </p>
-        <div className="flex flex-col items-center rounded-xl border border-zinc-200 bg-white p-6 shadow-sm">
-          {/* eslint-disable-next-line @next/next/no-img-element */}
-          <img
-            src={votingQr}
-            alt="QR code de votação do evento"
-            width={280}
-            height={280}
-            className="h-auto w-full max-w-[280px]"
-          />
-          <p className="mt-3 break-all text-center text-xs text-zinc-500">
-            {votingUrl}
-          </p>
+        <div className="grid gap-6 border-t border-[var(--line)] px-6 py-8 sm:grid-cols-2 sm:px-8">
+          <section>
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+              QR de entrada
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Mostre este código na entrada para o check-in.
+            </p>
+            <div className="mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] bg-white p-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={doorQr}
+                alt="QR code de entrada do ingresso"
+                width={280}
+                height={280}
+                className="h-auto w-full max-w-[240px]"
+              />
+              <p className="mt-3 break-all text-center font-mono text-[0.65rem] text-[var(--muted)]">
+                {ticket.id}
+              </p>
+            </div>
+          </section>
+
+          <section>
+            <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+              QR de votação
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Escaneie para abrir a página de votação do evento.
+            </p>
+            <div className="mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] bg-white p-5">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={votingQr}
+                alt="QR code de votação do evento"
+                width={280}
+                height={280}
+                className="h-auto w-full max-w-[240px]"
+              />
+              <p className="mt-3 break-all text-center text-[0.65rem] text-[var(--muted)]">
+                {votingUrl}
+              </p>
+            </div>
+          </section>
         </div>
-      </section>
 
-      <div className="flex flex-wrap gap-3 text-sm">
-        <Link
-          href="/meus-ingressos"
-          className="rounded-md border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-800 hover:bg-zinc-50"
-        >
-          Voltar
-        </Link>
-        <Link
-          href={`/evento/${ticket.event.id}/votar`}
-          className="rounded-md bg-rose-600 px-4 py-2 font-medium text-white hover:bg-rose-700"
-        >
-          Votar
-        </Link>
-        {canSeeMatches ? (
+        <div className="flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
           <Link
-            href={`/evento/${ticket.event.id}/matches`}
-            className="rounded-md bg-zinc-900 px-4 py-2 font-medium text-white hover:bg-zinc-800"
+            href="/meus-ingressos"
+            className="btn btn-secondary !min-h-10 !px-4 !text-sm"
           >
-            Ver matches
+            Voltar
           </Link>
-        ) : null}
-        <Link
-          href={`/eventos/${ticket.event.slug}`}
-          className="rounded-md border border-zinc-300 bg-white px-4 py-2 font-medium text-zinc-800 hover:bg-zinc-50"
-        >
-          Ver evento
-        </Link>
-      </div>
+          <Link
+            href={`/evento/${ticket.event.id}/votar`}
+            className="btn btn-primary !min-h-10 !px-4 !text-sm"
+          >
+            Votar
+          </Link>
+          {canSeeMatches ? (
+            <Link
+              href={`/evento/${ticket.event.id}/matches`}
+              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            >
+              Ver matches
+            </Link>
+          ) : null}
+          <Link
+            href={`/eventos/${ticket.event.slug}`}
+            className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+          >
+            Ver evento
+          </Link>
+        </div>
 
-      {canVote ? (
-        <p className="mt-4 text-xs text-green-700">
-          A votação está aberta — use o link ou o QR acima.
-        </p>
-      ) : null}
+        {canVote ? (
+          <p className="border-t border-[var(--line)] px-6 py-4 text-xs font-semibold uppercase tracking-wider text-[var(--success)] sm:px-8">
+            Votação aberta — use o link ou o QR acima
+          </p>
+        ) : null}
+      </article>
     </main>
   );
 }

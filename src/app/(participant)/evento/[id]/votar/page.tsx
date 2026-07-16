@@ -20,36 +20,47 @@ export default async function VotarPage({
   if (!ballot.ok) {
     const phoneHint = ballot.code === "phone";
     return (
-      <main className="mx-auto w-full max-w-lg px-4 py-12">
-        <h1 className="mb-4 text-2xl font-semibold text-zinc-900">Votação</h1>
-        <div className="rounded-xl border border-amber-200 bg-amber-50 px-4 py-5 text-base text-amber-950">
-          <p>{ballot.error}</p>
-          {phoneHint ? (
-            <Link
-              href="/minha-conta"
-              className="mt-4 inline-flex min-h-12 items-center rounded-xl bg-zinc-900 px-5 py-3 text-base font-semibold text-white"
-            >
-              Ir para Minha conta
-            </Link>
-          ) : null}
+      <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-lg">
+          <p className="eyebrow mb-3">Urna digital</p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+            Votação
+          </h1>
+          <div className="surface-card mt-8 border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-5 text-base text-[var(--ink-soft)]">
+            <p className="leading-relaxed">{ballot.error}</p>
+            {phoneHint ? (
+              <Link href="/minha-conta" className="btn btn-primary mt-5">
+                Ir para Minha conta
+              </Link>
+            ) : null}
+          </div>
         </div>
       </main>
     );
   }
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-12">
-      <h1 className="mb-1 text-2xl font-semibold text-zinc-900">Votação</h1>
-      <p className="mb-6 text-sm text-zinc-600">{ballot.data.eventTitle}</p>
-      <p className="mb-6 text-base text-zinc-700">
-        Marque Sim ou Não para cada pessoa. Você pode mudar o voto enquanto a
-        votação estiver aberta.
-      </p>
-      <BallotList
-        eventId={eventId}
-        candidates={ballot.data.candidates}
-        initialVotes={ballot.data.votes}
-      />
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-lg">
+        <p className="eyebrow mb-3">Urna digital</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)]">
+          Votação
+        </h1>
+        <p className="mt-2 text-sm font-medium text-[var(--ink-soft)]">
+          {ballot.data.eventTitle}
+        </p>
+        <p className="mt-3 text-base leading-relaxed text-[var(--muted)]">
+          Marque Sim ou Não para cada pessoa. Você pode mudar o voto enquanto a
+          votação estiver aberta.
+        </p>
+        <div className="mt-8">
+          <BallotList
+            eventId={eventId}
+            candidates={ballot.data.candidates}
+            initialVotes={ballot.data.votes}
+          />
+        </div>
+      </div>
     </main>
   );
 }

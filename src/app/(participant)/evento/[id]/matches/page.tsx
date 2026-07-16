@@ -10,39 +10,54 @@ export default async function MatchesPage({
   const result = await getMyMatches(eventId);
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-10">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900">Seus matches</h1>
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-xl">
+          <p className="eyebrow mb-3">Resultados</p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+            Seus matches
+          </h1>
+          <p className="mt-3 text-base text-[var(--muted)]">
+            Só match mútuo libera WhatsApp e Instagram.
+          </p>
+        </div>
         <Link
           href={`/evento/${eventId}/curtidas`}
-          className="text-sm font-medium text-rose-600 underline-offset-2 hover:underline"
+          className="btn btn-secondary !min-h-10 !px-4 !text-sm"
         >
           Quem te curtiu
         </Link>
       </div>
 
       {!result.ok ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="surface-card border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-4 text-sm text-[var(--ink-soft)]">
           {result.error}
         </div>
       ) : result.matches.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
-          Nenhum match mútuo ainda. Que tal na próxima?
+        <div className="surface-card px-6 py-16 text-center">
+          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
+            Nenhum match ainda
+          </p>
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
+            Nenhum match mútuo nesta noite. Que tal na próxima?
+          </p>
         </div>
       ) : (
-        <ul className="flex flex-col gap-3">
+        <ul className="grid gap-4 sm:grid-cols-2">
           {result.matches.map((m) => (
-            <li
-              key={m.matchId}
-              className="rounded-xl border border-zinc-200 bg-white p-4 shadow-sm"
-            >
-              <p className="text-lg font-semibold text-zinc-900">{m.name}</p>
-              <div className="mt-3 flex flex-wrap gap-2">
+            <li key={m.matchId} className="surface-card surface-card-hover p-6 sm:p-7">
+              <p className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+                {m.name}
+              </p>
+              <p className="mt-1 text-xs font-medium tracking-wide text-[var(--muted)]">
+                {m.phone}
+              </p>
+              <div className="mt-5 flex flex-wrap gap-2">
                 <a
                   href={m.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="inline-flex min-h-11 items-center justify-center rounded-lg bg-emerald-600 px-4 py-2 text-sm font-medium text-white hover:bg-emerald-700"
+                  className="btn btn-primary !min-h-10 !px-4 !text-sm"
                 >
                   WhatsApp
                 </a>
@@ -51,13 +66,13 @@ export default async function MatchesPage({
                     href={`https://instagram.com/${m.instagram.replace(/^@/, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="inline-flex min-h-11 items-center justify-center rounded-lg border border-zinc-300 px-4 py-2 text-sm font-medium text-zinc-800 hover:bg-zinc-50"
+                    className="btn btn-secondary !min-h-10 !px-4 !text-sm"
                   >
-                    Instagram {m.instagram.startsWith("@") ? m.instagram : `@${m.instagram}`}
+                    Instagram{" "}
+                    {m.instagram.startsWith("@") ? m.instagram : `@${m.instagram}`}
                   </a>
                 ) : null}
               </div>
-              <p className="mt-2 text-xs text-zinc-500">{m.phone}</p>
             </li>
           ))}
         </ul>

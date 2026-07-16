@@ -41,59 +41,56 @@ export default async function PagamentoPendentePage({
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">
-        Pagamento pendente
-      </h1>
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-xl">
+        <p className="eyebrow mb-3">Checkout</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Pagamento pendente
+        </h1>
 
-      {!ticket ? (
-        <p className="mb-6 text-sm text-zinc-600">
-          Ingresso não encontrado. Verifique em Meus ingressos.
-        </p>
-      ) : (
-        <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-          {ticket.status === "paid" ? (
-            <p className="mb-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-              Boa notícia: o pagamento já foi confirmado.
-            </p>
-          ) : (
-            <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Seu pagamento ainda está sendo processado. Você receberá a
-              confirmação em breve.
-            </p>
-          )}
+        {!ticket ? (
+          <p className="mt-4 text-base text-[var(--muted)]">
+            Ingresso não encontrado. Verifique em Meus ingressos.
+          </p>
+        ) : (
+          <div className="surface-card mt-8 p-6 sm:p-7">
+            {ticket.status === "paid" ? (
+              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
+                Boa notícia: o pagamento já foi confirmado.
+              </p>
+            ) : (
+              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--champagne)_45%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_14%,white)] px-3 py-2 text-sm text-[var(--ink-soft)]">
+                Seu pagamento ainda está sendo processado. Você receberá a
+                confirmação em breve.
+              </p>
+            )}
 
-          <p className="text-base font-medium text-zinc-900">
-            {ticket.event.title}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            {ticket.event.venue} · {ticket.event.city}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
-          </p>
-          <p className="mt-3 text-sm text-zinc-800">
-            Status do ingresso:{" "}
-            <span className="font-medium">
-              {statusLabel[ticket.status] ?? ticket.status}
-            </span>
-          </p>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+              {ticket.event.title}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {ticket.event.venue} · {ticket.event.city}
+            </p>
+            <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
+              {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+            </p>
+            <p className="mt-4 text-sm text-[var(--ink-soft)]">
+              Status do ingresso:{" "}
+              <span className="badge badge-soft ml-1 align-middle">
+                {statusLabel[ticket.status] ?? ticket.status}
+              </span>
+            </p>
+          </div>
+        )}
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link href="/meus-ingressos" className="btn btn-primary flex-1">
+            Meus ingressos
+          </Link>
+          <Link href="/eventos" className="btn btn-secondary flex-1">
+            Ver eventos
+          </Link>
         </div>
-      )}
-
-      <div className="flex flex-col gap-2 text-sm">
-        <Link
-          href="/meus-ingressos"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-center font-medium text-white hover:bg-zinc-800"
-        >
-          Meus ingressos
-        </Link>
-        <Link
-          href="/eventos"
-          className="rounded-md border border-zinc-300 px-4 py-2 text-center font-medium text-zinc-800 hover:bg-zinc-50"
-        >
-          Ver eventos
-        </Link>
       </div>
     </main>
   );

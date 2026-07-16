@@ -10,34 +10,54 @@ export default async function CurtidasPage({
   const result = await getWhoLikedMe(eventId);
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-10">
-      <div className="mb-6 flex items-center justify-between gap-3">
-        <h1 className="text-2xl font-semibold text-zinc-900">Quem te curtiu</h1>
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
+        <div className="max-w-xl">
+          <p className="eyebrow mb-3">Resultados</p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+            Quem te curtiu
+          </h1>
+          <p className="mt-3 text-base text-[var(--muted)]">
+            Contato (WhatsApp/Instagram) só é liberado em match mútuo.
+          </p>
+        </div>
         <Link
           href={`/evento/${eventId}/matches`}
-          className="text-sm font-medium text-rose-600 underline-offset-2 hover:underline"
+          className="btn btn-secondary !min-h-10 !px-4 !text-sm"
         >
           Ver matches
         </Link>
       </div>
 
-      <p className="mb-4 text-sm text-zinc-600">
-        Contato (WhatsApp/Instagram) só é liberado em match mútuo.
-      </p>
-
       {!result.ok ? (
-        <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-900">
+        <div className="surface-card border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-4 text-sm text-[var(--ink-soft)]">
           {result.error}
         </div>
       ) : result.likes.length === 0 ? (
-        <div className="rounded-lg border border-zinc-200 bg-zinc-50 px-4 py-8 text-center text-sm text-zinc-600">
-          Ninguém te curtiu nesta noite — ou a votação ainda não encerrou.
+        <div className="surface-card px-6 py-16 text-center">
+          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
+            Nenhuma curtida
+          </p>
+          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
+            Ninguém te curtiu nesta noite — ou a votação ainda não encerrou.
+          </p>
         </div>
       ) : (
-        <ul className="divide-y divide-zinc-200 rounded-xl border border-zinc-200 bg-white">
+        <ul className="surface-card divide-y divide-[var(--line)] overflow-hidden">
           {result.likes.map((like) => (
-            <li key={like.userId} className="px-4 py-3 text-base font-medium text-zinc-900">
-              {like.name}
+            <li
+              key={like.userId}
+              className="flex items-center gap-3 px-5 py-4 sm:px-6"
+            >
+              <span
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--carmine)_12%,white)] font-display text-sm font-semibold text-[var(--carmine-deep)]"
+                aria-hidden
+              >
+                {like.name.slice(0, 1).toUpperCase()}
+              </span>
+              <span className="font-display text-lg font-semibold tracking-tight text-[var(--ink)]">
+                {like.name}
+              </span>
             </li>
           ))}
         </ul>

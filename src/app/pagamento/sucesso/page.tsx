@@ -41,82 +41,85 @@ export default async function PagamentoSucessoPage({
     : null;
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">
-        Pagamento
-      </h1>
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-xl">
+        <p className="eyebrow mb-3">Checkout</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Pagamento
+        </h1>
 
-      {!ticket ? (
-        <p className="mb-6 text-sm text-zinc-600">
-          Ingresso não encontrado. Verifique em Meus ingressos.
-        </p>
-      ) : (
-        <div className="mb-6 rounded-lg border border-zinc-200 bg-white p-4 shadow-sm">
-          {ticket.status === "paid" ? (
-            <p className="mb-3 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-              Pagamento confirmado! Seu ingresso está garantido.
-            </p>
-          ) : ticket.status === "pending" ? (
-            <p className="mb-3 rounded-md border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800">
-              Estamos confirmando o pagamento. Atualize em instantes.
-            </p>
-          ) : (
-            <p className="mb-3 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-              Status: {statusLabel[ticket.status] ?? ticket.status}
-            </p>
-          )}
+        {!ticket ? (
+          <p className="mt-4 text-base text-[var(--muted)]">
+            Ingresso não encontrado. Verifique em Meus ingressos.
+          </p>
+        ) : (
+          <div className="surface-card mt-8 p-6 sm:p-7">
+            {ticket.status === "paid" ? (
+              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
+                Pagamento confirmado! Seu ingresso está garantido.
+              </p>
+            ) : ticket.status === "pending" ? (
+              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--champagne)_45%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_14%,white)] px-3 py-2 text-sm text-[var(--ink-soft)]">
+                Estamos confirmando o pagamento. Atualize em instantes.
+              </p>
+            ) : (
+              <p className="mb-4 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+                Status: {statusLabel[ticket.status] ?? ticket.status}
+              </p>
+            )}
 
-          <p className="text-base font-medium text-zinc-900">
-            {ticket.event.title}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            {ticket.event.venue} · {ticket.event.city}
-          </p>
-          <p className="mt-1 text-sm text-zinc-600">
-            {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
-          </p>
-          <p className="mt-3 text-sm text-zinc-800">
-            Status do ingresso:{" "}
-            <span className="font-medium">
-              {statusLabel[ticket.status] ?? ticket.status}
-            </span>
-          </p>
+            <h2 className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
+              {ticket.event.title}
+            </h2>
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              {ticket.event.venue} · {ticket.event.city}
+            </p>
+            <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
+              {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+            </p>
+            <p className="mt-4 text-sm text-[var(--ink-soft)]">
+              Status do ingresso:{" "}
+              <span className="badge badge-soft ml-1 align-middle">
+                {statusLabel[ticket.status] ?? ticket.status}
+              </span>
+            </p>
+          </div>
+        )}
+
+        {ticket?.status === "paid" ? (
+          <div className="surface-card mt-4 border-[color-mix(in_srgb,var(--carmine)_12%,var(--line))] bg-[color-mix(in_srgb,var(--carmine)_5%,var(--paper-card))] p-6 sm:p-7">
+            <p className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
+              Próximos passos
+            </p>
+            <ol className="mt-4 list-decimal space-y-2.5 pl-5 text-sm leading-relaxed text-[var(--ink-soft)]">
+              <li>
+                Mostre este ingresso (ou a tela em{" "}
+                <Link
+                  href="/meus-ingressos"
+                  className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
+                >
+                  Meus ingressos
+                </Link>
+                ) no check-in.
+              </li>
+              <li>
+                Chegue com alguns minutos de antecedência para o credenciamento.
+              </li>
+              <li>
+                Evento 18+ — leve um documento com foto se for pedido na entrada.
+              </li>
+            </ol>
+          </div>
+        ) : null}
+
+        <div className="mt-8 flex flex-col gap-3 sm:flex-row">
+          <Link href="/meus-ingressos" className="btn btn-primary flex-1">
+            Meus ingressos
+          </Link>
+          <Link href="/eventos" className="btn btn-secondary flex-1">
+            Ver eventos
+          </Link>
         </div>
-      )}
-
-      {ticket?.status === "paid" ? (
-        <div className="mb-6 rounded-xl border border-rose-100 bg-rose-50/60 px-4 py-4">
-          <p className="text-sm font-semibold text-zinc-900">Próximos passos</p>
-          <ol className="mt-3 list-decimal space-y-2 pl-5 text-sm leading-relaxed text-zinc-700">
-            <li>
-              Mostre este ingresso (ou a tela em{" "}
-              <Link
-                href="/meus-ingressos"
-                className="font-medium text-zinc-900 underline-offset-2 hover:underline"
-              >
-                Meus ingressos
-              </Link>
-              ) no check-in.
-            </li>
-            <li>Chegue com alguns minutos de antecedência para o credenciamento.</li>
-            <li>Evento 18+ — leve um documento com foto se for pedido na entrada.</li>
-          </ol>
-        </div>
-      ) : null}
-
-      <div className="flex flex-col gap-2 text-sm">
-        <Link
-          href="/meus-ingressos"
-          className="rounded-md bg-zinc-900 px-4 py-2 text-center font-medium text-white hover:bg-zinc-800"
-        >
-          Meus ingressos
-        </Link>
-        <Link
-          href="/eventos"
-          className="rounded-md border border-zinc-300 px-4 py-2 text-center font-medium text-zinc-800 hover:bg-zinc-50"
-        >
-          Ver eventos
-        </Link>
       </div>
     </main>
   );

@@ -34,72 +34,77 @@ export default async function MinhaContaPage({
   const params = await searchParams;
 
   return (
-    <main className="mx-auto w-full max-w-lg px-4 py-12">
-      <h1 className="mb-2 text-2xl font-semibold text-zinc-900">Minha conta</h1>
-      <p className="mb-6 text-sm text-zinc-600">
-        Logado como <span className="font-medium text-zinc-900">{user.email}</span>
-      </p>
-
-      {params.error ? (
-        <p className="mb-4 rounded-md border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
-          {params.error}
+    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+      <div className="mx-auto max-w-xl">
+        <p className="eyebrow mb-3">Perfil</p>
+        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          Minha conta
+        </h1>
+        <p className="mt-3 text-base text-[var(--muted)]">
+          Logado como{" "}
+          <span className="font-medium text-[var(--ink)]">{user.email}</span>
         </p>
-      ) : null}
 
-      {params.saved ? (
-        <p className="mb-4 rounded-md border border-green-200 bg-green-50 px-3 py-2 text-sm text-green-800">
-          Perfil atualizado com sucesso.
-        </p>
-      ) : null}
+        <div className="surface-card mt-8 p-6 sm:p-8">
+          {params.error ? (
+            <p className="mb-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+              {params.error}
+            </p>
+          ) : null}
 
-      <form action={profileAction} className="flex flex-col gap-4">
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">Nome</span>
-          <input
-            type="text"
-            name="name"
-            required
-            minLength={2}
-            maxLength={100}
-            defaultValue={user.name}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+          {params.saved ? (
+            <p className="mb-5 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
+              Perfil atualizado com sucesso.
+            </p>
+          ) : null}
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">Telefone</span>
-          <input
-            type="tel"
-            name="phone"
-            required
-            minLength={10}
-            maxLength={20}
-            defaultValue={user.phone}
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+          <form action={profileAction} className="flex flex-col gap-4">
+            <label className="block">
+              <span className="label">Nome</span>
+              <input
+                type="text"
+                name="name"
+                required
+                minLength={2}
+                maxLength={100}
+                defaultValue={user.name}
+                className="field"
+              />
+            </label>
 
-        <label className="flex flex-col gap-1 text-sm">
-          <span className="font-medium text-zinc-800">Instagram</span>
-          <input
-            type="text"
-            name="instagram"
-            maxLength={100}
-            defaultValue={user.instagram ?? ""}
-            placeholder="@seuusuario"
-            className="rounded-md border border-zinc-300 px-3 py-2 text-zinc-900 outline-none focus:border-zinc-500"
-          />
-        </label>
+            <label className="block">
+              <span className="label">Telefone</span>
+              <input
+                type="tel"
+                name="phone"
+                required
+                minLength={10}
+                maxLength={20}
+                defaultValue={user.phone}
+                className="field"
+              />
+            </label>
 
-        <PhotoField defaultValue={user.photoUrl} />
+            <label className="block">
+              <span className="label">Instagram</span>
+              <input
+                type="text"
+                name="instagram"
+                maxLength={100}
+                defaultValue={user.instagram ?? ""}
+                placeholder="@seuusuario"
+                className="field"
+              />
+            </label>
 
-        <button
-          type="submit"
-          className="mt-2 rounded-md bg-zinc-900 px-4 py-2 text-sm font-medium text-white hover:bg-zinc-800"
-        >
-          Salvar
-        </button>
-      </form>
+            <PhotoField defaultValue={user.photoUrl} />
+
+            <button type="submit" className="btn btn-primary mt-2 w-full">
+              Salvar
+            </button>
+          </form>
+        </div>
+      </div>
     </main>
   );
 }
