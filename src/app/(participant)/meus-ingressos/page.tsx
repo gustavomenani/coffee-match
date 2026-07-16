@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { CancelPendingButton } from "@/components/tickets/cancel-pending-button";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -104,6 +105,9 @@ export default async function MeusIngressosPage() {
                 >
                   Evento
                 </Link>
+                {ticket.status === "pending" ? (
+                  <CancelPendingButton ticketId={ticket.id} />
+                ) : null}
                 {ticket.status === "paid" &&
                 ticket.checkedInAt &&
                 ticket.event.session?.status === "voting_open" ? (

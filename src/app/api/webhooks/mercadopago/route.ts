@@ -1,8 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { prisma } from "@/lib/prisma";
-import { shouldMarkSoldOut } from "@/lib/domain/capacity";
-import { getEventOccupancy } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -51,18 +50,7 @@ export async function POST(req: NextRequest) {
           select: { eventId: true },
         });
         if (ticket) {
-          const event = await prisma.event.findUnique({
-            where: { id: ticket.eventId },
-          });
-          if (event?.status === "published") {
-            const occ = await getEventOccupancy(event.id);
-            if (shouldMarkSoldOut(event, occ)) {
-              await prisma.event.update({
-                where: { id: event.id },
-                data: { status: "sold_out" },
-              });
-            }
-          }
+          await syncEventSoldOutStatus(ticket.eventId);
         }
       }
     }

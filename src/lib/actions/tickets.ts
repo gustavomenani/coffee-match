@@ -1,8 +1,12 @@
 "use server";
 
+import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import type { Occupancy } from "@/lib/domain/capacity";
+import {
+  shouldMarkSoldOut,
+  type Occupancy,
+} from "@/lib/domain/capacity";
 
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
@@ -37,6 +41,68 @@ export async function getEventOccupancy(eventId: string): Promise<Occupancy> {
   }
 
   return occ;
+}
+
+/** Mark published → sold_out when both genders are full; reverse when capacity frees. */
+export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event) return;
+  if (event.status !== "published" && event.status !== "sold_out") return;
+
+  const occ = await getEventOccupancy(eventId);
+  const fullySoldOut = shouldMarkSoldOut(event, occ);
+
+  if (fullySoldOut && event.status === "published") {
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: "sold_out" },
+    });
+  } else if (!fullySoldOut && event.status === "sold_out") {
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: "published" },
+    });
+  }
+}
+
+export async function cancelPendingTicket(
+  ticketId: string
+): Promise<ActionResult> {
+  const session = await auth();
+  if (!session?.user?.id) {
+    return { ok: false, error: "Não autenticado." };
+  }
+
+  const ticket = await prisma.ticket.findFirst({
+    where: {
+      id: ticketId,
+      userId: session.user.id,
+      status: "pending",
+    },
+    include: {
+      event: { select: { id: true, slug: true } },
+    },
+  });
+
+  if (!ticket) {
+    return { ok: false, error: "Pedido pendente não encontrado." };
+  }
+
+  await prisma.ticket.update({
+    where: { id: ticket.id },
+    data: { status: "cancelled" },
+  });
+
+  await syncEventSoldOutStatus(ticket.eventId);
+
+  revalidatePath("/meus-ingressos");
+  revalidatePath(`/meus-ingressos/${ticket.id}`);
+  revalidatePath("/eventos");
+  revalidatePath(`/eventos/${ticket.event.slug}`);
+  revalidatePath("/admin");
+  revalidatePath("/admin/eventos");
+
+  return { ok: true };
 }
 
 export async function getMyTickets() {

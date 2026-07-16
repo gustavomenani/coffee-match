@@ -1,29 +1,20 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canSellTicket, shouldMarkSoldOut } from "@/lib/domain/capacity";
+import { canSellTicket } from "@/lib/domain/capacity";
 import {
   isPendingTicketExpired,
   resolveCheckoutTicket,
 } from "@/lib/domain/checkout";
-import { getEventOccupancy } from "@/lib/actions/tickets";
+import {
+  getEventOccupancy,
+  syncEventSoldOutStatus,
+} from "@/lib/actions/tickets";
 import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
 import { rateLimit } from "@/lib/rate-limit";
-
-async function maybeMarkSoldOut(eventId: string) {
-  const event = await prisma.event.findUnique({ where: { id: eventId } });
-  if (!event || event.status !== "published") return;
-  const occ = await getEventOccupancy(eventId);
-  if (shouldMarkSoldOut(event, occ)) {
-    await prisma.event.update({
-      where: { id: eventId },
-      data: { status: "sold_out" },
-    });
-  }
-}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -82,6 +73,7 @@ export async function POST(req: NextRequest) {
       where: { id: { in: expiredPendingIds } },
       data: { status: "cancelled" },
     });
+    await syncEventSoldOutStatus(event.id);
   }
 
   const activeTickets = userTickets.filter(
@@ -103,7 +95,7 @@ export async function POST(req: NextRequest) {
         where: { id: existing.id },
         data: { status: "paid" },
       });
-      await maybeMarkSoldOut(event.id);
+      await syncEventSoldOutStatus(event.id);
       return NextResponse.json({
         initPoint: `/pagamento/sucesso?ticket=${existing.id}`,
       });
@@ -148,12 +140,13 @@ export async function POST(req: NextRequest) {
     },
   });
 
+  await syncEventSoldOutStatus(event.id);
+
   if (isMpDevBypass()) {
     await prisma.ticket.update({
       where: { id: ticket.id },
       data: { status: "paid" },
     });
-    await maybeMarkSoldOut(event.id);
     return NextResponse.json({
       initPoint: `/pagamento/sucesso?ticket=${ticket.id}`,
     });
@@ -172,6 +165,7 @@ export async function POST(req: NextRequest) {
         where: { id: ticket.id },
         data: { status: "cancelled" },
       });
+      await syncEventSoldOutStatus(event.id);
       return NextResponse.json(
         { error: "Falha ao criar preferência de pagamento." },
         { status: 502 }
@@ -183,6 +177,7 @@ export async function POST(req: NextRequest) {
       where: { id: ticket.id },
       data: { status: "cancelled" },
     });
+    await syncEventSoldOutStatus(event.id);
     return NextResponse.json(
       { error: "Falha ao criar preferência de pagamento." },
       { status: 502 }
