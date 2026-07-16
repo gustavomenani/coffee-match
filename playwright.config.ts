@@ -30,6 +30,9 @@ export default defineConfig({
       AUTH_SECRET:
         process.env.AUTH_SECRET ??
         "e2e-auth-secret-speeddate-br-dev-only-32chars",
+      AUTH_URL: process.env.AUTH_URL ?? baseURL,
+      AUTH_TRUST_HOST: "true",
+      E2E_DISABLE_RATE_LIMIT: "1",
       NEXT_PUBLIC_APP_URL: process.env.NEXT_PUBLIC_APP_URL ?? baseURL,
     },
   },

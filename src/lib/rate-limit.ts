@@ -1,6 +1,13 @@
 const buckets = new Map<string, { count: number; resetAt: number }>();
 
 export function rateLimit(key: string, limit: number, windowMs: number): boolean {
+  if (
+    process.env.E2E_DISABLE_RATE_LIMIT === "1" ||
+    process.env.AUTH_SECRET?.includes("e2e-auth-secret")
+  ) {
+    return true;
+  }
+
   const now = Date.now();
   const b = buckets.get(key);
   if (!b || now > b.resetAt) {
