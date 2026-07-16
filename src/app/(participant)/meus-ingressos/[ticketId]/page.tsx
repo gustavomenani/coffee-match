@@ -3,6 +3,8 @@ import { notFound, redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { toDataUrl } from "@/lib/qr";
+import { CopyButton } from "@/components/ui/copy-button";
+import { PrintButton } from "@/components/ui/print-button";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -159,6 +161,9 @@ export default async function TicketDetailPage({ params }: PageProps) {
               <p className="mt-3 break-all text-center font-mono text-[0.65rem] text-[var(--muted)]">
                 {ticket.id}
               </p>
+              <div className="no-print mt-3">
+                <CopyButton value={ticket.id} label="Copiar código" />
+              </div>
             </div>
           </section>
 
@@ -181,11 +186,15 @@ export default async function TicketDetailPage({ params }: PageProps) {
               <p className="mt-3 break-all text-center text-[0.65rem] text-[var(--muted)]">
                 {votingUrl}
               </p>
+              <div className="no-print mt-3">
+                <CopyButton value={votingUrl} label="Copiar link" />
+              </div>
             </div>
           </section>
         </div>
 
         <div className="no-print flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
+          <PrintButton />
           <Link
             href="/meus-ingressos"
             className="btn btn-secondary !min-h-10 !px-4 !text-sm"

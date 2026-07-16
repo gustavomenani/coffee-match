@@ -233,6 +233,61 @@ export default async function Home() {
         </div>
       </section>
 
+      {/* Social proof */}
+      <section className="px-4 py-10 sm:px-6">
+        <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
+          {[
+            { k: "7 min", v: "por conversa — tempo certo para química" },
+            { k: "Mútuo", v: "só quem gostou um do outro troca contato" },
+            { k: "18+", v: "ambiente adulto, regras claras, respeito" },
+          ].map((s) => (
+            <div key={s.k} className="surface-card px-5 py-6 text-center">
+              <p className="font-display text-3xl font-semibold text-[var(--carmine)]">
+                {s.k}
+              </p>
+              <p className="mt-2 text-sm text-[var(--muted)]">{s.v}</p>
+            </div>
+          ))}
+        </div>
+      </section>
+
+      {/* FAQ */}
+      <section className="px-4 py-12 sm:px-6 sm:py-16">
+        <div className="mx-auto max-w-3xl">
+          <p className="eyebrow mb-3">Dúvidas frequentes</p>
+          <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+            Antes de sentar à mesa
+          </h2>
+          <dl className="mt-8 space-y-3">
+            {[
+              {
+                q: "Preciso baixar um app?",
+                a: "Não. O site funciona no celular. No dia, você usa o QR para votar.",
+              },
+              {
+                q: "E se eu não tiver match?",
+                a: "Acontece. Você ainda conheceu gente ao vivo — e pode ver quem te curtiu (sem liberar contato sem reciprocidade).",
+              },
+              {
+                q: "Posso cancelar o ingresso?",
+                a: "Pedidos pendentes podem ser cancelados na área de ingressos. Pagos seguem a política de reembolso.",
+              },
+              {
+                q: "É seguro?",
+                a: "Check-in na porta, votação privada e contato só em match mútuo. Eventos 18+ com regras de conduta.",
+              },
+            ].map((item) => (
+              <div key={item.q} className="surface-card px-5 py-4 sm:px-6 sm:py-5">
+                <dt className="font-semibold text-[var(--ink)]">{item.q}</dt>
+                <dd className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
+                  {item.a}
+                </dd>
+              </div>
+            ))}
+          </dl>
+        </div>
+      </section>
+
       {/* Closing CTA */}
       <section className="px-4 py-16 sm:px-6 sm:py-20">
         <div className="surface-card mx-auto max-w-6xl overflow-hidden p-0">

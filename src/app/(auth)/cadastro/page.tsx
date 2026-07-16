@@ -22,7 +22,7 @@ export default async function CadastroPage({
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="surface-card p-8 sm:p-10">
+      <div className="surface-card relative p-8 sm:p-10">
         <p className="eyebrow mb-3">Conta</p>
         <h1 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
           Criar conta
@@ -38,6 +38,17 @@ export default async function CadastroPage({
         ) : null}
 
         <form action={cadastroAction} className="mt-8 flex flex-col gap-4">
+          {/* Honeypot anti-bot — hidden from humans */}
+          <div
+            aria-hidden
+            className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
+          >
+            <label>
+              Website
+              <input type="text" name="_hp" tabIndex={-1} autoComplete="off" />
+            </label>
+          </div>
+
           <label className="block">
             <span className="label">Nome</span>
             <input
@@ -72,7 +83,12 @@ export default async function CadastroPage({
               maxLength={100}
               autoComplete="new-password"
               className="field"
+              pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
+              title="Mínimo 8 caracteres, com letras e números"
             />
+            <span className="mt-1.5 block text-xs text-[var(--muted)]">
+              Mínimo 8 caracteres, com letras e números.
+            </span>
           </label>
 
           <label className="block">

@@ -34,6 +34,17 @@ function formatDate(value: Date | string) {
   }).format(d);
 }
 
+function relativeLabel(value: Date | string) {
+  const d = typeof value === "string" ? new Date(value) : value;
+  const diff = d.getTime() - Date.now();
+  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  if (days < 0) return "Passado";
+  if (days === 0) return "Hoje";
+  if (days === 1) return "Amanhã";
+  if (days <= 7) return `Em ${days} dias`;
+  return null;
+}
+
 const statusLabel: Record<string, string> = {
   published: "Aberto",
   sold_out: "Esgotado",
@@ -43,6 +54,8 @@ const statusLabel: Record<string, string> = {
 };
 
 export function EventCard({ event }: { event: EventCardData }) {
+  const when = relativeLabel(event.startsAt);
+
   return (
     <Link
       href={`/eventos/${event.slug}`}
@@ -54,6 +67,7 @@ export function EventCard({ event }: { event: EventCardData }) {
             <span className="badge badge-live">
               {statusLabel[event.status] ?? event.status}
             </span>
+            {when ? <span className="badge badge-soft">{when}</span> : null}
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
               {event.city}
             </span>

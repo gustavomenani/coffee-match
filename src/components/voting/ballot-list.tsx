@@ -6,6 +6,7 @@ import {
   type BallotCandidate,
   type BallotVote,
 } from "@/lib/actions/voting";
+import { ProgressBar } from "@/components/ui/progress-bar";
 
 type Props = {
   eventId: string;
@@ -50,14 +51,27 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
     );
   }
 
+  const allDone = votedCount >= candidates.length && candidates.length > 0;
+
   return (
     <div className="flex flex-col gap-4">
-      <p className="text-sm font-medium text-[var(--muted)]">
-        Votos ·{" "}
-        <span className="tabular text-[var(--ink)]">
-          {votedCount}/{candidates.length}
-        </span>
-      </p>
+      <div className="surface-card p-4 sm:p-5">
+        <ProgressBar
+          value={votedCount}
+          max={candidates.length}
+          label="Progresso da cédula"
+        />
+        {allDone ? (
+          <p className="mt-3 text-sm font-medium text-[var(--success)]">
+            Cédula completa. Você pode mudar um voto até o admin encerrar.
+          </p>
+        ) : (
+          <p className="mt-3 text-sm text-[var(--muted)]">
+            Marque Sim ou Não para cada pessoa. Dá para alterar até o fim da
+            votação.
+          </p>
+        )}
+      </div>
 
       {error ? (
         <p className="rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
@@ -65,7 +79,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
         </p>
       ) : null}
 
-      <ul className="flex flex-col gap-3">
+      <ul className="stagger flex flex-col gap-3">
         {candidates.map((person) => {
           const current = votes[person.id];
           const busy = isPending && pendingId === person.id;

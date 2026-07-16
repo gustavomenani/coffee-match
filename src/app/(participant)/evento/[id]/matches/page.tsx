@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getMyMatches } from "@/lib/actions/results";
+import { PageShell, EmptyState, Flash } from "@/components/ui/page-shell";
 
 export default async function MatchesPage({
   params,
@@ -10,54 +11,49 @@ export default async function MatchesPage({
   const result = await getMyMatches(eventId);
 
   return (
-    <main className="page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mb-10 flex flex-wrap items-end justify-between gap-4">
-        <div className="max-w-xl">
-          <p className="eyebrow mb-3">Resultados</p>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
-            Seus matches
-          </h1>
-          <p className="mt-3 text-base text-[var(--muted)]">
-            Só match mútuo libera WhatsApp e Instagram.
-          </p>
-        </div>
+    <PageShell
+      eyebrow="Resultados da noite"
+      title="Seus matches"
+      description="Contato liberado só quando o interesse foi mútuo."
+      actions={
         <Link
           href={`/evento/${eventId}/curtidas`}
-          className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+          className="btn btn-secondary !min-h-10 !text-sm"
         >
           Quem te curtiu
         </Link>
-      </div>
-
+      }
+    >
       {!result.ok ? (
-        <div className="surface-card border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-4 text-sm text-[var(--ink-soft)]">
-          {result.error}
-        </div>
+        <Flash tone="warning">{result.error}</Flash>
       ) : result.matches.length === 0 ? (
-        <div className="surface-card px-6 py-16 text-center">
-          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
-            Nenhum match ainda
-          </p>
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
-            Nenhum match mútuo nesta noite. Que tal na próxima?
-          </p>
-        </div>
+        <EmptyState
+          title="Nenhum match mútuo"
+          description="Desta vez não rolou reciprocidade. Na próxima noite, outra mesa — outra história."
+          action={
+            <Link href="/eventos" className="btn btn-primary">
+              Ver próximas noites
+            </Link>
+          }
+        />
       ) : (
-        <ul className="grid gap-4 sm:grid-cols-2">
+        <ul className="stagger mx-auto grid max-w-2xl gap-4">
           {result.matches.map((m) => (
-            <li key={m.matchId} className="surface-card surface-card-hover p-6 sm:p-7">
-              <p className="font-display text-2xl font-semibold tracking-tight text-[var(--ink)]">
-                {m.name}
-              </p>
-              <p className="mt-1 text-xs font-medium tracking-wide text-[var(--muted)]">
-                {m.phone}
-              </p>
-              <div className="mt-5 flex flex-wrap gap-2">
+            <li key={m.matchId} className="surface-card overflow-hidden">
+              <div className="border-b border-[var(--line)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--carmine)_8%,var(--paper-card)),var(--paper-card))] px-6 py-5">
+                <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+                  Match mútuo
+                </p>
+                <p className="font-display mt-1 text-3xl font-semibold text-[var(--ink)]">
+                  {m.name}
+                </p>
+              </div>
+              <div className="flex flex-wrap gap-2 p-5">
                 <a
                   href={m.whatsappUrl}
                   target="_blank"
                   rel="noopener noreferrer"
-                  className="btn btn-primary !min-h-10 !px-4 !text-sm"
+                  className="btn btn-primary !min-h-11"
                 >
                   WhatsApp
                 </a>
@@ -66,17 +62,17 @@ export default async function MatchesPage({
                     href={`https://instagram.com/${m.instagram.replace(/^@/, "")}`}
                     target="_blank"
                     rel="noopener noreferrer"
-                    className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+                    className="btn btn-secondary !min-h-11"
                   >
-                    Instagram{" "}
-                    {m.instagram.startsWith("@") ? m.instagram : `@${m.instagram}`}
+                    Instagram @{m.instagram.replace(/^@/, "")}
                   </a>
                 ) : null}
               </div>
+              <p className="px-5 pb-5 text-xs text-[var(--muted)]">{m.phone}</p>
             </li>
           ))}
         </ul>
       )}
-    </main>
+    </PageShell>
   );
 }

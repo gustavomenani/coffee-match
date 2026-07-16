@@ -9,6 +9,7 @@ import {
   CheckInList,
   type CheckInTicketRow,
 } from "@/components/admin/checkin-list";
+import { CopyButton } from "@/components/ui/copy-button";
 
 async function openVotingAction(formData: FormData) {
   "use server";
@@ -233,6 +234,9 @@ export default async function NoitePage({
             className="mt-4 h-48 w-48 rounded-[var(--radius-sm)] bg-white p-2 outline outline-1 outline-[var(--line)]"
           />
           <p className="mt-3 break-all text-xs text-[var(--muted)]">{votingUrl}</p>
+          <div className="mt-4">
+            <CopyButton value={votingUrl} label="Copiar link da votação" />
+          </div>
         </section>
       </div>
 
