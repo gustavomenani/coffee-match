@@ -1,13 +1,29 @@
 import { NextRequest, NextResponse } from "next/server";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import { canSellTicket } from "@/lib/domain/capacity";
+import { canSellTicket, shouldMarkSoldOut } from "@/lib/domain/capacity";
+import {
+  isPendingTicketExpired,
+  resolveCheckoutTicket,
+} from "@/lib/domain/checkout";
 import { getEventOccupancy } from "@/lib/actions/tickets";
 import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
 import { rateLimit } from "@/lib/rate-limit";
+
+async function maybeMarkSoldOut(eventId: string) {
+  const event = await prisma.event.findUnique({ where: { id: eventId } });
+  if (!event || event.status !== "published") return;
+  const occ = await getEventOccupancy(eventId);
+  if (shouldMarkSoldOut(event, occ)) {
+    await prisma.event.update({
+      where: { id: eventId },
+      data: { status: "sold_out" },
+    });
+  }
+}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -43,34 +59,51 @@ export async function POST(req: NextRequest) {
     );
   }
 
-  const occupancy = await getEventOccupancy(event.id);
-  if (!canSellTicket(event, user.gender, occupancy)) {
-    return NextResponse.json(
-      { error: "Esgotado para o seu gênero." },
-      { status: 409 }
-    );
-  }
+  const now = new Date();
 
-  const existing = await prisma.ticket.findFirst({
+  // Cancel expired pending tickets for this user+event (>2h) so capacity frees up.
+  const userTickets = await prisma.ticket.findMany({
     where: {
       eventId: event.id,
       userId: user.id,
       status: { in: ["pending", "paid"] },
     },
+    orderBy: { createdAt: "desc" },
   });
-  if (existing) {
-    if (existing.status === "paid") {
-      return NextResponse.json(
-        { error: "Você já possui ingresso para este evento." },
-        { status: 409 }
-      );
-    }
-    // Reuse pending ticket for retry
+
+  const expiredPendingIds = userTickets
+    .filter(
+      (t) => t.status === "pending" && isPendingTicketExpired(t.createdAt, now)
+    )
+    .map((t) => t.id);
+
+  if (expiredPendingIds.length > 0) {
+    await prisma.ticket.updateMany({
+      where: { id: { in: expiredPendingIds } },
+      data: { status: "cancelled" },
+    });
+  }
+
+  const activeTickets = userTickets.filter(
+    (t) => !expiredPendingIds.includes(t.id)
+  );
+  const decision = resolveCheckoutTicket(activeTickets, now);
+
+  if (decision.action === "reject_paid") {
+    return NextResponse.json(
+      { error: "Você já possui ingresso para este evento." },
+      { status: 409 }
+    );
+  }
+
+  if (decision.action === "reuse_pending") {
+    const existing = activeTickets.find((t) => t.id === decision.ticketId)!;
     if (isMpDevBypass()) {
       await prisma.ticket.update({
         where: { id: existing.id },
         data: { status: "paid" },
       });
+      await maybeMarkSoldOut(event.id);
       return NextResponse.json({
         initPoint: `/pagamento/sucesso?ticket=${existing.id}`,
       });
@@ -98,6 +131,15 @@ export async function POST(req: NextRequest) {
     }
   }
 
+  // New ticket: capacity must allow sale for this gender.
+  const occupancy = await getEventOccupancy(event.id);
+  if (!canSellTicket(event, user.gender, occupancy)) {
+    return NextResponse.json(
+      { error: "Esgotado para o seu gênero." },
+      { status: 409 }
+    );
+  }
+
   const ticket = await prisma.ticket.create({
     data: {
       eventId: event.id,
@@ -111,6 +153,7 @@ export async function POST(req: NextRequest) {
       where: { id: ticket.id },
       data: { status: "paid" },
     });
+    await maybeMarkSoldOut(event.id);
     return NextResponse.json({
       initPoint: `/pagamento/sucesso?ticket=${ticket.id}`,
     });

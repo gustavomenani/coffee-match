@@ -30,3 +30,14 @@ export function canSellTicket(
 ): boolean {
   return remainingSpots(event, gender, occ) > 0;
 }
+
+/** True when both genders have zero remaining spots (paid + pending). */
+export function shouldMarkSoldOut(
+  event: CapacityEvent,
+  occ: Occupancy
+): boolean {
+  return (
+    remainingSpots(event, "male", occ) <= 0 &&
+    remainingSpots(event, "female", occ) <= 0
+  );
+}

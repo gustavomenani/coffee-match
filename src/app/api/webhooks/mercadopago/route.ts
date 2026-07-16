@@ -1,6 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { prisma } from "@/lib/prisma";
+import { shouldMarkSoldOut } from "@/lib/domain/capacity";
+import { getEventOccupancy } from "@/lib/actions/tickets";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -32,7 +34,7 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      await prisma.ticket.updateMany({
+      const updated = await prisma.ticket.updateMany({
         where: {
           id: ticketId,
           status: { in: ["pending", "paid"] },
@@ -42,6 +44,27 @@ export async function POST(req: NextRequest) {
           mpPaymentId: String(paymentId),
         },
       });
+
+      if (updated.count > 0) {
+        const ticket = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: { eventId: true },
+        });
+        if (ticket) {
+          const event = await prisma.event.findUnique({
+            where: { id: ticket.eventId },
+          });
+          if (event?.status === "published") {
+            const occ = await getEventOccupancy(event.id);
+            if (shouldMarkSoldOut(event, occ)) {
+              await prisma.event.update({
+                where: { id: event.id },
+                data: { status: "sold_out" },
+              });
+            }
+          }
+        }
+      }
     }
   } catch (err) {
     console.error("Mercado Pago webhook error:", err);

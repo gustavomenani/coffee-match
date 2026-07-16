@@ -11,6 +11,21 @@ MVP web de **speed dating** para o Brasil: organizar e vender eventos, check-in 
 | Auth | Auth.js (NextAuth v5) — e-mail + senha |
 | Pagamentos | Mercado Pago (Preferences + webhook) |
 
+## Funcionalidades do MVP
+
+- **Eventos públicos** — listagem e detalhe por slug, vagas por gênero, status (publicado / esgotado / ao vivo)
+- **Cadastro e login** — participante 18+, perfil com WhatsApp, Instagram e foto
+- **Compra de ingresso** — checkout Mercado Pago (Pix/cartão) ou bypass de dev; 1 ingresso pago por usuário+evento; reuso de pending; cancelamento de pending expirado (>2h)
+- **Meus ingressos** — lista + QR de porta e de votação
+- **Admin** — CRUD de eventos, capacidade homens/mulheres, preço, status
+- **Check-in** — lista de pagos na porta (noite)
+- **Sessão da noite** — abrir/fechar votação
+- **Votação** — cédula sim/não no celular (só check-in + votação aberta + WhatsApp)
+- **Matches** — cálculo mútuo; revelação de contato (WhatsApp/Instagram); lista de quem curtiu
+- **Webhook MP** — marca ingresso pago de forma idempotente; pode marcar evento esgotado
+- **Páginas legais** — termos, privacidade, regras, reembolso
+- **Testes** — unitários (Vitest) + smoke E2E (Playwright)
+
 ## Pré-requisitos
 
 - **Node.js 20+**
