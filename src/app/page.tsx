@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { EventCard } from "@/components/events/event-card";
 import { listPublishedEvents } from "@/lib/actions/events";
 import { JsonLd } from "@/components/seo/json-ld";
+import { Reveal } from "@/components/ui/reveal";
 import { SITE, absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -161,7 +162,7 @@ export default async function Home() {
                 <img
                   src="/logo.jpeg"
                   alt="Coffee Match"
-                  className="h-40 w-40 rounded-full object-cover shadow-[0_16px_40px_rgba(0,0,0,0.45)] ring-2 ring-[color-mix(in_srgb,var(--champagne)_40%,transparent)] sm:h-48 sm:w-48"
+                  className="float-soft h-40 w-40 rounded-full object-cover shadow-[0_16px_40px_rgba(0,0,0,0.45)] ring-2 ring-[color-mix(in_srgb,var(--champagne)_40%,transparent)] sm:h-48 sm:w-48"
                 />
                 <p className="font-display mt-6 text-3xl font-medium text-[#f5e6d3] sm:text-4xl">
                   Coffee <span className="text-[var(--champagne)]">Match</span>
@@ -189,7 +190,7 @@ export default async function Home() {
       </section>
 
       {/* Próximas noites */}
-      <section className="px-4 py-4 sm:px-6">
+      <Reveal as="section" className="px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -220,18 +221,18 @@ export default async function Home() {
             </p>
           ) : (
             <ul className="flex flex-col gap-4">
-              {events.map((event) => (
-                <li key={event.id}>
+              {events.map((event, i) => (
+                <Reveal as="li" key={event.id} delay={i * 80}>
                   <EventCard event={event} />
-                </li>
+                </Reveal>
               ))}
             </ul>
           )}
         </div>
-      </section>
+      </Reveal>
 
       {/* Features */}
-      <section className="mt-12 px-4 py-4 sm:px-6">
+      <Reveal as="section" className="mt-12 px-4 py-4 sm:px-6">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex items-end justify-between gap-4">
             <div>
@@ -242,9 +243,11 @@ export default async function Home() {
             </div>
           </div>
           <ul className="grid gap-4 md:grid-cols-3">
-            {features.map((feature) => (
-              <li
+            {features.map((feature, i) => (
+              <Reveal
+                as="li"
                 key={feature.title}
+                delay={i * 90}
                 className="surface-card surface-card-hover group p-6 sm:p-7"
               >
                 <span className="font-display text-sm font-semibold tracking-[0.2em] text-[var(--champagne)]">
@@ -256,14 +259,14 @@ export default async function Home() {
                 <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
                   {feature.description}
                 </p>
-              </li>
+              </Reveal>
             ))}
           </ul>
         </div>
-      </section>
+      </Reveal>
 
       {/* How it works — night band */}
-      <section className="night-band mt-16 px-4 py-16 sm:px-6 sm:py-20">
+      <Reveal as="section" className="night-band mt-16 px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <p className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--champagne-light)]">
             Como funciona
@@ -304,48 +307,56 @@ export default async function Home() {
             </Link>
           </div>
         </div>
-      </section>
+      </Reveal>
 
       {/* Social proof */}
-      <section className="px-4 py-10 sm:px-6">
+      <Reveal as="section" className="px-4 py-10 sm:px-6">
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
           {[
             { k: "7 min", v: "por conversa — tempo certo para química" },
             { k: "Mútuo", v: "só quem gostou um do outro troca contato" },
             { k: "18+", v: "ambiente adulto, regras claras, respeito" },
-          ].map((s) => (
-            <div key={s.k} className="surface-card px-5 py-6 text-center">
-              <p className="font-display text-3xl font-semibold text-[var(--carmine)]">
+          ].map((s, i) => (
+            <Reveal
+              key={s.k}
+              delay={i * 80}
+              className="surface-card px-5 py-6 text-center"
+            >
+              <p className="font-display text-3xl font-semibold text-[var(--coffee)]">
                 {s.k}
               </p>
               <p className="mt-2 text-sm text-[var(--muted)]">{s.v}</p>
-            </div>
+            </Reveal>
           ))}
         </div>
-      </section>
+      </Reveal>
 
       {/* FAQ */}
-      <section className="px-4 py-12 sm:px-6 sm:py-16">
+      <Reveal as="section" className="px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-3xl">
           <p className="eyebrow mb-3">Dúvidas frequentes</p>
           <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
             Antes de sentar à mesa
           </h2>
           <dl className="mt-8 space-y-3">
-            {faqs.map((item) => (
-              <div key={item.q} className="surface-card px-5 py-4 sm:px-6 sm:py-5">
+            {faqs.map((item, i) => (
+              <Reveal
+                key={item.q}
+                delay={i * 60}
+                className="surface-card px-5 py-4 sm:px-6 sm:py-5"
+              >
                 <dt className="font-semibold text-[var(--ink)]">{item.q}</dt>
                 <dd className="mt-2 text-sm leading-relaxed text-[var(--muted)]">
                   {item.a}
                 </dd>
-              </div>
+              </Reveal>
             ))}
           </dl>
         </div>
-      </section>
+      </Reveal>
 
       {/* Closing CTA */}
-      <section className="px-4 py-16 sm:px-6 sm:py-20">
+      <Reveal as="section" className="px-4 py-16 sm:px-6 sm:py-20">
         <div className="surface-card mx-auto max-w-6xl overflow-hidden p-0">
           <div className="grid lg:grid-cols-[1.2fr_0.8fr]">
             <div className="p-8 sm:p-12">
@@ -379,7 +390,7 @@ export default async function Home() {
             </div>
           </div>
         </div>
-      </section>
+      </Reveal>
     </div>
   );
 }
