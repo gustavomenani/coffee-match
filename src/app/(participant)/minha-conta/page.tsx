@@ -47,7 +47,7 @@ export default async function MinhaContaPage({
 
         <div className="surface-card mt-8 p-6 sm:p-8">
           {params.error ? (
-            <p className="mb-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+            <p className="mb-5 rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-2 text-sm">
               {params.error}
             </p>
           ) : null}

@@ -36,7 +36,7 @@ export default async function CadastroPage({
         </p>
 
         {error ? (
-          <p className="mt-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+          <p className="mt-5 rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-2 text-sm">
             {error}
           </p>
         ) : null}

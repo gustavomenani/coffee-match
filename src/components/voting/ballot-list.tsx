@@ -74,7 +74,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
       </div>
 
       {error ? (
-        <p className="rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+        <p className="rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           {error}
         </p>
       ) : null}
@@ -138,7 +138,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                   onClick={() => onVote(person.id, "no")}
                   className={`btn tap-target !min-h-12 ${
                     current === "no"
-                      ? "!bg-[var(--ink)] !text-white"
+                      ? "!bg-[var(--ink)] !text-[var(--paper)]"
                       : "btn-secondary"
                   }`}
                 >

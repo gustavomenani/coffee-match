@@ -33,7 +33,7 @@ export default async function AdminMatchesPage({
       </div>
 
       {!result.ok ? (
-        <div className="max-w-2xl rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+        <div className="flash-error max-w-2xl rounded-[var(--radius-sm)] px-4 py-3 text-sm">
           {result.error}
         </div>
       ) : result.matches.length === 0 ? (

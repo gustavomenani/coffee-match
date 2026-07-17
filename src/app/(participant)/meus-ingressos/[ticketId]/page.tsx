@@ -149,7 +149,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-[var(--muted)]">
               Mostre este código na entrada para o check-in.
             </p>
-            <div className="mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] bg-white p-5">
+            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] p-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={doorQr}
@@ -174,7 +174,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-[var(--muted)]">
               Escaneie para abrir a página de votação do evento.
             </p>
-            <div className="mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] bg-white p-5">
+            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] p-5">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={votingQr}

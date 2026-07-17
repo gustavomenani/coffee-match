@@ -139,19 +139,19 @@ export default async function NoitePage({
       </p>
 
       {query.error ? (
-        <p className="mt-5 rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+        <p className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           {query.error}
         </p>
       ) : null}
 
       {query.ok === "open" ? (
-        <p className="mt-5 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           Votação aberta com sucesso.
         </p>
       ) : null}
 
       {query.ok === "close" ? (
-        <p className="mt-5 rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           Votação encerrada. Matches mútuos calculados.
         </p>
       ) : null}
@@ -232,7 +232,7 @@ export default async function NoitePage({
           <img
             src={votingQr}
             alt="QR code da votação"
-            className="mt-4 h-48 w-48 rounded-[var(--radius-sm)] bg-white p-2 outline outline-1 outline-[var(--line)]"
+            className="qr-surface mt-4 h-48 w-48 rounded-[var(--radius-sm)] p-2 outline outline-1 outline-[var(--line)]"
           />
           <p className="mt-3 break-all text-xs text-[var(--muted)]">{votingUrl}</p>
           <div className="mt-4">

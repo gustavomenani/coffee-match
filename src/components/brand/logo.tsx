@@ -26,7 +26,7 @@ export function Logo({
   const mark = (
     <span className={`inline-flex items-center gap-2.5 ${className}`}>
       <span
-        className="relative shrink-0 overflow-hidden rounded-full bg-[#1a100c] shadow-[0_8px_20px_rgba(26,16,12,0.35)] ring-1 ring-[color-mix(in_srgb,var(--coffee)_25%,transparent)]"
+        className="relative shrink-0 overflow-hidden rounded-full bg-[var(--espresso)] shadow-[0_8px_20px_rgba(26,16,12,0.35)] ring-1 ring-[color-mix(in_srgb,var(--coffee)_25%,transparent)]"
         style={{ width: s.box, height: s.box }}
       >
         <Image

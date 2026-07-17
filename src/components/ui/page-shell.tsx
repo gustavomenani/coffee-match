@@ -53,7 +53,7 @@ export function EmptyState({
     <div className="surface-card px-6 py-16 text-center sm:px-10">
       <div
         aria-hidden
-        className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full bg-[color-mix(in_srgb,var(--carmine)_10%,white)] text-xl text-[var(--carmine)]"
+        className="mx-auto mb-5 grid h-14 w-14 place-items-center rounded-full bg-[color-mix(in_srgb,var(--coffee)_12%,var(--paper-deep))] text-xl text-[var(--coffee)]"
       >
         ◦
       </div>
@@ -76,17 +76,16 @@ export function Flash({
   children: ReactNode;
 }) {
   const styles = {
-    info: "border-[var(--line)] bg-[var(--paper-deep)] text-[var(--ink-soft)]",
-    success:
-      "border-emerald-200 bg-emerald-50 text-emerald-900",
-    error: "border-red-200 bg-red-50 text-red-800",
-    warning: "border-amber-200 bg-amber-50 text-amber-950",
+    info: "border border-[var(--line-strong)] bg-[var(--paper-deep)] text-[var(--ink-soft)]",
+    success: "flash-success",
+    error: "flash-error",
+    warning: "flash-warning",
   } as const;
 
   return (
     <div
       role="status"
-      className={`rounded-[var(--radius-sm)] border px-4 py-3 text-sm leading-relaxed ${styles[tone]}`}
+      className={`rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed ${styles[tone]}`}
     >
       {children}
     </div>

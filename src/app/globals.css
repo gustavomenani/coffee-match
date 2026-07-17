@@ -145,6 +145,57 @@ html.dark .badge-live {
   color: var(--champagne-light);
 }
 
+/* Alerts — work in light + dark (avoid Tailwind red-50 etc.) */
+.flash-error {
+  border: 1px solid color-mix(in srgb, var(--danger) 40%, var(--line));
+  background: color-mix(in srgb, var(--danger) 12%, var(--paper-card));
+  color: color-mix(in srgb, var(--danger) 85%, var(--ink));
+}
+
+.flash-success {
+  border: 1px solid color-mix(in srgb, var(--success) 40%, var(--line));
+  background: color-mix(in srgb, var(--success) 12%, var(--paper-card));
+  color: color-mix(in srgb, var(--success) 75%, var(--ink));
+}
+
+.flash-warning {
+  border: 1px solid color-mix(in srgb, var(--champagne) 45%, var(--line));
+  background: color-mix(in srgb, var(--champagne) 14%, var(--paper-card));
+  color: color-mix(in srgb, var(--ink) 90%, var(--coffee-deep));
+}
+
+html.dark .flash-error {
+  background: color-mix(in srgb, var(--danger) 18%, var(--paper-deep));
+  color: #ffc9c2;
+  border-color: color-mix(in srgb, var(--danger) 45%, transparent);
+}
+
+html.dark .flash-success {
+  background: color-mix(in srgb, var(--success) 16%, var(--paper-deep));
+  color: #b8f0d0;
+  border-color: color-mix(in srgb, var(--success) 40%, transparent);
+}
+
+html.dark .flash-warning {
+  background: color-mix(in srgb, var(--champagne) 12%, var(--paper-deep));
+  color: var(--champagne-light);
+  border-color: color-mix(in srgb, var(--champagne) 35%, transparent);
+}
+
+/* QR codes need pure white for scanning in both themes */
+.qr-surface {
+  background: #ffffff !important;
+  color: #111;
+}
+
+html.dark .btn-primary {
+  color: #1a100c;
+}
+
+html.dark header {
+  background: color-mix(in srgb, var(--paper) 88%, transparent);
+}
+
 /* Subtle paper grain — CSS only, no assets */
 body::before {
   content: "";
@@ -389,12 +440,12 @@ p,
   background: var(--paper-card);
   color: var(--ink);
   border: 1px solid var(--line-strong);
-  box-shadow: 0 1px 0 rgba(255, 255, 255, 0.7) inset;
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 70%, transparent) inset;
 }
 
 .btn-secondary:hover:not(:disabled) {
   border-color: color-mix(in srgb, var(--champagne) 60%, var(--line-strong));
-  background: #fff;
+  background: color-mix(in srgb, var(--paper-card) 70%, var(--paper-deep));
 }
 
 .btn-ghost {

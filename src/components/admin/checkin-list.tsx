@@ -127,13 +127,13 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
       ) : null}
 
       {error ? (
-        <p className="rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-3 text-sm text-red-700">
+        <p className="rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="rounded-[var(--radius-sm)] border border-emerald-200 bg-emerald-50 px-3 py-3 text-sm text-emerald-800">
+        <p className="rounded-[var(--radius-sm)] flash-success rounded-[var(--radius-sm)] px-3 py-3 text-sm">
           {success}
         </p>
       ) : null}
@@ -167,7 +167,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
                 </div>
 
                 {done ? (
-                  <span className="badge badge-soft inline-flex min-h-12 items-center justify-center px-5 py-3 text-base font-semibold text-emerald-800">
+                  <span className="badge badge-soft inline-flex min-h-12 items-center justify-center px-5 py-3 text-base font-semibold text-[var(--success)]">
                     Check-in feito
                   </span>
                 ) : (

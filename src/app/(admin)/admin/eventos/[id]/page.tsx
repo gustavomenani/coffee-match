@@ -84,7 +84,7 @@ export default async function AdminEventoEditPage({
       </div>
 
       {query.error ? (
-        <p className="mb-4 max-w-2xl rounded-[var(--radius-sm)] border border-red-200 bg-red-50 px-3 py-2 text-sm text-red-700">
+        <p className="flash-error mb-4 max-w-2xl rounded-[var(--radius-sm)] px-3 py-2 text-sm">
           {query.error}
         </p>
       ) : null}
