@@ -88,46 +88,48 @@ body {
   text-rendering: optimizeLegibility;
 }
 
-/* Smooth theme cross-fade (View Transitions API) */
+/*
+ * Theme switch — View Transitions API
+ * JS drives a circular clip-path from the toggle; CSS disables default
+ * cross-fade so the wipe is clean (no double-animation flicker).
+ */
 @supports (view-transition-name: root) {
   html {
     view-transition-name: root;
   }
 
+  /* Keep the toggle out of the page morph so the icon stays sharp */
+  .theme-toggle-btn {
+    view-transition-name: theme-toggle;
+  }
+
   ::view-transition-old(root),
   ::view-transition-new(root) {
-    animation-duration: 0.55s;
-    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    animation: none;
+    mix-blend-mode: normal;
   }
 
+  /* New theme sits above while the circle expands */
   ::view-transition-old(root) {
-    animation-name: theme-fade-out;
+    z-index: 1;
   }
 
   ::view-transition-new(root) {
-    animation-name: theme-fade-in;
+    z-index: 2;
   }
 
-  @keyframes theme-fade-out {
-    from {
-      opacity: 1;
-      filter: brightness(1);
-    }
-    to {
-      opacity: 0;
-      filter: brightness(1.05);
-    }
+  /* Toggle icon layer — soft opacity only, no blur */
+  ::view-transition-old(theme-toggle),
+  ::view-transition-new(theme-toggle) {
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+    height: 100%;
+    width: 100%;
   }
 
-  @keyframes theme-fade-in {
-    from {
-      opacity: 0;
-      filter: brightness(0.96);
-    }
-    to {
-      opacity: 1;
-      filter: brightness(1);
-    }
+  ::view-transition-group(theme-toggle) {
+    animation-duration: 0.35s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
   }
 }
 
@@ -650,7 +652,9 @@ p,
   }
 
   ::view-transition-old(root),
-  ::view-transition-new(root) {
+  ::view-transition-new(root),
+  ::view-transition-old(theme-toggle),
+  ::view-transition-new(theme-toggle) {
     animation: none !important;
   }
 

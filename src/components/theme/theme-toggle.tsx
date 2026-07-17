@@ -1,6 +1,12 @@
 "use client";
 
-import { useEffect, useState, useTransition } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type MouseEvent,
+} from "react";
 
 type Theme = "light" | "dark";
 
@@ -16,7 +22,23 @@ function setThemeClass(theme: Theme) {
   root.style.colorScheme = theme;
 }
 
-function applyTheme(theme: Theme, animate: boolean) {
+/** Radius from click point that covers the full viewport */
+function coverRadius(x: number, y: number) {
+  const maxX = Math.max(x, window.innerWidth - x);
+  const maxY = Math.max(y, window.innerHeight - y);
+  return Math.hypot(maxX, maxY);
+}
+
+type ViewTransition = {
+  ready: Promise<void>;
+  finished: Promise<void>;
+};
+
+function applyTheme(
+  theme: Theme,
+  animate: boolean,
+  origin?: { x: number; y: number },
+) {
   const root = document.documentElement;
 
   if (!animate || prefersReducedMotion()) {
@@ -24,21 +46,62 @@ function applyTheme(theme: Theme, animate: boolean) {
     return;
   }
 
-  // Smooth cross-fade when browser supports View Transitions
   const doc = document as Document & {
-    startViewTransition?: (cb: () => void) => { finished: Promise<void> };
+    startViewTransition?: (cb: () => void) => ViewTransition;
   };
 
   if (typeof doc.startViewTransition === "function") {
-    doc.startViewTransition(() => {
+    const x = origin?.x ?? window.innerWidth / 2;
+    const y = origin?.y ?? 48;
+    const radius = coverRadius(x, y);
+
+    root.dataset.themeTransition = theme === "dark" ? "to-dark" : "to-light";
+
+    const transition = doc.startViewTransition(() => {
       setThemeClass(theme);
     });
+
+    transition.ready
+      .then(() => {
+        // Circular reveal of the new theme from the toggle
+        root.animate(
+          {
+            clipPath: [
+              `circle(0px at ${x}px ${y}px)`,
+              `circle(${radius}px at ${x}px ${y}px)`,
+            ],
+          },
+          {
+            duration: 520,
+            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
+            pseudoElement: "::view-transition-new(root)",
+          },
+        );
+
+        // Old theme gently recedes (keeps continuity, less harsh flash)
+        root.animate(
+          {
+            opacity: [1, 0.92],
+          },
+          {
+            duration: 420,
+            easing: "cubic-bezier(0.4, 0, 1, 1)",
+            pseudoElement: "::view-transition-old(root)",
+          },
+        );
+      })
+      .catch(() => {
+        /* transition aborted */
+      })
+      .finally(() => {
+        delete root.dataset.themeTransition;
+      });
+
     return;
   }
 
   // Fallback: timed CSS transitions on key surfaces
   root.classList.add("theme-switching");
-  // Force style flush so transitions run from current computed values
   void root.offsetHeight;
   setThemeClass(theme);
   window.setTimeout(() => {
@@ -50,6 +113,7 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
   const [theme, setTheme] = useState<Theme>("light");
   const [ready, setReady] = useState(false);
   const [, startTransition] = useTransition();
+  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
@@ -60,22 +124,28 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       initial = "dark";
     }
     setTheme(initial);
-    // Initial apply without animation (script already set class; keep in sync)
+    // Script already set class; keep React state in sync without animation
     setThemeClass(initial);
     setReady(true);
   }, []);
 
-  function toggle() {
+  function toggle(e: MouseEvent<HTMLButtonElement>) {
     const next: Theme = theme === "dark" ? "light" : "dark";
+    const rect = btnRef.current?.getBoundingClientRect();
+    const origin = rect
+      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
+      : { x: e.clientX, y: e.clientY };
+
     startTransition(() => {
       setTheme(next);
     });
-    applyTheme(next, true);
+    applyTheme(next, true, origin);
     localStorage.setItem(STORAGE_KEY, next);
   }
 
   return (
     <button
+      ref={btnRef}
       type="button"
       onClick={toggle}
       className={`theme-toggle-btn relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[var(--line-strong)] bg-[var(--paper-card)] text-[var(--ink-soft)] shadow-sm transition-[background-color,border-color,color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:border-[color-mix(in_srgb,var(--champagne)_50%,var(--line-strong))] hover:text-[var(--coffee)] active:scale-95 ${className}`}
@@ -90,14 +160,14 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
       ) : (
         <>
           <span
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-400 ease-[cubic-bezier(0.2,0,0,1)] ${
+            className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               theme === "dark"
                 ? "scale-100 rotate-0 opacity-100"
                 : "scale-50 -rotate-90 opacity-0"
             }`}
             aria-hidden
           >
-            {/* sun — shown in dark mode (click to go light) */}
+            {/* sun — visible in dark (click → light) */}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <circle
                 cx="12"
@@ -115,14 +185,14 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
             </svg>
           </span>
           <span
-            className={`absolute inset-0 flex items-center justify-center transition-all duration-400 ease-[cubic-bezier(0.2,0,0,1)] ${
+            className={`absolute inset-0 flex items-center justify-center transition-[opacity,transform] duration-500 ease-[cubic-bezier(0.22,1,0.36,1)] ${
               theme === "light"
                 ? "scale-100 rotate-0 opacity-100"
                 : "scale-50 rotate-90 opacity-0"
             }`}
             aria-hidden
           >
-            {/* moon — shown in light mode (click to go dark) */}
+            {/* moon — visible in light (click → dark) */}
             <svg width="18" height="18" viewBox="0 0 24 24" fill="none">
               <path
                 d="M21 14.5A8.5 8.5 0 1 1 9.5 3a7 7 0 0 0 11.5 11.5Z"
