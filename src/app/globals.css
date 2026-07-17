@@ -268,7 +268,9 @@ html.dark .flash-warning {
   color: #111;
 }
 
-html.dark .btn-primary {
+/* Primary is caramel in both themes — keep dark espresso text in dark mode */
+html.dark .btn-primary,
+html.dark .btn-primary:hover:not(:disabled) {
   color: #1a100c;
 }
 
@@ -536,6 +538,56 @@ p,
 .btn-ghost:hover:not(:disabled) {
   background: color-mix(in srgb, var(--ink) 4%, transparent);
   color: var(--ink);
+}
+
+/*
+ * Buttons on fixed dark surfaces (night-band, espresso cards).
+ * Colors are theme-independent — never use --ink/--paper here
+ * (those invert in dark mode and kill contrast on cream CTAs).
+ */
+.btn-on-dark {
+  position: relative;
+  overflow: hidden;
+  background: linear-gradient(165deg, #f3e0c8 0%, #e0c09a 40%, #c9a27a 100%);
+  color: #1a100c !important;
+  border: 1px solid transparent;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.35) inset,
+    0 10px 28px rgba(201, 162, 122, 0.28);
+}
+
+.btn-on-dark:hover:not(:disabled) {
+  background: linear-gradient(165deg, #f8e9d4 0%, #e8cda8 45%, #d4b08a 100%);
+  color: #1a100c !important;
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.4) inset,
+    0 14px 32px rgba(201, 162, 122, 0.36);
+}
+
+.btn-outline-on-dark {
+  background: transparent;
+  color: #f8f1ec !important;
+  border: 1px solid rgba(255, 255, 255, 0.22);
+  box-shadow: none;
+}
+
+.btn-outline-on-dark:hover:not(:disabled) {
+  background: rgba(255, 255, 255, 0.1);
+  color: #fffaf5 !important;
+  border-color: rgba(255, 255, 255, 0.35);
+}
+
+html.dark .btn-on-dark,
+html.dark .btn-on-dark:hover:not(:disabled) {
+  color: #1a100c !important;
+}
+
+html.dark .btn-outline-on-dark {
+  color: #f8f1ec !important;
+}
+
+html.dark .btn-outline-on-dark:hover:not(:disabled) {
+  color: #fffaf5 !important;
 }
 
 /* Form controls */

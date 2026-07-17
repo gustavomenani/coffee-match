@@ -293,16 +293,10 @@ export default async function Home() {
             ))}
           </ol>
           <div className="mt-12 flex flex-col gap-3 sm:flex-row">
-            <Link
-              href="/eventos"
-              className="btn btn-primary !bg-[linear-gradient(165deg,#f3e0c8,#c9a27a)] !text-[var(--ink)] !shadow-[0_10px_28px_rgba(201,162,122,0.28)]"
-            >
+            <Link href="/eventos" className="btn btn-on-dark">
               Escolher uma noite
             </Link>
-            <Link
-              href="/regras"
-              className="btn !border !border-white/20 !bg-transparent !text-[#f8f1ec] hover:!bg-white/10"
-            >
+            <Link href="/regras" className="btn btn-outline-on-dark">
               Ver regras da noite
             </Link>
           </div>
