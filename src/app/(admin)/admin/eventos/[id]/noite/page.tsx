@@ -16,6 +16,7 @@ import {
 import { CopyButton } from "@/components/ui/copy-button";
 import { SubmitButton } from "@/components/ui/submit-button";
 import { parseCuid } from "@/lib/security/ids";
+import { appBaseUrl } from "@/lib/env";
 
 async function openVotingAction(formData: FormData) {
   "use server";
@@ -135,10 +136,7 @@ export default async function NoitePage({
     sessionStatus === "voting_closed";
   const canClose = sessionStatus === "voting_open";
 
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000";
-  const votingUrl = `${appUrl}/evento/${eventId}/votar`;
+  const votingUrl = `${appBaseUrl()}/evento/${eventId}/votar`;
   const votingQr = await toDataUrl(votingUrl);
   const checkedInCount = rows.filter((r) => r.checkedInAt).length;
 

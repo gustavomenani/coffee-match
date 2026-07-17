@@ -6,22 +6,16 @@ export function PageShell({
   description,
   actions,
   children,
-  narrow,
 }: {
   eyebrow?: string;
   title: string;
   description?: string;
   actions?: ReactNode;
   children: ReactNode;
-  narrow?: boolean;
 }) {
   return (
     <main className="mx-auto w-full max-w-6xl flex-1 px-4 py-12 sm:px-6 sm:py-16">
-      <div
-        className={`mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between ${
-          narrow ? "max-w-2xl" : ""
-        }`}
-      >
+      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
         <div className="max-w-2xl">
           {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
           <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">

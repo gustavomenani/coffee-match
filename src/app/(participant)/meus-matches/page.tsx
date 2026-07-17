@@ -4,14 +4,9 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageShell, EmptyState } from "@/components/ui/page-shell";
 import { formatDateTime as formatDate } from "@/lib/datetime";
+import { toWhatsappUrl } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
-
-function toWhatsappUrl(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${withCountry}`;
-}
 
 export default async function MeusMatchesPage() {
   const session = await auth();

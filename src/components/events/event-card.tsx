@@ -1,6 +1,7 @@
 "use client";
 
 import Link from "next/link";
+import { formatBRL } from "@/lib/format";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { APP_TZ, formatWeekdayTime } from "@/lib/datetime";
@@ -16,13 +17,6 @@ export type EventCardData = {
   remainingWomen: number;
   status: string;
 };
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
-}
 
 function formatDate(value: Date | string) {
   const d = typeof value === "string" ? new Date(value) : value;

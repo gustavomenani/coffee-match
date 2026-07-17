@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { canViewResults } from "@/lib/domain/eligibility";
 import { requireAdmin } from "@/lib/authz";
 import { parseCuid } from "@/lib/security/ids";
+import { toWhatsappUrl } from "@/lib/format";
 
 export type MatchContact = {
   matchId: string;
@@ -34,12 +35,6 @@ export type WhoLikedMeResult =
 export type AdminMatchesResult =
   | { ok: true; matches: AdminMatchPair[] }
   | ResultsError;
-
-function toWhatsappUrl(phone: string): string {
-  const digits = phone.replace(/\D/g, "");
-  const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
-  return `https://wa.me/${withCountry}`;
-}
 
 async function loadEligibleTicket(eventId: string, userId: string) {
   // Prefer paid ticket — never pick a random pending/cancelled row first

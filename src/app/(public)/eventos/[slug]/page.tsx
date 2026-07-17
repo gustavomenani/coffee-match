@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBRL } from "@/lib/format";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
@@ -69,13 +70,6 @@ export async function generateMetadata({
       follow: true,
     },
   };
-}
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
 }
 
 const statusLabel: Record<string, string> = {

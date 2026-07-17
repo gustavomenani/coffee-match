@@ -1,4 +1,5 @@
 import Link from "next/link";
+import { formatBRL } from "@/lib/format";
 import { notFound } from "next/navigation";
 import { RefundButton } from "@/components/admin/refund-button";
 import { EventForm } from "@/components/events/event-form";
@@ -8,13 +9,6 @@ import { prisma } from "@/lib/prisma";
 import { parseCuid } from "@/lib/security/ids";
 
 export const dynamic = "force-dynamic";
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
-}
 
 export default async function AdminEventoEditPage({
   params,

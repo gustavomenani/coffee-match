@@ -1,15 +1,9 @@
 import Link from "next/link";
+import { formatBRL } from "@/lib/format";
 import { listAdminEvents } from "@/lib/actions/admin";
 import { formatDateTime as formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
-}
 
 const statusLabel: Record<string, string> = {
   draft: "Rascunho",

@@ -1,17 +1,11 @@
 import Link from "next/link";
+import { formatBRL } from "@/lib/format";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getOccupancyByEvent } from "@/lib/occupancy";
 import { formatDateTime as formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
-
-function formatBRL(cents: number) {
-  return new Intl.NumberFormat("pt-BR", {
-    style: "currency",
-    currency: "BRL",
-  }).format(cents / 100);
-}
 
 export default async function AdminDashboardPage() {
   const { membership } = await requireAdminOrThrow();

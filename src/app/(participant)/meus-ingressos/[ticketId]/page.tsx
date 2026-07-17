@@ -6,6 +6,7 @@ import { toDataUrl } from "@/lib/qr";
 import { CopyButton } from "@/components/ui/copy-button";
 import { PrintButton } from "@/components/ui/print-button";
 import { formatDateTime as formatDate } from "@/lib/datetime";
+import { appBaseUrl } from "@/lib/env";
 import {
   canVote as canVoteNow,
   canViewResults,
@@ -66,10 +67,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
     notFound();
   }
 
-  const appUrl =
-    process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000";
-  const votingUrl = `${appUrl}/evento/${ticket.event.id}/votar`;
+  const votingUrl = `${appBaseUrl()}/evento/${ticket.event.id}/votar`;
 
   const [doorQr, votingQr] = await Promise.all([
     toDataUrl(ticket.id),

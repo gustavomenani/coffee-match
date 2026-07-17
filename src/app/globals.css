@@ -279,8 +279,7 @@ body::before {
 
 h1,
 h2,
-h3,
-.heading-balance {
+h3 {
   text-wrap: balance;
 }
 
@@ -361,13 +360,6 @@ p,
   transform: translateY(-3px);
   border-color: color-mix(in srgb, var(--champagne) 60%, var(--line-strong));
   box-shadow: var(--shadow-lift);
-}
-
-.surface-glass {
-  background: color-mix(in srgb, var(--paper-card) 78%, transparent);
-  border: 1px solid var(--line);
-  backdrop-filter: blur(10px) saturate(1.15);
-  -webkit-backdrop-filter: blur(10px) saturate(1.15);
 }
 
 .gold-rule {
