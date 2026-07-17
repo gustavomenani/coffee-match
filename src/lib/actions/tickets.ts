@@ -8,6 +8,12 @@ import {
   type Occupancy,
 } from "@/lib/domain/capacity";
 
+function bustEventCaches(slug?: string) {
+  revalidatePath("/eventos");
+  revalidatePath("/");
+  if (slug) revalidatePath(`/eventos/${slug}`);
+}
+
 export type ActionResult = { ok: true } | { ok: false; error: string };
 
 export async function getEventOccupancy(eventId: string): Promise<Occupancy> {
@@ -57,11 +63,13 @@ export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
       where: { id: eventId },
       data: { status: "sold_out" },
     });
+    bustEventCaches(event.slug);
   } else if (!fullySoldOut && event.status === "sold_out") {
     await prisma.event.update({
       where: { id: eventId },
       data: { status: "published" },
     });
+    bustEventCaches(event.slug);
   }
 }
 
@@ -100,10 +108,10 @@ export async function cancelPendingTicket(
   });
 
   await syncEventSoldOutStatus(ticket.eventId);
+  bustEventCaches(ticket.event.slug);
 
   revalidatePath("/meus-ingressos");
   revalidatePath(`/meus-ingressos/${ticket.id}`);
-  revalidatePath("/eventos");
   revalidatePath(`/eventos/${ticket.event.slug}`);
   revalidatePath("/admin");
   revalidatePath("/admin/eventos");

@@ -6,6 +6,12 @@ import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
+
+function bustPublicEventCache(slug?: string) {
+  revalidatePath("/eventos");
+  revalidatePath("/");
+  if (slug) revalidatePath(`/eventos/${slug}`);
+}
 import { parseCuid } from "@/lib/security/ids";
 
 export type ActionResult =
@@ -109,7 +115,7 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     meta: { eventId: event.id, slug: event.slug },
   });
 
-  revalidatePath("/eventos");
+  bustPublicEventCache(event.slug);
   revalidatePath("/admin/eventos");
   revalidatePath("/admin");
   return { ok: true, id: event.id };
@@ -179,8 +185,8 @@ export async function updateEvent(
     meta: { eventId: id, slug: data.slug },
   });
 
-  revalidatePath("/eventos");
-  revalidatePath(`/eventos/${data.slug}`);
+  bustPublicEventCache(data.slug);
+  if (current.slug !== data.slug) bustPublicEventCache(current.slug);
   revalidatePath("/admin/eventos");
   revalidatePath(`/admin/eventos/${id}`);
   revalidatePath("/admin");
