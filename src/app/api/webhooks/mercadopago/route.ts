@@ -271,6 +271,33 @@ export async function POST(req: NextRequest) {
           venue: `${ticket.event.venue}, ${ticket.event.city}`,
           ticketId,
         });
+      } else {
+        // Money was captured for a ticket that is no longer pending, so it can
+        // never become paid: the buyer paid a still-live MP link after the
+        // ticket was cancelled (by the user, by checkout's expired-pending
+        // sweep, or by the expire-pending cron). Reaching here means the status
+        // is cancelled/refunded — a same-payment retry returns at the
+        // mpPaymentId lookup, and a paid ticket is caught as a duplicate.
+        //
+        // Silence here means: buyer charged, no ticket, and no record outside
+        // Mercado Pago. Never return 200 quietly. Not auto-refunded on purpose
+        // — issuing money back is an explicit admin decision (src/lib/actions/refund.ts).
+        await auditLog({
+          actorId: ticket.userId,
+          action: "ticket.paid_but_not_pending",
+          meta: {
+            ticketId,
+            paymentId: String(paymentId),
+            eventId: ticket.eventId,
+            ticketStatus: ticket.status,
+            transactionAmount: payment.transaction_amount ?? null,
+            currencyId: payment.currency_id ?? null,
+          },
+        });
+        console.error(
+          "[mp-webhook] approved payment for a non-pending ticket — buyer charged with no ticket, refund required",
+          { ticketId, paymentId: String(paymentId), ticketStatus: ticket.status }
+        );
       }
     }
   } catch (err) {

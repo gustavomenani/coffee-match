@@ -118,12 +118,13 @@ describe("POST /api/webhooks/mercadopago", () => {
   it("marks the ticket paid for an approved payment with the exact amount", async () => {
     const res = await POST(webhookRequest());
     expect(res.status).toBe(200);
-    expect(ticketUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: expect.objectContaining({ id: TICKET_ID }),
-        data: { status: "paid", mpPaymentId: PAYMENT_ID },
-      })
-    );
+    // Exact `where`, not objectContaining: the `status: "pending"` guard is what
+    // stops the webhook flipping a cancelled/refunded ticket back to paid, and a
+    // loose matcher would stay green if someone deleted it.
+    expect(ticketUpdateMany).toHaveBeenCalledWith({
+      where: { id: TICKET_ID, status: "pending" },
+      data: { status: "paid", mpPaymentId: PAYMENT_ID },
+    });
     expect(auditLogMock).toHaveBeenCalledWith(
       expect.objectContaining({ action: "ticket.paid" })
     );
@@ -189,11 +190,30 @@ describe("POST /api/webhooks/mercadopago", () => {
     expect(ticketUpdateMany).not.toHaveBeenCalled();
   });
 
-  it("does not send email when no pending ticket matched the update", async () => {
+  it("flags an approved payment for a cancelled ticket instead of swallowing it", async () => {
+    // The buyer paid a still-live MP link after the ticket was cancelled, so the
+    // pending-guarded update matches nothing. Money is captured and no ticket
+    // exists: this must leave a record, never a quiet 200.
+    ticketFindUnique.mockReset();
+    ticketFindUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce({ ...ticketRow, status: "cancelled" });
     ticketUpdateMany.mockResolvedValue({ count: 0 });
+
     const res = await POST(webhookRequest());
-    expect(res.status).toBe(200);
+
+    expect(res.status).toBe(200); // MP must not retry — retrying cannot help
     expect(sendEmailMock).not.toHaveBeenCalled();
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ticket.paid_but_not_pending",
+        meta: expect.objectContaining({
+          ticketId: TICKET_ID,
+          paymentId: PAYMENT_ID,
+          ticketStatus: "cancelled",
+        }),
+      })
+    );
   });
 
   it("500 when the MP API errors so MP retries", async () => {
