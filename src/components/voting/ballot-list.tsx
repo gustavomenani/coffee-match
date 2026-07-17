@@ -56,7 +56,11 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="surface-card p-4 sm:p-5">
+      <div className="surface-card relative overflow-hidden p-4 pt-5 sm:p-5 sm:pt-6">
+        <div
+          aria-hidden
+          className="absolute inset-x-0 top-0 h-1 bg-[linear-gradient(90deg,var(--coffee-deep),var(--coffee-hot),var(--champagne))]"
+        />
         <ProgressBar
           value={votedCount}
           max={candidates.length}
@@ -112,14 +116,16 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                       src={person.photoUrl}
                       alt=""
                       className={`${
-                        expanded ? "h-28 w-28" : "h-14 w-14"
-                      } shrink-0 rounded-full object-cover outline outline-1 outline-[var(--line)]`}
+                        expanded
+                          ? "h-28 w-28 outline-2 outline-[color-mix(in_srgb,var(--champagne)_70%,transparent)] shadow-[var(--shadow-soft)]"
+                          : "h-14 w-14 outline-1 outline-[var(--line)]"
+                      } shrink-0 rounded-full object-cover outline transition-all duration-300 ease-out`}
                     />
                   ) : (
                     <div
                       className={`grid ${
                         expanded ? "h-28 w-28 text-3xl" : "h-14 w-14 text-lg"
-                      } shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-semibold text-white`}
+                      } shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-semibold text-white transition-all duration-300 ease-out`}
                     >
                       {person.name.slice(0, 1).toUpperCase()}
                     </div>
@@ -157,7 +163,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 </button>
 
                 {expanded ? (
-                  <div id={panelId} className="mt-3">
+                  <div id={panelId} className="animate-rise mt-3">
                     {person.bio ? (
                       <p className="text-sm text-[var(--muted)]">
                         {person.bio}
@@ -181,7 +187,13 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 {current ? (
                   <p className="mt-1 text-sm text-[var(--muted)]">
                     Seu voto:{" "}
-                    <span className="font-semibold text-[var(--ink-soft)]">
+                    <span
+                      className={`font-semibold ${
+                        current === "yes"
+                          ? "text-[var(--success)]"
+                          : "text-[var(--ink-soft)]"
+                      }`}
+                    >
                       {current === "yes" ? "Sim" : "Não"}
                     </span>
                   </p>
@@ -199,9 +211,9 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                   aria-pressed={current === "yes"}
                   aria-label={`Sim para ${person.name}`}
                   onClick={() => onVote(person.id, "yes")}
-                  className={`btn tap-target !min-h-12 ${
+                  className={`btn tap-target !min-h-12 sm:!min-w-[6.25rem] ${
                     current === "yes"
-                      ? "btn-primary"
+                      ? "btn-primary border border-transparent"
                       : "btn-secondary"
                   }`}
                 >
@@ -213,9 +225,9 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                   aria-pressed={current === "no"}
                   aria-label={`Não para ${person.name}`}
                   onClick={() => onVote(person.id, "no")}
-                  className={`btn tap-target !min-h-12 ${
+                  className={`btn tap-target !min-h-12 sm:!min-w-[6.25rem] ${
                     current === "no"
-                      ? "!bg-[var(--ink)] !text-[var(--paper)]"
+                      ? "border border-transparent !bg-[var(--ink)] !text-[var(--paper)]"
                       : "btn-secondary"
                   }`}
                 >

@@ -79,6 +79,33 @@ html {
   scroll-behavior: smooth;
   /* Kill the gray flash on tap for links/buttons (mobile WebKit/Blink) */
   -webkit-tap-highlight-color: transparent;
+  /* Subtle themed scrollbar (Firefox/Chromium; --paper-deep tracks the theme) */
+  scrollbar-width: thin;
+  scrollbar-color: color-mix(in srgb, var(--coffee) 40%, var(--paper-deep))
+    transparent;
+}
+
+/* Webkit fallback (Safari ignores scrollbar-color) */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+
+::-webkit-scrollbar-track {
+  background: transparent;
+}
+
+::-webkit-scrollbar-thumb {
+  background: color-mix(in srgb, var(--coffee) 40%, var(--paper-deep));
+  border-radius: 999px;
+  border: 2px solid transparent;
+  background-clip: padding-box;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background: color-mix(in srgb, var(--coffee) 60%, var(--paper-deep));
+  border: 2px solid transparent;
+  background-clip: padding-box;
 }
 
 body {
@@ -473,6 +500,44 @@ p,
   color: var(--ink);
 }
 
+/* Destructive actions — theme-safe red, same weight family as .btn-secondary */
+.btn-danger {
+  background: var(--paper-card);
+  color: var(--danger);
+  border: 1px solid color-mix(in srgb, var(--danger) 35%, var(--line-strong));
+  box-shadow: 0 1px 0 color-mix(in srgb, var(--paper) 70%, transparent) inset;
+}
+
+.btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 8%, var(--paper-card));
+  border-color: color-mix(in srgb, var(--danger) 55%, var(--line-strong));
+}
+
+.btn-danger:focus-visible {
+  outline-color: var(--danger);
+}
+
+html.dark .btn-danger {
+  background: var(--paper-deep);
+  border-color: color-mix(in srgb, var(--danger) 40%, var(--line-strong));
+}
+
+html.dark .btn-danger:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--danger) 16%, var(--paper-deep));
+}
+
+/* Button sizes — override .btn without !important hacks */
+.btn-sm {
+  min-height: 2.5rem;
+  padding: 0.45rem 1rem;
+  font-size: 0.85rem;
+}
+
+.btn-lg {
+  min-height: 3rem;
+  padding: 0.8rem 1.5rem;
+}
+
 /*
  * Buttons on fixed dark surfaces (night-band, espresso cards).
  * Colors are theme-independent — never use --ink/--paper here
@@ -579,6 +644,11 @@ html.dark .btn-outline-on-dark:hover:not(:disabled) {
 .badge-18 {
   background: linear-gradient(135deg, var(--carmine-hot), var(--carmine-deep));
   color: white;
+}
+
+/* In dark mode the caramel gradient is light — espresso text keeps contrast */
+html.dark .badge-18 {
+  color: #1a100c;
 }
 
 /* Scroll reveal */
@@ -701,10 +771,14 @@ a.link-coffee:hover,
   background-size: 100% 1.5px;
 }
 
-/* Focus ring — keyboard a11y */
+/* Focus ring — keyboard a11y (darkened on light paper, lightened on dark) */
 :focus-visible {
-  outline: 2px solid color-mix(in srgb, var(--carmine) 70%, white);
+  outline: 2px solid color-mix(in srgb, var(--carmine) 80%, var(--ink));
   outline-offset: 2px;
+}
+
+html.dark :focus-visible {
+  outline-color: color-mix(in srgb, var(--carmine-hot) 80%, white);
 }
 
 .btn:focus-visible {
@@ -728,7 +802,7 @@ a.link-coffee:hover,
 }
 
 .stagger > * {
-  animation: rise-in 480ms cubic-bezier(0.2, 0, 0, 1) both;
+  animation: rise-in 420ms cubic-bezier(0.2, 0, 0, 1) both;
 }
 
 .stagger > *:nth-child(1) {

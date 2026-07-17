@@ -128,7 +128,7 @@ export function QrScanner({ onCode }: Props) {
             <button
               type="button"
               onClick={stopCamera}
-              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+              className="btn btn-secondary btn-sm"
             >
               Fechar câmera
             </button>
@@ -139,7 +139,7 @@ export function QrScanner({ onCode }: Props) {
           <button
             type="button"
             onClick={startCamera}
-            className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            className="btn btn-secondary btn-sm"
           >
             Escanear QR
           </button>

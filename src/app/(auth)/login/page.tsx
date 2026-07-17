@@ -48,9 +48,13 @@ export default async function LoginPage({
               <span className="text-[var(--champagne)]">Coffee Match</span>.
             </p>
           </div>
-          <p className="relative text-sm leading-relaxed text-[color-mix(in_srgb,#f5e6d3_68%,transparent)]">
-            Ingressos, votos e matches — tudo na sua conta. Uma xícara por vez.
-          </p>
+          <div className="relative">
+            <div aria-hidden className="gold-rule mb-6" />
+            <p className="text-sm leading-relaxed text-[color-mix(in_srgb,#f5e6d3_68%,transparent)]">
+              Ingressos, votos e matches — tudo na sua conta. Uma xícara por
+              vez.
+            </p>
+          </div>
         </div>
 
         <div className="bg-[var(--paper-card)] p-8 sm:p-10">
@@ -65,7 +69,7 @@ export default async function LoginPage({
           {passwordReset ? (
             <p
               role="status"
-              className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+              className="flash-success mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
             >
               Senha redefinida. Faça login.
             </p>
@@ -74,7 +78,7 @@ export default async function LoginPage({
           {justRegistered ? (
             <p
               role="status"
-              className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+              className="flash-success mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
             >
               Conta criada! Faça login para continuar.
             </p>

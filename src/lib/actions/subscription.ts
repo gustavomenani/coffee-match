@@ -86,7 +86,7 @@ export async function startSubscription(): Promise<SubscribeResult> {
     console.error("[subscription] preapproval failed", err);
     return {
       ok: false,
-      error: "Não foi possível iniciar a assinatura. Tente de novo.",
+      error: "Não foi possível iniciar a assinatura. Tente novamente.",
     };
   }
 }
@@ -114,7 +114,7 @@ export async function cancelSubscription(): Promise<CancelResult> {
       console.error("[subscription] cancel failed", err);
       return {
         ok: false,
-        error: "Falha ao cancelar no Mercado Pago. Tente de novo.",
+        error: "Falha ao cancelar no Mercado Pago. Tente novamente.",
       };
     }
   }

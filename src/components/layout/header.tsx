@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { Logo } from "@/components/brand/logo";
+import { NavLink } from "@/components/layout/nav-link";
 import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 async function logoutAction() {
@@ -18,38 +19,20 @@ export async function Header() {
         <Logo size="md" priority />
 
         <nav className="flex items-center gap-0.5 text-sm font-medium text-[var(--ink-soft)] sm:gap-1">
-          <Link
-            href="/eventos"
-            className="rounded-full px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] hover:text-[var(--ink)]"
-          >
-            Eventos
-          </Link>
-          <Link
-            href="/meus-ingressos"
-            className="hidden rounded-full px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] hover:text-[var(--ink)] sm:inline-flex"
-          >
+          <NavLink href="/eventos">Eventos</NavLink>
+          <NavLink href="/meus-ingressos" className="hidden sm:inline-flex">
             Ingressos
-          </Link>
-          {isAdmin ? (
-            <Link
-              href="/admin"
-              className="rounded-full px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] hover:text-[var(--ink)]"
-            >
-              Admin
-            </Link>
-          ) : null}
+          </NavLink>
+          {isAdmin ? <NavLink href="/admin">Admin</NavLink> : null}
 
           <ThemeToggle className="ml-1" />
 
           {session?.user ? (
             <>
-              <Link
-                href="/minha-conta"
-                className="rounded-full px-3 py-2 transition-colors hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] hover:text-[var(--ink)]"
-              >
+              <NavLink href="/minha-conta">
                 <span className="hidden sm:inline">Conta</span>
                 <span className="sm:hidden">Eu</span>
-              </Link>
+              </NavLink>
               <form action={logoutAction}>
                 <button
                   type="submit"

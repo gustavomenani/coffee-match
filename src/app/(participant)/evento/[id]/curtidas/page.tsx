@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { getWhoLikedMe } from "@/lib/actions/results";
+import { EmptyState } from "@/components/ui/page-shell";
 
 export default async function CurtidasPage({
   params,
@@ -38,29 +39,33 @@ export default async function CurtidasPage({
           {result.error}
         </div>
       ) : result.likes.length === 0 ? (
-        <div className="surface-card max-w-2xl px-6 py-16 text-center">
-          <p className="font-display text-2xl font-semibold text-[var(--ink)]">
-            Nenhuma curtida
-          </p>
-          <p className="mx-auto mt-3 max-w-sm text-sm leading-relaxed text-[var(--muted)]">
-            Ninguém te curtiu nesta noite — ou a votação ainda não encerrou.
-          </p>
+        <div className="max-w-2xl">
+          <EmptyState
+            title="Nenhuma curtida"
+            description="Ninguém te curtiu nesta noite — ou a votação ainda não encerrou."
+          />
         </div>
       ) : (
-        <ul className="surface-card max-w-2xl divide-y divide-[var(--line)] overflow-hidden">
+        <ul className="stagger surface-card max-w-2xl divide-y divide-[var(--line)] overflow-hidden">
           {result.likes.map((like) => (
             <li
               key={like.userId}
               className="flex items-center gap-3 px-5 py-4 sm:px-6"
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--carmine)_12%,var(--paper-card))] font-display text-sm font-semibold text-[var(--carmine-deep)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-display text-sm font-semibold text-white shadow-[var(--shadow-soft)]"
                 aria-hidden
               >
                 {like.name.slice(0, 1).toUpperCase()}
               </span>
               <span className="font-display text-lg font-semibold tracking-tight text-[var(--ink)]">
                 {like.name}
+              </span>
+              <span
+                aria-hidden
+                className="ml-auto text-sm text-[color-mix(in_srgb,var(--champagne)_80%,var(--coffee))]"
+              >
+                ☕
               </span>
             </li>
           ))}

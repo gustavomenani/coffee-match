@@ -72,7 +72,7 @@ export default async function AssinaturaPage({
       {query.ativada === "1" && isActive ? (
         <p
           role="status"
-          className="flash-success mb-6 rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+          className="flash-success mb-6 rounded-[var(--radius-sm)] px-4 py-3 text-sm"
         >
           Assinatura ativada. Bem-vindo(a) ao clube dos apoiadores ☕
         </p>
@@ -97,26 +97,43 @@ export default async function AssinaturaPage({
             <CancelSubscriptionButton />
           </div>
         ) : userId ? (
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <p className="font-display text-4xl font-semibold tabular text-[var(--ink)]">
-              R$ 10
-              <span className="text-lg text-[var(--muted)]">/mês</span>
-            </p>
+          <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-display text-5xl font-semibold leading-none tabular text-[var(--ink)]">
+                R$ 10
+                <span className="ml-1 text-lg font-medium text-[var(--muted)]">
+                  /mês
+                </span>
+              </p>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Cancele quando quiser
+              </p>
+            </div>
             <SubscribeButton />
           </div>
         ) : (
-          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
-            <p className="font-display text-4xl font-semibold tabular text-[var(--ink)]">
-              R$ 10
-              <span className="text-lg text-[var(--muted)]">/mês</span>
-            </p>
+          <div className="mb-8 flex flex-col gap-5 sm:flex-row sm:items-end sm:justify-between">
+            <div>
+              <p className="font-display text-5xl font-semibold leading-none tabular text-[var(--ink)]">
+                R$ 10
+                <span className="ml-1 text-lg font-medium text-[var(--muted)]">
+                  /mês
+                </span>
+              </p>
+              <p className="mt-2 text-sm text-[var(--muted)]">
+                Cancele quando quiser
+              </p>
+            </div>
             <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
-              <Link href="/cadastro?next=/assinatura" className="btn btn-primary">
+              <Link
+                href="/cadastro?next=/assinatura"
+                className="btn btn-primary w-full sm:w-auto"
+              >
                 Criar conta
               </Link>
               <Link
                 href="/login?callbackUrl=/assinatura"
-                className="btn btn-secondary"
+                className="btn btn-secondary w-full sm:w-auto"
               >
                 Já tenho conta
               </Link>
@@ -126,15 +143,31 @@ export default async function AssinaturaPage({
 
         <div className="gold-rule mb-7" />
 
-        <ul className="grid gap-5 sm:grid-cols-3">
+        <ul className="grid gap-6 sm:grid-cols-3 sm:gap-5">
           {benefits.map((b) => (
-            <li key={b.title}>
-              <h2 className="text-sm font-semibold text-[var(--ink)]">
-                {b.title}
-              </h2>
-              <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">
-                {b.description}
-              </p>
+            <li key={b.title} className="flex gap-3">
+              <span
+                aria-hidden
+                className="mt-0.5 inline-flex h-5 w-5 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--coffee)_14%,transparent)] text-[var(--coffee-deep)]"
+              >
+                <svg width="11" height="11" viewBox="0 0 24 24" fill="none">
+                  <path
+                    d="m5 12.5 4.5 4.5L19 7.5"
+                    stroke="currentColor"
+                    strokeWidth="2.6"
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                  />
+                </svg>
+              </span>
+              <div>
+                <h2 className="text-sm font-semibold text-[var(--ink)]">
+                  {b.title}
+                </h2>
+                <p className="mt-1.5 text-sm leading-relaxed text-[var(--muted)]">
+                  {b.description}
+                </p>
+              </div>
             </li>
           ))}
         </ul>

@@ -10,7 +10,7 @@ export default function EventosLoading() {
         <div className="skeleton mt-2 h-4 w-3/4" />
       </div>
 
-      <div className="flex flex-col gap-5">
+      <div className="flex flex-col gap-4">
         {[0, 1, 2].map((i) => (
           <div
             key={i}

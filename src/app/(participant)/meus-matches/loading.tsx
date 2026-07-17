@@ -10,6 +10,10 @@ export default function MeusMatchesLoading() {
       </div>
 
       <div className="mx-auto flex max-w-2xl flex-col gap-4">
+        <div aria-hidden>
+          <div className="skeleton h-7 w-2/3" />
+          <div className="skeleton mt-2 h-4 w-1/2" />
+        </div>
         {[0, 1].map((i) => (
           <div key={i} aria-hidden className="surface-card overflow-hidden">
             <div className="flex items-center gap-4 border-b border-[var(--line)] px-6 py-5">

@@ -79,7 +79,7 @@ export default async function EventosPage({
       {itemList ? <JsonLd data={itemList} /> : null}
       <div className="mb-12 max-w-2xl">
         <p className="eyebrow mb-3">Agenda</p>
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+        <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-[var(--ink)] sm:text-5xl">
           Próximas noites de speed dating
         </h1>
         <p className="mt-4 text-base leading-relaxed text-[var(--muted)]">
@@ -112,7 +112,7 @@ export default async function EventosPage({
           )}
         </div>
       ) : (
-        <ul className="flex flex-col gap-5">
+        <ul className="flex flex-col gap-4">
           {filteredEvents.map((event, i) => (
             <Reveal as="li" key={event.id} delay={i * 70}>
               <EventCard event={event} />

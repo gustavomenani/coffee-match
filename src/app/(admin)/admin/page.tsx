@@ -125,7 +125,7 @@ export default async function AdminDashboardPage() {
             <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
               {stat.label}
             </p>
-            <p className="font-display mt-2 text-4xl font-semibold tracking-tight text-[var(--ink)]">
+            <p className="font-display tabular mt-2 text-4xl font-semibold tracking-tight text-[var(--ink)]">
               {stat.value}
             </p>
             <p className="mt-1 text-sm text-[var(--muted)]">{stat.hint}</p>
@@ -159,13 +159,13 @@ export default async function AdminDashboardPage() {
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href={`/admin/eventos/${nextEvent.id}`}
-              className="btn btn-primary !min-h-10 !px-4 !text-sm"
+              className="btn btn-primary btn-sm"
             >
               Gerenciar
             </Link>
             <Link
               href={`/admin/eventos/${nextEvent.id}/noite`}
-              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+              className="btn btn-secondary btn-sm"
             >
               Noite
             </Link>

@@ -199,7 +199,12 @@ export default async function EventoDetailPage({
             </Link>
           </li>
           <li aria-hidden>/</li>
-          <li className="font-semibold text-[var(--ink-soft)]">{event.title}</li>
+          <li
+            aria-current="page"
+            className="max-w-[14rem] truncate font-semibold text-[var(--ink-soft)] sm:max-w-sm"
+          >
+            {event.title}
+          </li>
         </ol>
       </nav>
 
@@ -213,7 +218,7 @@ export default async function EventoDetailPage({
               {event.city}
             </span>
           </div>
-          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+          <h1 className="font-display text-4xl font-semibold leading-[1.1] tracking-tight text-[var(--ink)] sm:text-5xl">
             {event.title}
           </h1>
           <p className="mt-4 max-w-xl text-base leading-relaxed text-[var(--muted)]">
@@ -223,9 +228,33 @@ export default async function EventoDetailPage({
             <strong className="text-[var(--ink-soft)]">18+</strong>.
           </p>
 
-          <dl className="mt-10 space-y-6">
+          <dl className="mt-10 space-y-4">
             <div className="surface-card p-5">
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+              <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--coffee-deep)]">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                  className="shrink-0 text-[var(--coffee)]"
+                >
+                  <rect
+                    x="4"
+                    y="5"
+                    width="16"
+                    height="15"
+                    rx="2"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                  />
+                  <path
+                    d="M4 9.5h16M8 3v4M16 3v4"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
                 Quando
               </dt>
               <dd className="mt-2 text-base text-[var(--ink-soft)]">
@@ -241,7 +270,23 @@ export default async function EventoDetailPage({
               </dd>
             </div>
             <div className="surface-card p-5">
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+              <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--coffee-deep)]">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                  className="shrink-0 text-[var(--coffee)]"
+                >
+                  <path
+                    d="M12 21s-7-5.5-7-11a7 7 0 0 1 14 0c0 5.5-7 11-7 11Z"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinejoin="round"
+                  />
+                  <circle cx="12" cy="10" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+                </svg>
                 Local
               </dt>
               <dd className="mt-2 text-base text-[var(--ink-soft)]">
@@ -263,7 +308,30 @@ export default async function EventoDetailPage({
               </dd>
             </div>
             <div className="surface-card p-5">
-              <dt className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+              <dt className="flex items-center gap-2 text-xs font-semibold uppercase tracking-[0.14em] text-[var(--coffee-deep)]">
+                <svg
+                  width="16"
+                  height="16"
+                  viewBox="0 0 24 24"
+                  fill="none"
+                  aria-hidden
+                  className="shrink-0 text-[var(--coffee)]"
+                >
+                  <circle cx="9" cy="8" r="3" stroke="currentColor" strokeWidth="1.8" />
+                  <path
+                    d="M3.5 19c1.2-2.6 3.2-4 5.5-4s4.3 1.4 5.5 4"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                  <circle cx="16.5" cy="9" r="2.5" stroke="currentColor" strokeWidth="1.8" />
+                  <path
+                    d="M16.5 14.5c2 0 3.6 1.2 4.5 3.5"
+                    stroke="currentColor"
+                    strokeWidth="1.8"
+                    strokeLinecap="round"
+                  />
+                </svg>
                 Vagas restantes
               </dt>
               <dd className="mt-3 grid grid-cols-2 gap-3">
@@ -271,7 +339,13 @@ export default async function EventoDetailPage({
                   <p className="text-xs uppercase tracking-wider text-[var(--muted)]">
                     Homens
                   </p>
-                  <p className="font-display text-2xl font-semibold tabular text-[var(--ink)]">
+                  <p
+                    className={`font-display text-2xl font-semibold tabular ${
+                      event.remainingMen <= 0
+                        ? "text-[var(--danger)]"
+                        : "text-[var(--ink)]"
+                    }`}
+                  >
                     {Math.max(0, event.remainingMen)}
                     <span className="text-base text-[var(--muted)]">
                       /{event.capacityMen}
@@ -282,7 +356,13 @@ export default async function EventoDetailPage({
                   <p className="text-xs uppercase tracking-wider text-[var(--muted)]">
                     Mulheres
                   </p>
-                  <p className="font-display text-2xl font-semibold tabular text-[var(--ink)]">
+                  <p
+                    className={`font-display text-2xl font-semibold tabular ${
+                      event.remainingWomen <= 0
+                        ? "text-[var(--danger)]"
+                        : "text-[var(--ink)]"
+                    }`}
+                  >
                     {Math.max(0, event.remainingWomen)}
                     <span className="text-base text-[var(--muted)]">
                       /{event.capacityWomen}
@@ -334,6 +414,7 @@ export default async function EventoDetailPage({
                   <NotifyMeForm eventId={event.id} />
                 </div>
               )}
+              <div aria-hidden className="gold-rule" />
               <ShareButton
                 title={event.title}
                 text={`Vem comigo no ${event.title}, speed dating do Coffee Match em ${event.city}!`}

@@ -74,7 +74,8 @@ export default async function VotarPage({
           Marque Sim ou Não para cada pessoa. Você pode mudar o voto enquanto a
           votação estiver aberta.
         </p>
-        <div className="mt-8">
+        <div aria-hidden className="gold-rule mt-6" />
+        <div className="mt-6">
           <BallotList
             eventId={eventId}
             candidates={ballot.data.candidates}

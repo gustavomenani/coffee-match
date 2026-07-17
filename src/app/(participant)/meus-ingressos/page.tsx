@@ -12,6 +12,15 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
+/* Badge do estado — cores por status, legíveis nos 2 temas */
+const statusBadgeClass: Record<string, string> = {
+  paid: "bg-[color-mix(in_srgb,var(--success)_14%,var(--paper-card))] text-[var(--success)]",
+  pending:
+    "bg-[color-mix(in_srgb,var(--champagne)_26%,var(--paper-card))] text-[var(--coffee-deep)]",
+  cancelled: "bg-[var(--paper-deep)] text-[var(--muted)]",
+  refunded: "bg-[var(--paper-deep)] text-[var(--muted)]",
+};
+
 const PAGE_SIZE = 20;
 
 export default async function MeusIngressosPage({
@@ -102,7 +111,9 @@ export default async function MeusIngressosPage({
                     {formatDate(ticket.event.startsAt)}
                   </p>
                 </div>
-                <span className="badge badge-soft">
+                <span
+                  className={`badge ${statusBadgeClass[ticket.status] ?? "badge-soft"}`}
+                >
                   {statusLabel[ticket.status] ?? ticket.status}
                 </span>
               </div>
@@ -124,15 +135,6 @@ export default async function MeusIngressosPage({
                 >
                   Ver ingresso e QR
                 </Link>
-                <Link
-                  href={`/eventos/${ticket.event.slug}`}
-                  className="btn btn-secondary !min-h-10 !px-4 !text-sm"
-                >
-                  Evento
-                </Link>
-                {ticket.status === "pending" ? (
-                  <CancelPendingButton ticketId={ticket.id} />
-                ) : null}
                 {ticket.status === "paid" &&
                 ticket.checkedInAt &&
                 ticket.event.session?.status === "voting_open" ? (
@@ -153,6 +155,15 @@ export default async function MeusIngressosPage({
                     Matches
                   </Link>
                 ) : null}
+                {ticket.status === "pending" ? (
+                  <CancelPendingButton ticketId={ticket.id} />
+                ) : null}
+                <Link
+                  href={`/eventos/${ticket.event.slug}`}
+                  className="btn btn-ghost !min-h-10 !px-4 !text-sm"
+                >
+                  Evento
+                </Link>
               </div>
             </li>
           ))}

@@ -242,7 +242,7 @@ export default async function NoitePage({
               <button
                 type="submit"
                 disabled={!canOpen}
-                className="btn btn-primary w-full !min-h-12 sm:w-auto"
+                className="btn btn-primary btn-lg w-full sm:w-auto"
               >
                 Abrir votação
               </button>
@@ -252,7 +252,7 @@ export default async function NoitePage({
               <button
                 type="submit"
                 disabled={!canClose}
-                className="btn btn-secondary w-full !min-h-12 sm:w-auto"
+                className="btn btn-danger btn-lg w-full sm:w-auto"
               >
                 Encerrar votação
               </button>
@@ -262,7 +262,7 @@ export default async function NoitePage({
                 <input type="hidden" name="eventId" value={eventId} />
                 <button
                   type="submit"
-                  className="btn btn-secondary w-full !min-h-12 sm:w-auto"
+                  className="btn btn-secondary btn-lg w-full sm:w-auto"
                 >
                   Reabrir votação
                 </button>
@@ -270,7 +270,7 @@ export default async function NoitePage({
             ) : null}
             <Link
               href={`/admin/eventos/${eventId}/matches`}
-              className="btn btn-ghost w-full !min-h-12 sm:w-auto"
+              className="btn btn-ghost btn-lg w-full sm:w-auto"
             >
               Ver matches
             </Link>
@@ -304,7 +304,7 @@ export default async function NoitePage({
           </h2>
           <a
             href={`/admin/eventos/${eventId}/checkins`}
-            className="btn btn-secondary !min-h-9 px-3 text-sm"
+            className="btn btn-secondary btn-sm"
           >
             Exportar CSV
           </a>

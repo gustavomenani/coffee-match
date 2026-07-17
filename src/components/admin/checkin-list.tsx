@@ -192,7 +192,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
         <button
           type="submit"
           disabled={isPending && codePending}
-          className="btn btn-primary shrink-0 !min-h-12"
+          className="btn btn-primary btn-lg shrink-0"
         >
           {isPending && codePending ? "Confirmando…" : "Check-in por código"}
         </button>
@@ -268,7 +268,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
                     type="button"
                     disabled={busy}
                     onClick={() => onCheckIn(ticket.id)}
-                    className="btn btn-primary shrink-0 !min-h-12"
+                    className="btn btn-primary btn-lg shrink-0"
                   >
                     {busy ? "Confirmando…" : "Fazer check-in"}
                   </button>

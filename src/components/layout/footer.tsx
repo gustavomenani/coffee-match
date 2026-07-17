@@ -11,13 +11,13 @@ const links = [
 
 export function Footer() {
   return (
-    <footer className="mt-auto border-t border-[var(--line)] bg-[linear-gradient(180deg,var(--paper-deep)_0%,color-mix(in_srgb,var(--cream)_55%,var(--paper-deep))_100%)]">
+    <footer className="mt-auto border-t border-[var(--line)] bg-[linear-gradient(180deg,var(--paper-deep)_0%,color-mix(in_srgb,var(--champagne)_16%,var(--paper-deep))_100%)]">
       <div
         aria-hidden
         className="h-px w-full bg-[linear-gradient(90deg,transparent_0%,color-mix(in_srgb,var(--coffee)_30%,transparent)_20%,var(--champagne)_50%,color-mix(in_srgb,var(--coffee)_30%,transparent)_80%,transparent_100%)]"
       />
       <div className="mx-auto w-full max-w-6xl px-4 py-14 sm:px-6 sm:py-16">
-        <div className="flex flex-col gap-10 sm:flex-row sm:items-end sm:justify-between">
+        <div className="flex flex-col gap-10 sm:flex-row sm:items-start sm:justify-between">
           <div className="max-w-md space-y-4">
             <Logo href="/" size="md" />
             <p className="text-sm leading-relaxed text-[var(--muted)]">
@@ -28,7 +28,7 @@ export function Footer() {
           </div>
 
           <nav
-            className="flex flex-wrap gap-x-6 gap-y-2.5 text-sm font-medium text-[var(--ink-soft)]"
+            className="flex flex-wrap gap-x-6 gap-y-2.5 text-sm font-medium text-[var(--ink-soft)] sm:pt-2"
             aria-label="Links do rodapé"
           >
             {links.map((link) => (

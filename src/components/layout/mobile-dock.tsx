@@ -84,13 +84,20 @@ export function MobileDock() {
             <li key={item.href}>
               <Link
                 href={item.href}
+                aria-current={active ? "page" : undefined}
                 className={`flex min-h-12 flex-col items-center justify-center gap-0.5 rounded-2xl text-[0.68rem] font-semibold transition-colors ${
                   active
                     ? "bg-[color-mix(in_srgb,var(--coffee)_12%,transparent)] text-[var(--coffee-deep)]"
                     : "text-[var(--ink-soft)] hover:bg-[color-mix(in_srgb,var(--ink)_4%,transparent)] hover:text-[var(--coffee)]"
                 }`}
               >
-                <span className={active ? "scale-105" : "opacity-80"}>{item.icon}</span>
+                <span
+                  className={`transition-transform duration-200 motion-reduce:transition-none ${
+                    active ? "scale-110" : "opacity-80"
+                  }`}
+                >
+                  {item.icon}
+                </span>
                 {item.label}
               </Link>
             </li>

@@ -50,7 +50,15 @@ export default async function PagamentoSucessoPage({
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-xl">
+      <div className="animate-rise mx-auto max-w-xl">
+        {ticket?.status === "paid" ? (
+          <div
+            aria-hidden
+            className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-[color-mix(in_srgb,var(--success)_14%,var(--paper-card))] text-2xl font-semibold text-[var(--success)] ring-1 ring-[color-mix(in_srgb,var(--success)_35%,transparent)] shadow-[var(--shadow-soft)]"
+          >
+            ✓
+          </div>
+        ) : null}
         <p className="eyebrow mb-3">Checkout</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
           {heading}
@@ -70,21 +78,21 @@ export default async function PagamentoSucessoPage({
             {ticket.status === "paid" ? (
               <p
                 role="status"
-                className="flash-success mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+                className="flash-success mb-4 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
               >
                 Pagamento confirmado! Seu ingresso está garantido.
               </p>
             ) : ticket.status === "pending" ? (
               <p
                 role="status"
-                className="flash-warning mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+                className="flash-warning mb-4 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
               >
                 Estamos confirmando o pagamento. Atualize em instantes.
               </p>
             ) : (
               <p
                 role="alert"
-                className="flash-error mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+                className="flash-error mb-4 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
               >
                 Status: {statusLabel[ticket.status] ?? ticket.status}
               </p>

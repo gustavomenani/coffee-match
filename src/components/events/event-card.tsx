@@ -102,19 +102,37 @@ export function EventCard({ event }: { event: EventCardData }) {
           <div className="space-y-1 text-xs leading-relaxed text-[var(--muted)]">
             <p>
               Homens ·{" "}
-              <span className="font-semibold tabular text-[var(--ink-soft)]">
+              <span
+                className={`font-semibold tabular ${
+                  event.remainingMen <= 0
+                    ? "text-[var(--danger)]"
+                    : "text-[var(--ink-soft)]"
+                }`}
+              >
                 {Math.max(0, event.remainingMen)}
               </span>
             </p>
             <p>
               Mulheres ·{" "}
-              <span className="font-semibold tabular text-[var(--ink-soft)]">
+              <span
+                className={`font-semibold tabular ${
+                  event.remainingWomen <= 0
+                    ? "text-[var(--danger)]"
+                    : "text-[var(--ink-soft)]"
+                }`}
+              >
                 {Math.max(0, event.remainingWomen)}
               </span>
             </p>
           </div>
-          <span className="text-sm font-semibold text-[var(--coffee)] transition-transform group-hover:translate-x-0.5">
-            Ver detalhes →
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--coffee)]">
+            Ver detalhes{" "}
+            <span
+              aria-hidden
+              className="inline-block transition-transform group-hover:translate-x-0.5"
+            >
+              →
+            </span>
           </span>
         </div>
       </div>

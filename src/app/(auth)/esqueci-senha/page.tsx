@@ -41,7 +41,7 @@ export default async function EsqueciSenhaPage({
         {sent ? (
           <p
             role="status"
-            className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            className="flash-success mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
           >
             Se o e-mail estiver cadastrado, você receberá um link para
             redefinir a senha. Confira sua caixa de entrada e o spam.
@@ -51,13 +51,13 @@ export default async function EsqueciSenhaPage({
         {error ? (
           <p
             role="alert"
-            className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            className="flash-error mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
           >
             {error}
           </p>
         ) : null}
 
-        <form action={esqueciSenhaAction} className="mt-8 flex flex-col gap-4">
+        <form action={esqueciSenhaAction} className="mt-8 flex flex-col gap-5">
           {/* Honeypot anti-bot — hidden from humans */}
           <div
             aria-hidden

@@ -43,7 +43,7 @@ export default async function RedefinirSenhaPage({
         {error ? (
           <p
             role="alert"
-            className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            className="flash-error mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
           >
             {error}
           </p>
@@ -52,7 +52,7 @@ export default async function RedefinirSenhaPage({
         {token ? (
           <form
             action={redefinirSenhaAction}
-            className="mt-8 flex flex-col gap-4"
+            className="mt-8 flex flex-col gap-5"
           >
             <input type="hidden" name="token" value={token} />
 
@@ -94,7 +94,7 @@ export default async function RedefinirSenhaPage({
         ) : (
           <p
             role="alert"
-            className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            className="flash-error mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
           >
             Link inválido ou expirado. Solicite um novo link abaixo.
           </p>

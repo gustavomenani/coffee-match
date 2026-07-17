@@ -77,7 +77,7 @@ export default async function AdminEventosPage({
               {events.map((event) => (
                 <tr
                   key={event.id}
-                  className="border-b border-[var(--line)] last:border-0"
+                  className="border-b border-[var(--line)] last:border-0 even:bg-[color-mix(in_srgb,var(--paper-deep)_45%,transparent)] hover:bg-[color-mix(in_srgb,var(--coffee)_6%,transparent)]"
                 >
                   <td className="px-4 py-4 font-medium text-[var(--ink)]">
                     {event.title}
@@ -120,7 +120,7 @@ export default async function AdminEventosPage({
           {page > 1 ? (
             <Link
               href={`/admin/eventos?page=${page - 1}`}
-              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+              className="btn btn-secondary btn-sm"
             >
               ← Anteriores
             </Link>
@@ -133,7 +133,7 @@ export default async function AdminEventosPage({
           {page < totalPages ? (
             <Link
               href={`/admin/eventos?page=${page + 1}`}
-              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+              className="btn btn-secondary btn-sm"
             >
               Próximos →
             </Link>

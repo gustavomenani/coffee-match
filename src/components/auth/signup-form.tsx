@@ -13,13 +13,13 @@ export function SignupForm({ next }: { next: string | null }) {
       {state?.error ? (
         <p
           role="alert"
-          className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+          className="flash-error mt-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
         >
           {state.error}
         </p>
       ) : null}
 
-      <form action={formAction} className="mt-8 flex flex-col gap-4">
+      <form action={formAction} className="mt-8 flex flex-col gap-5">
         {next ? <input type="hidden" name="next" value={next} /> : null}
         {/* Honeypot anti-bot — hidden from humans */}
         <div

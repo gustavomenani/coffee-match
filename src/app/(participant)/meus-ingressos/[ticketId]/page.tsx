@@ -14,6 +14,15 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
+/* Badge do estado do ingresso — cores por status, legíveis nos 2 temas */
+const statusBadgeClass: Record<string, string> = {
+  paid: "bg-[color-mix(in_srgb,var(--success)_14%,var(--paper-card))] text-[var(--success)]",
+  pending:
+    "bg-[color-mix(in_srgb,var(--champagne)_26%,var(--paper-card))] text-[var(--coffee-deep)]",
+  cancelled: "bg-[var(--paper-deep)] text-[var(--muted)]",
+  refunded: "bg-[var(--paper-deep)] text-[var(--muted)]",
+};
+
 type PageProps = {
   params: Promise<{ ticketId: string }>;
 };
@@ -71,7 +80,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
     sessionStatus === "voting_closed";
 
   return (
-    <main className="print-ticket page-glow mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
+    <main className="print-ticket page-glow mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
       <div className="no-print mb-8">
         <Link
           href="/meus-ingressos"
@@ -82,8 +91,12 @@ export default async function TicketDetailPage({ params }: PageProps) {
       </div>
 
       {/* Premium ticket card */}
-      <article className="surface-card overflow-hidden">
-        <div className="border-b border-[var(--line)] bg-[linear-gradient(165deg,color-mix(in_srgb,var(--carmine)_8%,var(--paper-card)),var(--paper-card))] px-6 py-7 sm:px-8 sm:py-9">
+      <article className="surface-card animate-rise overflow-hidden shadow-[var(--shadow-lift)]">
+        <div
+          aria-hidden
+          className="h-1 bg-[linear-gradient(90deg,var(--coffee-deep),var(--coffee-hot),var(--champagne))]"
+        />
+        <div className="bg-[linear-gradient(165deg,color-mix(in_srgb,var(--carmine)_8%,var(--paper-card)),var(--paper-card))] px-6 py-7 sm:px-8 sm:py-9">
           <div className="flex flex-wrap items-start justify-between gap-3">
             <div>
               <p className="eyebrow mb-3">Ingresso</p>
@@ -91,7 +104,9 @@ export default async function TicketDetailPage({ params }: PageProps) {
                 {ticket.event.title}
               </h1>
             </div>
-            <span className="badge badge-soft">
+            <span
+              className={`badge ${statusBadgeClass[ticket.status] ?? "badge-soft"}`}
+            >
               {statusLabel[ticket.status] ?? ticket.status}
             </span>
           </div>
@@ -125,7 +140,11 @@ export default async function TicketDetailPage({ params }: PageProps) {
           </div>
 
           {ticket.checkedInAt ? (
-            <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--success)]">
+            <p className="mt-5 inline-flex items-center gap-2 text-xs font-semibold uppercase tracking-wider text-[var(--success)]">
+              <span
+                aria-hidden
+                className="inline-block h-1.5 w-1.5 rounded-full bg-[var(--success)]"
+              />
               Check-in · {formatDate(ticket.checkedInAt)}
             </p>
           ) : ticket.status === "paid" ? (
@@ -142,7 +161,14 @@ export default async function TicketDetailPage({ params }: PageProps) {
           </p>
         </div>
 
-        <div className="grid gap-6 border-t border-[var(--line)] px-6 py-8 sm:grid-cols-2 sm:px-8">
+        {/* Linha de picote — separa o "canhoto" (dados) da área dos QRs */}
+        <div aria-hidden className="flex items-center">
+          <span className="-ml-3 h-6 w-6 shrink-0 rounded-full border border-[var(--line-strong)] bg-[var(--paper)]" />
+          <span className="mx-2 flex-1 border-t-2 border-dashed border-[color-mix(in_srgb,var(--champagne)_55%,var(--line-strong))]" />
+          <span className="-mr-3 h-6 w-6 shrink-0 rounded-full border border-[var(--line-strong)] bg-[var(--paper)]" />
+        </div>
+
+        <div className="grid gap-6 px-6 py-8 sm:grid-cols-2 sm:px-8">
           <section>
             <h2 className="font-display text-xl font-semibold tracking-tight text-[var(--ink)]">
               QR de entrada
@@ -150,7 +176,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-[var(--muted)]">
               Mostre este código na entrada para o check-in.
             </p>
-            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] p-5">
+            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border-2 border-dashed border-[color-mix(in_srgb,var(--champagne)_60%,var(--line-strong))] p-5 shadow-[var(--shadow-soft)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={doorQr}
@@ -175,7 +201,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
             <p className="mt-1 text-sm text-[var(--muted)]">
               Escaneie para abrir a página de votação do evento.
             </p>
-            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border border-[var(--line)] p-5">
+            <div className="qr-surface mt-4 flex flex-col items-center rounded-[var(--radius-md)] border-2 border-dashed border-[color-mix(in_srgb,var(--champagne)_60%,var(--line-strong))] p-5 shadow-[var(--shadow-soft)]">
               {/* eslint-disable-next-line @next/next/no-img-element */}
               <img
                 src={votingQr}
@@ -195,13 +221,6 @@ export default async function TicketDetailPage({ params }: PageProps) {
         </div>
 
         <div className="no-print flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
-          <PrintButton />
-          <Link
-            href="/meus-ingressos"
-            className="btn btn-secondary !min-h-10 !px-4 !text-sm"
-          >
-            Voltar
-          </Link>
           <Link
             href={`/evento/${ticket.event.id}/votar`}
             className="btn btn-primary !min-h-10 !px-4 !text-sm"
@@ -216,6 +235,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
               Ver matches
             </Link>
           ) : null}
+          <PrintButton />
           <Link
             href={`/eventos/${ticket.event.slug}`}
             className="btn btn-secondary !min-h-10 !px-4 !text-sm"

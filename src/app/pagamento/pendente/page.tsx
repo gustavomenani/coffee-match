@@ -43,7 +43,13 @@ export default async function PagamentoPendentePage({
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mx-auto max-w-xl">
+      <div className="animate-rise mx-auto max-w-xl">
+        <div
+          aria-hidden
+          className="mb-6 grid h-14 w-14 place-items-center rounded-full bg-[color-mix(in_srgb,var(--champagne)_22%,var(--paper-card))] text-2xl text-[var(--coffee-deep)] ring-1 ring-[color-mix(in_srgb,var(--champagne)_45%,transparent)] shadow-[var(--shadow-soft)]"
+        >
+          ◷
+        </div>
         <p className="eyebrow mb-3">Checkout</p>
         <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
           Pagamento pendente
@@ -63,14 +69,14 @@ export default async function PagamentoPendentePage({
             {ticket.status === "paid" ? (
               <p
                 role="status"
-                className="flash-success mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+                className="flash-success mb-4 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
               >
                 Boa notícia: o pagamento já foi confirmado.
               </p>
             ) : (
               <p
                 role="status"
-                className="flash-warning mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+                className="flash-warning mb-4 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
               >
                 Seu pagamento ainda está sendo processado. Você receberá a
                 confirmação em breve.

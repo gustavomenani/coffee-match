@@ -113,7 +113,7 @@ export default async function Home() {
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="eyebrow mb-5">Coffee Match · Brasil</p>
-            <h1 className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
+            <h1 className="font-display max-w-xl text-[clamp(2.35rem,11vw,2.75rem)] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
               Conectando pessoas.{" "}
               <span className="italic text-[var(--coffee)]">
                 Uma xícara por vez.
@@ -154,7 +154,7 @@ export default async function Home() {
               aria-hidden
               className="absolute -inset-6 rounded-[2rem] bg-[radial-gradient(circle_at_50%_40%,color-mix(in_srgb,var(--champagne)_40%,transparent),transparent_65%)] blur-2xl"
             />
-            <div className="relative overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[linear-gradient(165deg,#1a100c_0%,#2a1a12_45%,#120c09_100%)] p-7 shadow-[var(--shadow-lift)] sm:p-9">
+            <div className="relative overflow-hidden rounded-[1.75rem] border border-white/10 bg-[linear-gradient(165deg,#1a100c_0%,#2a1a12_45%,#120c09_100%)] p-7 shadow-[var(--shadow-lift)] sm:p-9">
               <div className="flex flex-col items-center text-center">
                 <Image
                   src="/logo.jpeg"
@@ -190,7 +190,7 @@ export default async function Home() {
       </section>
 
       {/* Próximas noites */}
-      <Reveal as="section" className="px-4 py-4 sm:px-6">
+      <Reveal as="section" className="px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto max-w-6xl">
           <div className="mb-8 flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
             <div>
@@ -202,9 +202,15 @@ export default async function Home() {
             {events.length > 0 ? (
               <Link
                 href="/eventos"
-                className="text-sm font-semibold text-[var(--carmine)] hover:underline"
+                className="group inline-flex items-center gap-1 text-sm font-semibold text-[var(--carmine)] transition-colors hover:text-[var(--coffee-hot)]"
               >
-                Ver todas →
+                Ver todas{" "}
+                <span
+                  aria-hidden
+                  className="inline-block transition-transform group-hover:translate-x-0.5"
+                >
+                  →
+                </span>
               </Link>
             ) : null}
           </div>
@@ -232,15 +238,13 @@ export default async function Home() {
       </Reveal>
 
       {/* Features */}
-      <Reveal as="section" className="mt-12 px-4 py-4 sm:px-6">
+      <Reveal as="section" className="px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto max-w-6xl">
-          <div className="mb-8 flex items-end justify-between gap-4">
-            <div>
-              <p className="eyebrow mb-3">Por que funciona</p>
-              <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
-                A noite inteira, desenhada para química
-              </h2>
-            </div>
+          <div className="mb-8">
+            <p className="eyebrow mb-3">Por que funciona</p>
+            <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+              A noite inteira, desenhada para química
+            </h2>
           </div>
           <ul className="grid gap-4 md:grid-cols-3">
             {features.map((feature, i) => (
@@ -266,7 +270,7 @@ export default async function Home() {
       </Reveal>
 
       {/* How it works — night band */}
-      <Reveal as="section" className="night-band mt-16 px-4 py-16 sm:px-6 sm:py-20">
+      <Reveal as="section" className="night-band mt-8 px-4 py-16 sm:px-6 sm:py-20">
         <div className="mx-auto max-w-6xl">
           <p className="mb-3 text-[0.72rem] font-semibold uppercase tracking-[0.16em] text-[var(--champagne-light)]">
             Como funciona
@@ -304,7 +308,7 @@ export default async function Home() {
       </Reveal>
 
       {/* Social proof */}
-      <Reveal as="section" className="px-4 py-10 sm:px-6">
+      <Reveal as="section" className="px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto grid max-w-6xl gap-4 sm:grid-cols-3">
           {[
             { k: "7 min", v: "por conversa — tempo certo para química" },
@@ -326,7 +330,7 @@ export default async function Home() {
       </Reveal>
 
       {/* Apoiador */}
-      <Reveal as="section" className="px-4 py-10 sm:px-6">
+      <Reveal as="section" className="px-4 py-8 sm:px-6 sm:py-10">
         <div className="surface-card mx-auto max-w-6xl p-8 sm:p-12">
           <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
             <div className="max-w-xl">
@@ -350,7 +354,7 @@ export default async function Home() {
       </Reveal>
 
       {/* FAQ */}
-      <Reveal as="section" className="px-4 py-12 sm:px-6 sm:py-16">
+      <Reveal as="section" className="px-4 py-8 sm:px-6 sm:py-10">
         <div className="mx-auto max-w-3xl">
           <p className="eyebrow mb-3">Dúvidas frequentes</p>
           <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
@@ -374,11 +378,11 @@ export default async function Home() {
       </Reveal>
 
       {/* Closing CTA */}
-      <Reveal as="section" className="px-4 py-16 sm:px-6 sm:py-20">
+      <Reveal as="section" className="px-4 pb-16 pt-8 sm:px-6 sm:pb-24 sm:pt-10">
         <div className="surface-card mx-auto max-w-6xl overflow-hidden p-0">
           <div className="grid lg:grid-cols-[1.2fr_0.8fr]">
             <div className="p-8 sm:p-12">
-              <p className="eyebrow mb-4">Pronto para a próxima mesa?</p>
+              <p className="eyebrow mb-3">Pronto para a próxima mesa?</p>
               <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
                 Uma conta. Uma noite. Talvez uma história.
               </h2>
@@ -395,7 +399,7 @@ export default async function Home() {
                 </Link>
               </div>
             </div>
-            <div className="relative min-h-[220px] bg-[linear-gradient(145deg,var(--carmine-deep),#2a0f16_55%,#1a1012)] p-8 text-[#f8f1ec] sm:p-10">
+            <div className="relative min-h-[220px] bg-[linear-gradient(145deg,#6b3f1f,#2a0f16_55%,#1a1012)] p-8 text-[#f8f1ec] sm:p-10">
               <p className="text-[0.7rem] font-semibold uppercase tracking-[0.16em] text-[var(--champagne-light)]">
                 Lembrete
               </p>

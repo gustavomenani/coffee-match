@@ -43,7 +43,7 @@ export function ProfileForm({ defaults }: ProfileFormProps) {
       {state?.error ? (
         <p
           role="alert"
-          className="flash-error mb-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+          className="flash-error mb-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
         >
           {state.error}
         </p>
@@ -52,13 +52,13 @@ export function ProfileForm({ defaults }: ProfileFormProps) {
       {state?.success ? (
         <p
           role="status"
-          className="flash-success mb-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+          className="flash-success mb-5 rounded-[var(--radius-sm)] px-4 py-3 text-sm leading-relaxed"
         >
           Perfil atualizado com sucesso.
         </p>
       ) : null}
 
-      <form action={formAction} className="flex flex-col gap-4">
+      <form action={formAction} className="flex flex-col gap-5">
         <label className="block">
           <span className="label">Nome</span>
           <input
@@ -109,7 +109,7 @@ export function ProfileForm({ defaults }: ProfileFormProps) {
             placeholder="Ex.: Viciada em café coado e boas conversas."
             className="field"
           />
-          <span className="mt-1 block text-xs text-[var(--muted)]">
+          <span className="mt-1.5 block text-xs text-[var(--muted)]">
             Até 160 caracteres — é o seu cartão de visita na cédula.
           </span>
         </label>

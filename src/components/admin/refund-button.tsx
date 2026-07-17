@@ -28,7 +28,7 @@ export function RefundButton({ ticketId }: Props) {
         type="button"
         onClick={onRefund}
         disabled={isPending}
-        className="btn btn-secondary !min-h-10 !px-4 !text-sm !text-[var(--danger)]"
+        className="btn btn-danger btn-sm"
       >
         {isPending ? "Reembolsando…" : "Reembolsar"}
       </button>
