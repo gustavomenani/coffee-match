@@ -33,14 +33,20 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
     setError(null);
     setPendingId(toUserId);
     startTransition(async () => {
-      const result = await castVote({ eventId, toUserId, interest });
-      if (!result.ok) {
-        setError(result.error);
+      try {
+        const result = await castVote({ eventId, toUserId, interest });
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        setVotes((prev) => ({ ...prev, [toUserId]: interest }));
+      } catch {
+        // Bad bar wifi rejected the action. Without this the tap was lost
+        // silently — the vote never registered and nothing said so.
+        setError("Sem conexão. Toque de novo para registrar o voto.");
+      } finally {
         setPendingId(null);
-        return;
       }
-      setVotes((prev) => ({ ...prev, [toUserId]: interest }));
-      setPendingId(null);
     });
   }
 

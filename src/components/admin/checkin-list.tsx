@@ -118,14 +118,21 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
     setSuccess(null);
     setPendingId(ticketId);
     startTransition(async () => {
-      const result = await checkInTicket(eventId, ticketId);
-      if (!result.ok) {
-        setError(result.error);
+      try {
+        const result = await checkInTicket(eventId, ticketId);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
+        markCheckedIn(ticketId);
+      } catch {
+        // A dropped connection at the door rejected the server action; without
+        // this the button just stuck in its pending state with no message and
+        // the queue stalled. Surface it so the operator can simply tap again.
+        setError("Sem conexão. Tente o check-in de novo.");
+      } finally {
         setPendingId(null);
-        return;
       }
-      markCheckedIn(ticketId);
-      setPendingId(null);
     });
   }
 
@@ -134,20 +141,24 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
     setSuccess(null);
     setCodePending(true);
     startTransition(async () => {
-      const result = await checkInByTicketId(eventId, id);
-      if (!result.ok) {
-        setError(result.error);
-        setCodePending(false);
-        return;
-      }
+      try {
+        const result = await checkInByTicketId(eventId, id);
+        if (!result.ok) {
+          setError(result.error);
+          return;
+        }
 
-      const known = tickets.some((t) => t.id === id);
-      if (known) {
-        markCheckedIn(id);
+        const known = tickets.some((t) => t.id === id);
+        if (known) {
+          markCheckedIn(id);
+        }
+        setSuccess("Check-in confirmado.");
+        setTicketCode("");
+      } catch {
+        setError("Sem conexão. Tente ler o código de novo.");
+      } finally {
+        setCodePending(false);
       }
-      setSuccess("Check-in confirmado.");
-      setTicketCode("");
-      setCodePending(false);
     });
   }
 
