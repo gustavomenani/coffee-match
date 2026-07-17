@@ -5,6 +5,7 @@ import { Footer } from "@/components/layout/footer";
 import { MobileDock } from "@/components/layout/mobile-dock";
 import { JsonLd } from "@/components/seo/json-ld";
 import { auth } from "@/lib/auth";
+import { ThemeScript } from "@/components/theme/theme-script";
 import { SITE, absoluteUrl, orgId, websiteId } from "@/lib/seo";
 import "./globals.css";
 
@@ -152,11 +153,19 @@ export default async function RootLayout({
   const showDock = !!session?.user;
 
   return (
-    <html lang="pt-BR" className={`${display.variable} ${body.variable} h-full`}>
+    <html
+      lang="pt-BR"
+      className={`${display.variable} ${body.variable} h-full`}
+      suppressHydrationWarning
+    >
+      <head>
+        <ThemeScript />
+      </head>
       <body
         className={`page-glow flex min-h-full flex-col bg-[var(--paper)] text-[var(--ink)] antialiased ${
           showDock ? "has-mobile-dock" : ""
         }`}
+        suppressHydrationWarning
       >
         <JsonLd data={globalJsonLd} />
         <Header />

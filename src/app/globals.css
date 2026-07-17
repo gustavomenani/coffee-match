@@ -1,7 +1,7 @@
 @import "tailwindcss";
 
 :root {
-  /* Coffee Match brand — espresso, cream, caramel */
+  /* Coffee Match — light (dia) */
   --ink: #1a100c;
   --ink-soft: #3d2e26;
   --muted: #6b574c;
@@ -10,7 +10,6 @@
   --paper-card: #fffdfb;
   --line: rgba(26, 16, 12, 0.08);
   --line-strong: rgba(26, 16, 12, 0.14);
-  /* Primary coffee/caramel (alias carmine kept for existing classnames) */
   --coffee: #b87333;
   --coffee-hot: #c9843f;
   --coffee-deep: #6b3f1f;
@@ -33,6 +32,36 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-pill: 999px;
+  color-scheme: light;
+}
+
+/* Coffee Match — night (escuro) */
+html.dark {
+  --ink: #f5e6d3;
+  --ink-soft: #e8d5c0;
+  --muted: #a89080;
+  --paper: #120c09;
+  --paper-deep: #1a120e;
+  --paper-card: #1c1410;
+  --line: rgba(245, 230, 211, 0.1);
+  --line-strong: rgba(245, 230, 211, 0.18);
+  --coffee: #d4924a;
+  --coffee-hot: #e0a55c;
+  --coffee-deep: #c9843f;
+  --carmine: var(--coffee);
+  --carmine-hot: var(--coffee-hot);
+  --carmine-deep: var(--coffee-deep);
+  --champagne: #e0b98a;
+  --champagne-light: #f0d9b5;
+  --espresso: #0a0706;
+  --cream: #f5e6d3;
+  --success: #3d9b6a;
+  --danger: #e85d4c;
+  --shadow-soft: 0 1px 2px rgba(0, 0, 0, 0.35),
+    0 8px 24px rgba(0, 0, 0, 0.35);
+  --shadow-lift: 0 4px 12px rgba(0, 0, 0, 0.4),
+    0 16px 40px rgba(212, 146, 74, 0.12);
+  color-scheme: dark;
 }
 
 @theme inline {
@@ -57,6 +86,63 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+  transition:
+    background-color 280ms cubic-bezier(0.2, 0, 0, 1),
+    color 280ms cubic-bezier(0.2, 0, 0, 1);
+}
+
+html.dark .page-glow::before {
+  background:
+    radial-gradient(
+      900px 480px at 12% -10%,
+      color-mix(in srgb, var(--coffee) 18%, transparent),
+      transparent 60%
+    ),
+    radial-gradient(
+      700px 420px at 95% 8%,
+      color-mix(in srgb, var(--champagne) 12%, transparent),
+      transparent 55%
+    ),
+    radial-gradient(
+      600px 380px at 50% 100%,
+      color-mix(in srgb, var(--coffee) 8%, transparent),
+      transparent 50%
+    );
+}
+
+html.dark .surface-card {
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper-card) 100%, #2a1c14) 0%,
+    var(--paper-card) 100%
+  );
+}
+
+html.dark .btn-secondary {
+  background: var(--paper-deep);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+html.dark .btn-secondary:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--paper-card) 80%, var(--coffee));
+  border-color: color-mix(in srgb, var(--champagne) 40%, var(--line-strong));
+}
+
+html.dark .field {
+  background: var(--paper-deep);
+  border-color: var(--line-strong);
+  color: var(--ink);
+}
+
+html.dark .badge-soft {
+  background: color-mix(in srgb, var(--coffee) 18%, var(--paper-deep));
+  color: var(--champagne-light);
+}
+
+html.dark .badge-live {
+  background: color-mix(in srgb, var(--coffee) 22%, var(--paper-deep));
+  color: var(--champagne-light);
 }
 
 /* Subtle paper grain — CSS only, no assets */

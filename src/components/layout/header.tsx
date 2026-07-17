@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { auth, signOut } from "@/lib/auth";
 import { Logo } from "@/components/brand/logo";
+import { ThemeToggle } from "@/components/theme/theme-toggle";
 
 async function logoutAction() {
   "use server";
@@ -37,6 +38,8 @@ export async function Header() {
               Admin
             </Link>
           ) : null}
+
+          <ThemeToggle className="ml-1" />
 
           {session?.user ? (
             <>
