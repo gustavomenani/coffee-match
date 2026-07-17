@@ -15,6 +15,7 @@ import {
   isMpDevBypass,
 } from "@/lib/mercadopago";
 import { rateLimit } from "@/lib/rate-limit";
+import { sendTicketPaidEmail } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -97,6 +98,13 @@ export async function POST(req: NextRequest) {
         data: { status: "paid" },
       });
       await syncEventSoldOutStatus(event.id);
+      await sendTicketPaidEmail({
+        to: user.email,
+        eventTitle: event.title,
+        eventWhen: event.startsAt.toLocaleString("pt-BR"),
+        venue: `${event.venue}, ${event.city}`,
+        ticketId: existing.id,
+      });
       return NextResponse.json({
         initPoint: `/pagamento/sucesso?ticket=${existing.id}`,
       });
@@ -173,6 +181,13 @@ export async function POST(req: NextRequest) {
       data: { status: "paid" },
     });
     await syncEventSoldOutStatus(event.id);
+    await sendTicketPaidEmail({
+      to: user.email,
+      eventTitle: event.title,
+      eventWhen: event.startsAt.toLocaleString("pt-BR"),
+      venue: `${event.venue}, ${event.city}`,
+      ticketId: ticket.id,
+    });
     return NextResponse.json({
       initPoint: `/pagamento/sucesso?ticket=${ticket.id}`,
     });

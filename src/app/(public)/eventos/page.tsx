@@ -3,6 +3,7 @@ import type { Metadata } from "next";
 import { EventCard } from "@/components/events/event-card";
 import { listPublishedEvents } from "@/lib/actions/events";
 import { JsonLd } from "@/components/seo/json-ld";
+import { Reveal } from "@/components/ui/reveal";
 import { absoluteUrl, SITE } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
@@ -75,10 +76,10 @@ export default async function EventosPage() {
         </div>
       ) : (
         <ul className="flex flex-col gap-5">
-          {events.map((event) => (
-            <li key={event.id}>
+          {events.map((event, i) => (
+            <Reveal as="li" key={event.id} delay={i * 70}>
               <EventCard event={event} />
-            </li>
+            </Reveal>
           ))}
         </ul>
       )}

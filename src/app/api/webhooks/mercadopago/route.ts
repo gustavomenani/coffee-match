@@ -5,6 +5,7 @@ import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 import { verifyMercadoPagoSignature } from "@/lib/mp-webhook";
 import { isProduction } from "@/lib/env";
 import { auditLog } from "@/lib/audit";
+import { sendTicketPaidEmail } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
   const body = await req.json().catch(() => null);
@@ -76,14 +77,37 @@ export async function POST(req: NextRequest) {
       if (updated.count > 0) {
         const ticket = await prisma.ticket.findUnique({
           where: { id: ticketId },
-          select: { eventId: true, userId: true },
+          select: {
+            eventId: true,
+            userId: true,
+            user: { select: { email: true } },
+            event: {
+              select: {
+                title: true,
+                startsAt: true,
+                venue: true,
+                city: true,
+              },
+            },
+          },
         });
         if (ticket) {
           await syncEventSoldOutStatus(ticket.eventId);
           await auditLog({
             actorId: ticket.userId,
             action: "ticket.paid",
-            meta: { ticketId, paymentId: String(paymentId), eventId: ticket.eventId },
+            meta: {
+              ticketId,
+              paymentId: String(paymentId),
+              eventId: ticket.eventId,
+            },
+          });
+          await sendTicketPaidEmail({
+            to: ticket.user.email,
+            eventTitle: ticket.event.title,
+            eventWhen: ticket.event.startsAt.toLocaleString("pt-BR"),
+            venue: `${ticket.event.venue}, ${ticket.event.city}`,
+            ticketId,
           });
         }
       }
