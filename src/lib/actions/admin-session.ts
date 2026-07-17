@@ -6,6 +6,7 @@ import { computeMutualMatches } from "@/lib/domain/matching";
 import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
+import { sendMatchesReadyEmail } from "@/lib/notify";
 import type { ActionResult } from "@/lib/action-result";
 
 export async function checkInTicket(rawTicketId: string): Promise<ActionResult> {
@@ -200,6 +201,28 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     action: "voting.close",
     meta: { eventId, matchCount: pairs.length },
   });
+
+  // Notify everyone who voted that results are out (matches count per user).
+  const matchCountByUser = new Map<string, number>();
+  for (const p of pairs) {
+    matchCountByUser.set(p.userAId, (matchCountByUser.get(p.userAId) ?? 0) + 1);
+    matchCountByUser.set(p.userBId, (matchCountByUser.get(p.userBId) ?? 0) + 1);
+  }
+  const voterIds = [...new Set(votes.map((v) => v.fromUserId))];
+  if (voterIds.length > 0) {
+    const voters = await prisma.user.findMany({
+      where: { id: { in: voterIds } },
+      select: { id: true, email: true },
+    });
+    for (const voter of voters) {
+      await sendMatchesReadyEmail({
+        to: voter.email,
+        eventTitle: event.title,
+        eventId,
+        matchCount: matchCountByUser.get(voter.id) ?? 0,
+      });
+    }
+  }
 
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
