@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
+import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Termos de uso — Coffee Match",
+  title: "Termos de uso",
   description: "Termos de uso da plataforma Coffee Match de speed dating presencial.",
+  alternates: { canonical: absoluteUrl("/termos") },
 };
 
 export default function TermosPage() {

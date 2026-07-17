@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
+import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Regras do evento — Coffee Match",
+  title: "Regras do evento",
   description:
     "Regras de check-in, respeito, votação e matches mútuos nos eventos Coffee Match.",
+  alternates: { canonical: absoluteUrl("/regras") },
 };
 
 export default function RegrasPage() {

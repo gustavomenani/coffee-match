@@ -7,6 +7,7 @@ import {
   SubscribeButton,
 } from "@/components/subscription/subscription-buttons";
 import { APP_TZ } from "@/lib/datetime";
+import { absoluteUrl } from "@/lib/seo";
 
 export const dynamic = "force-dynamic";
 
@@ -14,6 +15,7 @@ export const metadata: Metadata = {
   title: "Assinatura Apoiador",
   description:
     "Assine o Coffee Match por R$ 10/mês: selo de apoiador e acesso antecipado às vagas das noites.",
+  alternates: { canonical: absoluteUrl("/assinatura") },
 };
 
 const benefits = [

@@ -61,12 +61,13 @@ export const metadata: Metadata = {
     apple: [{ url: "/logo.jpeg", type: "image/jpeg" }],
   },
   manifest: "/manifest.webmanifest",
-  alternates: {
-    canonical: absoluteUrl("/"),
-    languages: {
-      "pt-BR": absoluteUrl("/"),
-    },
-  },
+  // No `alternates.canonical` here. Metadata is shallow-merged and inherited,
+  // so a canonical on the root layout became "this page IS the homepage" for
+  // every page that did not override it — /termos, /privacidade, /regras,
+  // /reembolso and /assinatura all told Google to drop them in favour of "/",
+  // while sitemap.ts submitted those same URLs for indexing. Contradictory
+  // signals, and unindexable Terms/Refund pages are a bad look for a product
+  // that takes payments. Each page now declares its own.
   openGraph: {
     type: "website",
     locale: SITE.locale,

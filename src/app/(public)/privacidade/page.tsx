@@ -1,10 +1,12 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
+import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Privacidade — Coffee Match",
+  title: "Privacidade",
   description: "Política de privacidade da Coffee Match: quais dados coletamos e como usamos.",
+  alternates: { canonical: absoluteUrl("/privacidade") },
 };
 
 export default function PrivacidadePage() {

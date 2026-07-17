@@ -125,7 +125,7 @@ Espelha a validação de `src/lib/env.ts` (o app falha ao subir com config invá
 | `DATABASE_URL` | Sim | Postgres (Prisma) |
 | `AUTH_SECRET` | Sim | Min. 16 chars (32+ e sem `change-me` em produção) |
 | `AUTH_URL` | Não | URL base para o Auth.js |
-| `NEXT_PUBLIC_APP_URL` | Em produção | URL pública do app (links de e-mail, QR, retorno do MP). Em produção, `NEXT_PUBLIC_APP_URL` **ou** `AUTH_URL` é obrigatória — sem uma delas o app subiria mandando links `http://localhost:3000` em e-mail de reset de senha |
+| `NEXT_PUBLIC_APP_URL` | Em produção | URL pública do app (links de e-mail, QR, canonical, retorno do MP). Em produção, `NEXT_PUBLIC_APP_URL` **ou** `AUTH_URL` é obrigatória — sem uma delas o app subiria mandando links `http://localhost:3000` no e-mail de reset de senha. ⚠️ **Precisa estar presente no `build`**: por ser `NEXT_PUBLIC_*`, o valor é *inlinado no bundle* em build time — defini-la só em runtime não muda `appBaseUrl()` (verificado: subindo o build com outro valor em runtime, o `<link rel="canonical">` continuou saindo com o host do build). `AUTH_URL`, que não tem o prefixo, é lida em runtime e serve de fallback |
 | `TRUSTED_PROXY_HOPS` | Não | Quantos proxies confiáveis existem entre o cliente e o app (padrão `1`). Define de qual posição do `x-forwarded-for` o IP é lido — ver `src/lib/security/ip.ts`. `1` serve para Vercel e para um nginx único; use `2` se houver CDN na frente |
 | `MERCADOPAGO_ACCESS_TOKEN` | Em produção | Token do MP; `TEST-DEV-BYPASS` é proibido em produção |
 | `MERCADOPAGO_WEBHOOK_SECRET` | Não | Valida a assinatura `x-signature` do webhook (recomendado em produção) |

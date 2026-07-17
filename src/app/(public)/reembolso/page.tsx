@@ -1,11 +1,13 @@
 import type { Metadata } from "next";
 import Link from "next/link";
 import { LegalPage } from "@/components/layout/legal-page";
+import { absoluteUrl } from "@/lib/seo";
 
 export const metadata: Metadata = {
-  title: "Política de reembolso — Coffee Match",
+  title: "Política de reembolso",
   description:
     "Quando e como solicitar reembolso de ingressos Coffee Match.",
+  alternates: { canonical: absoluteUrl("/reembolso") },
 };
 
 export default function ReembolsoPage() {
