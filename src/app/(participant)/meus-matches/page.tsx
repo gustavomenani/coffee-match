@@ -20,9 +20,29 @@ export default async function MeusMatchesPage() {
   }
   const userId = session.user.id;
 
+  // Same gate as canViewResults (src/lib/domain/eligibility.ts), enforced in the
+  // query. This page reached straight for Match rows and rendered phone numbers
+  // and WhatsApp links with no check at all, so it served contacts that
+  // /evento/[id]/matches correctly refuses:
+  //
+  //  - reopenVoting deliberately keeps matches while flipping the session back
+  //    to voting_open, so results are provisional again — this page kept
+  //    handing them out;
+  //  - refundTicket never deletes matches, so a refunded participant was locked
+  //    out of getMyMatches but still had every contact listed here.
+  //
+  // Contact disclosure is the one thing in this product that cannot be undone.
   const matches = await prisma.match.findMany({
     where: {
       OR: [{ userAId: userId }, { userBId: userId }],
+      session: {
+        status: "voting_closed",
+        event: {
+          tickets: {
+            some: { userId, status: "paid", checkedInAt: { not: null } },
+          },
+        },
+      },
     },
     include: {
       session: {

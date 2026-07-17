@@ -75,10 +75,19 @@ export async function verifyLogin(
       });
       return null;
     }
-    // Atomic increment — concurrent wrong attempts don't undercount.
+    // An expired lock starts a fresh window. failedLoginCount was only ever
+    // reset on a SUCCESSFUL login, so after one lockout it stayed at the
+    // ceiling forever: the lock expires, the next single typo increments 5 -> 6,
+    // 6 >= MAX_FAILED, and the user is locked out for another 15 minutes. The
+    // intended "5 attempts per window" silently became "1 attempt, permanently"
+    // for anyone who had ever been locked once. Reaching here means `locked` is
+    // false, so any lockedUntil still set is necessarily expired.
     const updated = await prisma.user.update({
       where: { id: user.id },
-      data: { failedLoginCount: { increment: 1 } },
+      data: user.lockedUntil
+        ? { failedLoginCount: 1, lockedUntil: null }
+        : // Atomic increment — concurrent wrong attempts don't undercount.
+          { failedLoginCount: { increment: 1 } },
     });
     const failed = updated.failedLoginCount;
     const lockedUntil =

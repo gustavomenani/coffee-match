@@ -7,7 +7,7 @@ import {
   isPendingTicketExpired,
   resolveCheckoutTicket,
 } from "@/lib/domain/checkout";
-import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { getEventOccupancy } from "@/lib/occupancy";
 import {
   canBuyDuringEarlyAccess,

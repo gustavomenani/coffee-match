@@ -144,11 +144,19 @@ export async function getWhoLikedMe(rawEventId: string): Promise<WhoLikedMeResul
   const eventSession = ticket.event.session;
   if (!eventSession) return { ok: false, error: "Sessão não encontrada." };
 
+  // Mirror closeVoting's presence filter: only people who were actually in the
+  // room count. Without it, someone refunded out of the event after voting is
+  // excluded from matching (deliberately) yet still shows up here by name.
   const votes = await prisma.vote.findMany({
     where: {
       sessionId: eventSession.id,
       toUserId: session.user.id,
       interest: "yes",
+      fromUser: {
+        tickets: {
+          some: { eventId, status: "paid", checkedInAt: { not: null } },
+        },
+      },
     },
     include: {
       fromUser: { select: { id: true, name: true } },

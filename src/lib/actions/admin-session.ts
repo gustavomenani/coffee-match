@@ -229,43 +229,52 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     return { ok: false, error: "A votação não está aberta." };
   }
 
-  // Only people actually in the room may match. A ticket refunded between the
-  // vote and the close still had its votes counted, so the refunded person
-  // matched anyway — and their counterpart got their name, phone and WhatsApp
-  // link, while they themselves were locked out of the results.
-  const presentTickets = await prisma.ticket.findMany({
-    where: { eventId, status: "paid", checkedInAt: { not: null } },
-    select: { userId: true },
-  });
-  const presentUserIds = presentTickets.map((t) => t.userId);
-
-  const votes = await prisma.vote.findMany({
-    where: {
-      sessionId: session.id,
-      fromUserId: { in: presentUserIds },
-      toUserId: { in: presentUserIds },
-    },
-  });
-  const pairs = computeMutualMatches(
-    votes.map((v) => ({
-      fromUserId: v.fromUserId,
-      toUserId: v.toUserId,
-      interest: v.interest,
-    }))
-  );
-
-  // Claiming the session is the FIRST write in the transaction, so a double
-  // click (or two admins, or a retry) cannot both proceed. The status check
-  // above is only a fast path: it read outside the transaction, and the old
-  // unguarded update let a second run delete the first run's matches, recreate
-  // them with new ids, and e-mail every voter a second time — or crash on the
-  // unique constraint mid-night if the two interleaved the other way.
-  const claimed = await prisma.$transaction(async (tx) => {
+  // Claiming the session is the FIRST write, and every read that feeds the
+  // matching happens AFTER it, inside the same transaction. Both orderings
+  // matter:
+  //
+  //  - Claim before the writes: a double click (or two admins, or a retry)
+  //    cannot both proceed. The status check above is only a fast path — it
+  //    reads outside the transaction, and an unguarded update let a second run
+  //    delete the first run's matches, recreate them with new ids, and e-mail
+  //    every voter again.
+  //  - Read after the claim: while the session is still voting_open, castVote
+  //    keeps accepting votes. Anything read before the claim is a snapshot that
+  //    can grow under us, and a vote landing in that window would be dropped
+  //    from BOTH the matching and the notification list — two people who each
+  //    said yes get no match and no e-mail, with no trace. Once the claim
+  //    commits the session is closed, so the vote set can no longer change.
+  const closed = await prisma.$transaction(async (tx) => {
     const claim = await tx.eventSession.updateMany({
       where: { id: session.id, status: "voting_open" },
       data: { status: "voting_closed", votingClosesAt: new Date() },
     });
-    if (claim.count === 0) return false;
+    if (claim.count === 0) return null;
+
+    // Only people actually in the room may match. A ticket refunded between the
+    // vote and the close still had its votes counted, so the refunded person
+    // matched anyway — and their counterpart got their name, phone and WhatsApp
+    // link, while they themselves were locked out of the results.
+    const presentTickets = await tx.ticket.findMany({
+      where: { eventId, status: "paid", checkedInAt: { not: null } },
+      select: { userId: true },
+    });
+    const presentUserIds = presentTickets.map((t) => t.userId);
+
+    const votes = await tx.vote.findMany({
+      where: {
+        sessionId: session.id,
+        fromUserId: { in: presentUserIds },
+        toUserId: { in: presentUserIds },
+      },
+    });
+    const pairs = computeMutualMatches(
+      votes.map((v) => ({
+        fromUserId: v.fromUserId,
+        toUserId: v.toUserId,
+        interest: v.interest,
+      }))
+    );
 
     await tx.match.deleteMany({ where: { sessionId: session.id } });
     if (pairs.length > 0) {
@@ -281,12 +290,13 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
       where: { id: eventId },
       data: { status: "closed" },
     });
-    return true;
+    return { pairs, voterIds: [...new Set(votes.map((v) => v.fromUserId))] };
   });
 
-  if (!claimed) {
+  if (!closed) {
     return { ok: false, error: "A votação não está aberta." };
   }
+  const { pairs, voterIds } = closed;
 
   await auditLog({
     actorId: admin.user.id,
@@ -300,7 +310,6 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     matchCountByUser.set(p.userAId, (matchCountByUser.get(p.userAId) ?? 0) + 1);
     matchCountByUser.set(p.userBId, (matchCountByUser.get(p.userBId) ?? 0) + 1);
   }
-  const voterIds = [...new Set(votes.map((v) => v.fromUserId))];
   if (voterIds.length > 0) {
     const voters = await prisma.user.findMany({
       where: { id: { in: voterIds } },

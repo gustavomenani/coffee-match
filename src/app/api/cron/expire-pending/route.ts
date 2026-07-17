@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PENDING_TICKET_TTL_MS } from "@/lib/domain/checkout";
-import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { auditLog } from "@/lib/audit";
 import { requireCronAuth } from "@/lib/security/cron-auth";

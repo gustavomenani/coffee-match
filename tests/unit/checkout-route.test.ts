@@ -49,7 +49,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/occupancy", () => ({
   getEventOccupancy: (...a: unknown[]) => getEventOccupancyMock(...a),
 }));
-vi.mock("@/lib/actions/tickets", () => ({
+vi.mock("@/lib/sold-out", () => ({
   syncEventSoldOutStatus: (...a: unknown[]) => syncSoldOutMock(...a),
 }));
 vi.mock("@/lib/mercadopago", () => ({

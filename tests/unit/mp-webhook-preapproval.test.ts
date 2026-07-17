@@ -22,7 +22,7 @@ vi.mock("@/lib/prisma", () => ({
 vi.mock("@/lib/mercadopago", () => ({
   getPreapprovalStatus: (...a: unknown[]) => getPreapprovalStatusMock(...a),
 }));
-vi.mock("@/lib/actions/tickets", () => ({ syncEventSoldOutStatus: vi.fn() }));
+vi.mock("@/lib/sold-out", () => ({ syncEventSoldOutStatus: vi.fn() }));
 vi.mock("@/lib/audit", () => ({ auditLog: (...a: unknown[]) => auditLogMock(...a) }));
 vi.mock("@/lib/notify", () => ({ sendTicketPaidEmail: vi.fn() }));
 vi.mock("mercadopago", () => ({

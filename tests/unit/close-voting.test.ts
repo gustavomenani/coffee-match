@@ -18,6 +18,8 @@ const revalidatePathMock = vi.fn();
 
 const tx = {
   eventSession: { updateMany: (...a: unknown[]) => sessionUpdateMany(...a) },
+  ticket: { findMany: (...a: unknown[]) => ticketFindMany(...a) },
+  vote: { findMany: (...a: unknown[]) => voteFindMany(...a) },
   match: {
     deleteMany: (...a: unknown[]) => matchDeleteMany(...a),
     createMany: (...a: unknown[]) => matchCreateMany(...a),
@@ -153,6 +155,21 @@ describe("closeVoting", () => {
       where: { id: SESSION_ID, status: "voting_open" },
       data: { status: "voting_closed", votingClosesAt: expect.any(Date) },
     });
+  });
+
+  it("reads the votes only after claiming, so a late vote cannot be dropped", async () => {
+    // While the session is still voting_open, castVote keeps accepting votes.
+    // Reading them before the claim takes a snapshot that can grow underneath —
+    // a vote landing in that window would vanish from both the matching and the
+    // notification list, with no trace.
+    await closeVoting(EVENT_ID);
+
+    expect(sessionUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      voteFindMany.mock.invocationCallOrder[0]
+    );
+    expect(sessionUpdateMany.mock.invocationCallOrder[0]).toBeLessThan(
+      ticketFindMany.mock.invocationCallOrder[0]
+    );
   });
 
   it("ignores votes from people who are no longer paid and checked in", async () => {

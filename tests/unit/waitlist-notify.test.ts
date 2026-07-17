@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from "vitest";
 
 const eventFindUnique = vi.fn();
-const eventUpdate = vi.fn();
+const eventUpdateMany = vi.fn();
 const interestFindMany = vi.fn();
 const interestUpdateMany = vi.fn();
 const getEventOccupancyMock = vi.fn();
@@ -17,7 +17,7 @@ vi.mock("@/lib/prisma", () => ({
   prisma: {
     event: {
       findUnique: (...a: unknown[]) => eventFindUnique(...a),
-      update: (...a: unknown[]) => eventUpdate(...a),
+      updateMany: (...a: unknown[]) => eventUpdateMany(...a),
     },
     eventInterest: {
       findMany: (...a: unknown[]) => interestFindMany(...a),
@@ -48,7 +48,7 @@ vi.mock("next/cache", () => ({
   revalidatePath: (...a: unknown[]) => revalidatePathMock(...a),
 }));
 
-import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 
 const EVENT_ID = "ckevent00000000000000001";
 
@@ -82,7 +82,9 @@ const interests = [
 
 beforeEach(() => {
   vi.clearAllMocks();
-  eventUpdate.mockResolvedValue({});
+  // count is load-bearing: the transition is claimed, and only the run that
+  // wins the row goes on to notify the waitlist.
+  eventUpdateMany.mockResolvedValue({ count: 1 });
   interestFindMany.mockResolvedValue([]);
   interestUpdateMany.mockResolvedValue({ count: 0 });
   // Mirrors the real signature: sendSpotOpenedEmail never throws, it reports
@@ -101,8 +103,9 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    expect(eventUpdate).toHaveBeenCalledWith({
-      where: { id: EVENT_ID },
+    // Claimed on the current status, not a bare id.
+    expect(eventUpdateMany).toHaveBeenCalledWith({
+      where: { id: EVENT_ID, status: "sold_out" },
       data: { status: "published" },
     });
     expect(interestFindMany).toHaveBeenCalledWith(
@@ -201,7 +204,7 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    expect(eventUpdate).toHaveBeenCalled();
+    expect(eventUpdateMany).toHaveBeenCalled();
     expect(sendSpotOpenedEmailMock).not.toHaveBeenCalled();
     expect(interestUpdateMany).not.toHaveBeenCalled();
     expect(auditLogMock).not.toHaveBeenCalled();
@@ -213,12 +216,30 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    expect(eventUpdate).toHaveBeenCalledWith({
-      where: { id: EVENT_ID },
+    expect(eventUpdateMany).toHaveBeenCalledWith({
+      where: { id: EVENT_ID, status: "published" },
       data: { status: "sold_out" },
     });
     expect(interestFindMany).not.toHaveBeenCalled();
     expect(sendSpotOpenedEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("does not blast the waitlist twice when two runs race the same reopen", async () => {
+    // Two MP webhook deliveries for one sold-out event, or a webhook racing the
+    // expire-pending cron: both read "sold_out" and both decide to reopen.
+    // Only the run that claims the row may notify — otherwise both select the
+    // same 50 interests (notifiedAt is stamped only after the sends) and e-mail
+    // every one of them twice.
+    eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
+    getEventOccupancyMock.mockResolvedValue(freeOccupancy);
+    interestFindMany.mockResolvedValue(interests);
+    eventUpdateMany.mockResolvedValue({ count: 0 }); // the other run won
+
+    await syncEventSoldOutStatus(EVENT_ID);
+
+    expect(sendSpotOpenedEmailMock).not.toHaveBeenCalled();
+    expect(interestUpdateMany).not.toHaveBeenCalled();
+    expect(auditLogMock).not.toHaveBeenCalled();
   });
 
   it("no transition touches nothing", async () => {
@@ -227,7 +248,7 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    expect(eventUpdate).not.toHaveBeenCalled();
+    expect(eventUpdateMany).not.toHaveBeenCalled();
     expect(sendSpotOpenedEmailMock).not.toHaveBeenCalled();
     expect(bustEventCachesMock).not.toHaveBeenCalled();
   });
@@ -238,6 +259,6 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     await syncEventSoldOutStatus(EVENT_ID);
 
     expect(getEventOccupancyMock).not.toHaveBeenCalled();
-    expect(eventUpdate).not.toHaveBeenCalled();
+    expect(eventUpdateMany).not.toHaveBeenCalled();
   });
 });

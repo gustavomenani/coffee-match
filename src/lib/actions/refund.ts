@@ -5,7 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
-import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { isMpDevBypass, refundTicketPayment } from "@/lib/mercadopago";
 import type { ActionResult } from "@/lib/action-result";

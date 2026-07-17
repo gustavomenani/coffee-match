@@ -2,7 +2,7 @@ import { NextRequest, NextResponse } from "next/server";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { getPreapprovalStatus } from "@/lib/mercadopago";
-import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { verifyMercadoPagoSignature } from "@/lib/mp-webhook";
 import { isPaymentAmountValid } from "@/lib/domain/payment";
 import { isProduction } from "@/lib/env";
