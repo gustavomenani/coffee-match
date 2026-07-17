@@ -108,6 +108,32 @@ describe("verifyLogin", () => {
     expect(lockData.lockedUntil).toBeInstanceOf(Date);
   });
 
+  it("an expired lock starts a fresh window instead of re-locking on one typo", async () => {
+    // failedLoginCount was only ever reset by a SUCCESSFUL login, so after one
+    // lockout it stayed at the ceiling forever: the lock expires, the next
+    // single typo increments 5 -> 6 >= MAX_FAILED, and the user is locked out
+    // again. "5 attempts per window" silently became "1 attempt, permanently".
+    findUnique.mockResolvedValue(
+      makeUser({
+        failedLoginCount: MAX_FAILED,
+        lockedUntil: new Date(Date.now() - 60_000), // expired
+      })
+    );
+    update.mockResolvedValueOnce({ failedLoginCount: 1 });
+
+    const result = await verifyLogin(credentials("wrong-pass-1"), "1.2.3.4");
+
+    expect(result).toBeNull();
+    // The window restarts at 1 and the stale lock is cleared...
+    expect(update).toHaveBeenCalledWith(
+      expect.objectContaining({
+        data: { failedLoginCount: 1, lockedUntil: null },
+      })
+    );
+    // ...and crucially, no second update re-locks the account.
+    expect(update).toHaveBeenCalledTimes(1);
+  });
+
   it("does not increment counters while locked with wrong password", async () => {
     findUnique.mockResolvedValue(
       makeUser({
