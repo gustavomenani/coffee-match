@@ -58,10 +58,14 @@ export default async function AdminDashboardPage() {
           capacityWomen: true,
         },
       }),
-      // Revenue aggregated in SQL: priceCents lives on Event, so a plain
-      // ticket aggregate can't sum it — join and SUM instead.
+      // Revenue must sum what each ticket was actually SOLD for — the snapshot
+      // Ticket.priceCents — not the event's current price, or editing an event's
+      // price after sales would silently rewrite reported revenue. This is the
+      // same invariant the webhook enforces (it validates captured amounts
+      // against Ticket.priceCents). COALESCE to e."priceCents" only covers
+      // legacy tickets sold before the snapshot column existed (nullable).
       prisma.$queryRaw<{ total: bigint | null }[]>`
-        SELECT COALESCE(SUM(e."priceCents"), 0) AS "total"
+        SELECT COALESCE(SUM(COALESCE(t."priceCents", e."priceCents")), 0) AS "total"
         FROM "Ticket" t
         JOIN "Event" e ON e."id" = t."eventId"
         WHERE t."status" = 'paid'

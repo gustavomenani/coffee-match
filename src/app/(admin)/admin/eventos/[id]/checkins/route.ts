@@ -2,6 +2,7 @@ import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { requireAdmin } from "@/lib/authz";
 import { parseCuid } from "@/lib/security/ids";
+import { formatDateTime } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -88,7 +89,10 @@ export async function GET(
       csvCell(t.user.phone),
       csvCell(genderLabel[t.user.gender] ?? t.user.gender),
       csvCell(t.checkedInAt ? "feito" : "pendente"),
-      csvCell(t.checkedInAt ? t.checkedInAt.toISOString() : ""),
+      // São Paulo, not UTC: the whole product renders dates in APP_TZ, and this
+      // column is read by an admin reconciling the door list against on-screen
+      // check-in times. A raw toISOString() shows 23:30 for a 20:30 check-in.
+      csvCell(t.checkedInAt ? formatDateTime(t.checkedInAt) : ""),
       csvCell(t.id),
     ].join(",")
   );

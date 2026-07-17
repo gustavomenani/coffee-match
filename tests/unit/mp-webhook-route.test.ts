@@ -258,7 +258,14 @@ describe("POST /api/webhooks/mercadopago", () => {
     ticketFindUnique.mockReset();
     ticketFindUnique
       .mockResolvedValueOnce(null)
-      .mockResolvedValueOnce({ ...ticketRow, status: "cancelled" });
+      .mockResolvedValueOnce({ ...ticketRow, status: "cancelled" })
+      // Re-read in the else branch: still genuinely cancelled, so this really is
+      // money captured with no ticket.
+      .mockResolvedValueOnce({
+        status: "cancelled",
+        mpPaymentId: null,
+        eventId: EVENT_ID,
+      });
     ticketUpdateMany.mockResolvedValue({ count: 0 });
 
     const res = await POST(webhookRequest());
@@ -274,6 +281,72 @@ describe("POST /api/webhooks/mercadopago", () => {
           ticketStatus: "cancelled",
         }),
       })
+    );
+  });
+
+  it("does NOT raise a false refund alert when a concurrent delivery of the same payment won the race", async () => {
+    // Two concurrent deliveries of the same approved payment. This one's pre-CAS
+    // read still said "pending", but the other delivery flipped the ticket to
+    // paid with THIS payment id microseconds earlier, so our guarded update
+    // matches 0 rows. Re-reading must recognise the ticket is now correctly paid
+    // with our payment and treat this as an idempotent duplicate delivery — the
+    // old code fired "paid_but_not_pending / refundRequired", which would have an
+    // operator refund a legitimately paid ticket.
+    ticketFindUnique.mockReset();
+    ticketFindUnique
+      .mockResolvedValueOnce(null) // this payment id not yet recorded when we read
+      .mockResolvedValueOnce(ticketRow) // ticket by id: still pending in our snapshot
+      .mockResolvedValueOnce({
+        // re-read after losing the CAS: now paid, by THIS same payment
+        status: "paid",
+        mpPaymentId: PAYMENT_ID,
+        eventId: EVENT_ID,
+      });
+    ticketUpdateMany.mockResolvedValue({ count: 0 }); // we lost the race
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    expect(sendEmailMock).not.toHaveBeenCalled();
+    // The whole point: no false money-captured-no-ticket / duplicate alert.
+    expect(auditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.paid_but_not_pending" })
+    );
+    expect(auditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.duplicate_payment" })
+    );
+    // It just re-syncs sold-out, idempotently.
+    expect(syncSoldOutMock).toHaveBeenCalledWith(EVENT_ID);
+  });
+
+  it("flags a duplicate when a DIFFERENT payment paid the ticket during the race", async () => {
+    // We lost the pending→paid race to a DIFFERENT payment, so THIS payment is a
+    // genuine duplicate charge — not money-captured-no-ticket.
+    ticketFindUnique.mockReset();
+    ticketFindUnique
+      .mockResolvedValueOnce(null)
+      .mockResolvedValueOnce(ticketRow)
+      .mockResolvedValueOnce({
+        status: "paid",
+        mpPaymentId: "999-other-payment",
+        eventId: EVENT_ID,
+      });
+    ticketUpdateMany.mockResolvedValue({ count: 0 });
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ticket.duplicate_payment",
+        meta: expect.objectContaining({
+          duplicatePaymentId: PAYMENT_ID,
+          originalPaymentId: "999-other-payment",
+        }),
+      })
+    );
+    expect(auditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.paid_but_not_pending" })
     );
   });
 

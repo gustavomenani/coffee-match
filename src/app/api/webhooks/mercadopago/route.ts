@@ -11,7 +11,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { clientIpFromHeaders } from "@/lib/security/ip";
 import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
-import { logError, logWarn } from "@/lib/observability";
+import { logError, logWarn, alertCritical } from "@/lib/observability";
 import { formatDateTime } from "@/lib/datetime";
 
 export async function POST(req: NextRequest) {
@@ -107,8 +107,9 @@ export async function POST(req: NextRequest) {
             duplicatePreapprovalId: paymentId,
           },
         });
-        logWarn("mp_webhook.duplicate_preapproval", {
+        alertCritical("mp_webhook.duplicate_preapproval", {
           userId: sub.userId,
+          originalPreapprovalId: sub.mpPreapprovalId,
           duplicatePreapprovalId: paymentId,
         });
       } else if (
@@ -227,8 +228,9 @@ export async function POST(req: NextRequest) {
             eventId: ticket.eventId,
           },
         });
-        logWarn("mp_webhook.duplicate_payment", {
+        alertCritical("mp_webhook.duplicate_payment", {
           ticketId,
+          originalPaymentId: ticket.mpPaymentId,
           duplicatePaymentId: String(paymentId),
         });
         return NextResponse.json({ ok: true });
@@ -309,16 +311,61 @@ export async function POST(req: NextRequest) {
           ticketId,
         });
       } else {
-        // Money was captured for a ticket that is no longer pending, so it can
-        // never become paid: the buyer paid a still-live MP link after the
-        // ticket was cancelled (by the user, by checkout's expired-pending
-        // sweep, or by the expire-pending cron). Reaching here means the status
-        // is cancelled/refunded — a same-payment retry returns at the
-        // mpPaymentId lookup, and a paid ticket is caught as a duplicate.
-        //
-        // Silence here means: buyer charged, no ticket, and no record outside
-        // Mercado Pago. Never return 200 quietly. Not auto-refunded on purpose
-        // — issuing money back is an explicit admin decision (src/lib/actions/refund.ts).
+        // updateMany matched 0 rows: the ticket was not pending at write time.
+        // Two very different shapes reach here and the stale `ticket` snapshot
+        // (read BEFORE the CAS) cannot tell them apart, so re-read before raising
+        // the highest-severity alert in the app. Crying "refund required" on a
+        // legitimately paid ticket would have an operator refund real money and
+        // destroy a valid ticket.
+        const current = await prisma.ticket.findUnique({
+          where: { id: ticketId },
+          select: { status: true, mpPaymentId: true, eventId: true },
+        });
+
+        if (
+          current?.status === "paid" &&
+          current.mpPaymentId === String(paymentId)
+        ) {
+          // A CONCURRENT delivery of THIS SAME payment won the pending→paid CAS
+          // microseconds earlier (our pre-CAS read still said "pending"). The
+          // winner already emailed and synced — this is an idempotent duplicate
+          // delivery, not an anomaly. Do NOT alert.
+          await syncEventSoldOutStatus(current.eventId);
+          return NextResponse.json({ ok: true });
+        }
+
+        if (
+          current?.status === "paid" &&
+          current.mpPaymentId !== String(paymentId)
+        ) {
+          // A DIFFERENT payment paid this ticket concurrently, so THIS payment is
+          // a genuine duplicate charge — the same shape as the duplicate branch
+          // above, which the pre-CAS read missed because the ticket still looked
+          // pending then. Never overwrite mpPaymentId; flag for manual refund.
+          await auditLog({
+            actorId: ticket.userId,
+            action: "ticket.duplicate_payment",
+            meta: {
+              ticketId,
+              originalPaymentId: current.mpPaymentId,
+              duplicatePaymentId: String(paymentId),
+              eventId: ticket.eventId,
+            },
+          });
+          alertCritical("mp_webhook.duplicate_payment", {
+            ticketId,
+            originalPaymentId: current.mpPaymentId,
+            duplicatePaymentId: String(paymentId),
+          });
+          return NextResponse.json({ ok: true });
+        }
+
+        // Genuinely money-captured-no-ticket: the status is cancelled/refunded —
+        // the buyer paid a still-live MP link after the ticket was cancelled (by
+        // the user, by checkout's expired-pending sweep, or by the expire-pending
+        // cron). Never 200 QUIETLY: alert loudly, then 200 so MP stops retrying a
+        // payment we can never turn into a ticket. Not auto-refunded on purpose —
+        // issuing money back is an explicit admin decision (src/lib/actions/refund.ts).
         await auditLog({
           actorId: ticket.userId,
           action: "ticket.paid_but_not_pending",
@@ -326,16 +373,16 @@ export async function POST(req: NextRequest) {
             ticketId,
             paymentId: String(paymentId),
             eventId: ticket.eventId,
-            ticketStatus: ticket.status,
+            ticketStatus: current?.status ?? ticket.status,
             transactionAmount: payment.transaction_amount ?? null,
             currencyId: payment.currency_id ?? null,
           },
         });
         // Highest-severity business alert in the app: money captured, no ticket.
-        logWarn("mp_webhook.paid_but_not_pending", {
+        alertCritical("mp_webhook.paid_but_not_pending", {
           ticketId,
           paymentId: String(paymentId),
-          ticketStatus: ticket.status,
+          ticketStatus: current?.status ?? ticket.status,
           refundRequired: true,
         });
       }

@@ -173,6 +173,7 @@ export async function POST(req: NextRequest) {
         ticketId: existing.id,
         title: `Ingresso: ${event.title}`,
         priceCents: existing.priceCents ?? event.priceCents,
+        currency: existing.currency ?? event.currency,
         payerEmail: user.email,
       });
       const initPoint = preference.init_point ?? preference.sandbox_init_point;
@@ -273,6 +274,7 @@ export async function POST(req: NextRequest) {
       ticketId: ticket.id,
       title: `Ingresso: ${event.title}`,
       priceCents: event.priceCents,
+      currency: ticket.currency ?? event.currency,
       payerEmail: user.email,
     });
     const initPoint = preference.init_point ?? preference.sandbox_init_point;

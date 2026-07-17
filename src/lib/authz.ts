@@ -59,8 +59,15 @@ export async function requireAdmin(): Promise<
     return { ok: false, error: "Acesso negado." };
   }
 
+  // The schema allows a user in several orgs, but the admin surfaces assume a
+  // single "home" org. findFirst without an order returned an ARBITRARY org, so
+  // a two-org admin could silently act on the wrong tenant across requests.
+  // Pin it to the oldest membership so the choice is deterministic and stable.
+  // If real multi-org admin is ever needed, this is the one place to thread an
+  // explicit orgId through — every admin action derives its scope from here.
   const membership = await prisma.organizationMember.findFirst({
     where: { userId: result.user.id },
+    orderBy: { createdAt: "asc" },
     include: {
       organization: { select: { id: true, slug: true, name: true } },
     },

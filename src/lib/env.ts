@@ -12,6 +12,12 @@ const envSchema = z.object({
   MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
   /** Bearer token required by the /api/cron/* routes (503 when unset). */
   CRON_SECRET: z.string().min(16).optional(),
+  /**
+   * Incoming-webhook URL (Slack/Discord/generic) that receives CRITICAL money
+   * anomalies via alertCritical(). Optional — when unset, alerts fall back to
+   * error-level log lines only.
+   */
+  ALERT_WEBHOOK_URL: z.string().url().optional(),
   /** Only honored when NODE_ENV !== production */
   ALLOW_DEV_BYPASS: z
     .enum(["0", "1", "true", "false"])
@@ -48,6 +54,14 @@ export function getEnv(): AppEnv {
   if (env.NODE_ENV === "production") {
     if (!env.MERCADOPAGO_ACCESS_TOKEN) {
       throw new Error("MERCADOPAGO_ACCESS_TOKEN is required in production");
+    }
+    // Fail closed at boot, like every other critical secret. Otherwise a deploy
+    // missing this boots fine and then 500s EVERY webhook — payments capture but
+    // tickets never flip to paid, and it's only discovered after the first sale.
+    if (!env.MERCADOPAGO_WEBHOOK_SECRET) {
+      throw new Error(
+        "MERCADOPAGO_WEBHOOK_SECRET is required in production — webhook signatures cannot be verified without it."
+      );
     }
     if (
       env.MERCADOPAGO_ACCESS_TOKEN.startsWith("TEST-DEV-BYPASS") ||

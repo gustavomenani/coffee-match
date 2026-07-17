@@ -13,8 +13,10 @@ const nextAuth = NextAuth({
     /**
      * Node-side JWT check with session versioning: password reset bumps
      * User.tokenVersion, so any JWT minted before it is rejected here.
-     * The edge middleware keeps using the DB-free authConfig callbacks —
-     * every server-side auth() call (pages, actions, routes) enforces this.
+     * The coarse route gate in proxy.ts (Next 16's renamed middleware, running
+     * on the Node runtime) keeps using the DB-free authConfig callbacks —
+     * every server-side auth() call (pages, actions, routes) enforces this
+     * tokenVersion check, which the proxy gate deliberately does not.
      */
     async jwt({ token, user }) {
       if (user) {

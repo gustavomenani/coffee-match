@@ -64,8 +64,14 @@ export async function requestPasswordReset(
   // actually protects an account; the global one is now a circuit breaker set
   // far above any plausible legitimate hour, not a gate.
   const ip = clientIpFromHeaders(await headers());
-  const ipAllowed = await rateLimit(`pwreset:ip:${ip}`, 10, 60 * 60_000);
-  const emailAllowed = await rateLimit(`pwreset:${email}`, 3, 60 * 60_000);
+  const ipAllowed = await rateLimit(`pwreset:ip:${ip}`, 10, 60 * 60_000, {
+    critical: true,
+  });
+  const emailAllowed = await rateLimit(`pwreset:${email}`, 3, 60 * 60_000, {
+    critical: true,
+  });
+  // Global stays best-effort: it is a circuit breaker set far above any
+  // legitimate volume, not a per-account gate, so clamping it would misfire.
   const globalAllowed = await rateLimit("pwreset:global", 500, 60 * 60_000);
 
   if (!ipAllowed || !globalAllowed) {

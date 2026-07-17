@@ -176,7 +176,12 @@ export default async function AdminEventoEditPage({
                       {t.user.phone}
                     </td>
                     <td className="px-3 py-3 tabular text-[var(--ink-soft)]">
-                      {formatBRL(event.priceCents)}
+                      {/* The snapshot the ticket was SOLD at — not the event's
+                          current price. This is the screen an admin reads before
+                          issuing per-ticket refunds; showing the live price here
+                          would misinform refund/accounting after any price edit.
+                          Fallback covers legacy tickets predating the snapshot. */}
+                      {formatBRL(t.priceCents ?? event.priceCents)}
                     </td>
                     <td className="px-3 py-3">
                       <RefundButton ticketId={t.id} />

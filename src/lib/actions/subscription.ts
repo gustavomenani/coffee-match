@@ -27,14 +27,15 @@ export async function startSubscription(): Promise<SubscribeResult> {
     return { ok: false, error: "Muitas tentativas. Aguarde um momento." };
   }
 
-  const existing = await prisma.subscription.findUnique({
-    where: { userId: user.id },
-  });
-  if (existing?.status === "active") {
-    return { ok: false, error: "Você já é assinante." };
-  }
-
+  // Dev bypass: no Mercado Pago round-trip, so no concurrency hazard — activate
+  // locally. The active-guard read stays here for this path only.
   if (isMpDevBypass()) {
+    const existing = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
+    if (existing?.status === "active") {
+      return { ok: false, error: "Você já é assinante." };
+    }
     await prisma.subscription.upsert({
       where: { userId: user.id },
       update: {
@@ -59,55 +60,79 @@ export async function startSubscription(): Promise<SubscribeResult> {
     return { ok: true, initPoint: "/assinatura?ativada=1" };
   }
 
-  // Retire the previous preapproval before minting a replacement. Overwriting
-  // mpPreapprovalId left the old one live and authorizable on MP: the user
-  // starts a subscription, doesn't finish, clicks again, then authorizes the
-  // FIRST link. The webhook activates on that one, and when the second is
-  // authorized too it finds the row already active and records nothing — so MP
-  // bills R$10/month twice and cancelSubscription only ever knows about one of
-  // them, leaving the other charging forever with no in-app way to stop it.
+  // Real MP path, serialized per user with a transaction-scoped advisory lock.
   //
-  // Best-effort on purpose: if MP cannot cancel the stale id, that must not
-  // block someone from subscribing. The orphan is audited so it can be found.
-  if (existing?.mpPreapprovalId) {
-    try {
-      await cancelPreapproval(existing.mpPreapprovalId);
-    } catch (err) {
-      logError("subscription.orphan_cancel_failed", err, {
-        preapprovalId: existing.mpPreapprovalId,
-      });
-      await auditLog({
-        actorId: user.id,
-        action: "subscription.orphaned_preapproval",
-        meta: { preapprovalId: existing.mpPreapprovalId },
-      });
-    }
-  }
-
+  // Without serialization, two near-simultaneous clicks (the rate limit allows
+  // 5/min) both read existing=null, both skip the cancel-old branch below, and
+  // both mint a LIVE preapproval — the second upsert overwrites the first's id,
+  // orphaning a preapproval MP will bill monthly and cancelSubscription can
+  // never reach. The existing cancel-old logic only guards the SEQUENTIAL case.
+  //
+  // pg_advisory_xact_lock makes the read→cancel-old→create→upsert critical
+  // section single-file per user and releases automatically on commit/rollback,
+  // so the second request now sees the first's mpPreapprovalId and cancels it.
+  // The MP calls run inside the locked section (they use the SDK, not tx), so
+  // the lock is held across ~1s of network I/O — acceptable at this app's
+  // subscription volume. The generous timeout keeps a slow MP round-trip from
+  // aborting the transaction and orphaning a just-created preapproval; the
+  // residual (MP hangs past the timeout) is caught by the webhook's
+  // duplicate_preapproval alert.
   try {
-    const { preapprovalId, initPoint } = await createSubscriptionPreapproval({
-      userId: user.id,
-      payerEmail: user.email,
-    });
-    await prisma.subscription.upsert({
-      where: { userId: user.id },
-      update: {
-        status: "pending",
-        mpPreapprovalId: preapprovalId,
-        cancelledAt: null,
+    return await prisma.$transaction(
+      async (tx): Promise<SubscribeResult> => {
+        await tx.$queryRaw`SELECT pg_advisory_xact_lock(hashtext(${`subscription:${user.id}`}))`;
+
+        const existing = await tx.subscription.findUnique({
+          where: { userId: user.id },
+        });
+        if (existing?.status === "active") {
+          return { ok: false, error: "Você já é assinante." };
+        }
+
+        // Best-effort: if MP cannot cancel the stale id, that must not block
+        // someone from subscribing. The orphan is audited so it can be found.
+        if (existing?.mpPreapprovalId) {
+          try {
+            await cancelPreapproval(existing.mpPreapprovalId);
+          } catch (err) {
+            logError("subscription.orphan_cancel_failed", err, {
+              preapprovalId: existing.mpPreapprovalId,
+            });
+            await auditLog({
+              actorId: user.id,
+              action: "subscription.orphaned_preapproval",
+              meta: { preapprovalId: existing.mpPreapprovalId },
+            });
+          }
+        }
+
+        const { preapprovalId, initPoint } =
+          await createSubscriptionPreapproval({
+            userId: user.id,
+            payerEmail: user.email,
+          });
+        await tx.subscription.upsert({
+          where: { userId: user.id },
+          update: {
+            status: "pending",
+            mpPreapprovalId: preapprovalId,
+            cancelledAt: null,
+          },
+          create: {
+            userId: user.id,
+            status: "pending",
+            mpPreapprovalId: preapprovalId,
+          },
+        });
+        await auditLog({
+          actorId: user.id,
+          action: "subscription.checkout_started",
+          meta: { preapprovalId },
+        });
+        return { ok: true, initPoint };
       },
-      create: {
-        userId: user.id,
-        status: "pending",
-        mpPreapprovalId: preapprovalId,
-      },
-    });
-    await auditLog({
-      actorId: user.id,
-      action: "subscription.checkout_started",
-      meta: { preapprovalId },
-    });
-    return { ok: true, initPoint };
+      { timeout: 20_000, maxWait: 10_000 }
+    );
   } catch (err) {
     logError("subscription.preapproval_failed", err, { userId: user.id });
     return {

@@ -106,6 +106,13 @@ export async function createTicketPreference(input: {
   title: string;
   priceCents: number;
   payerEmail: string;
+  // The ticket's snapshot currency, threaded through so the charge cannot
+  // disagree with what the webhook validates. Hardcoding "BRL" here while the
+  // webhook checks payment.currency_id against ticket.currency meant a non-BRL
+  // event (schema allows any currency) would charge BRL, fail webhook
+  // validation, 200 with no MP retry, and strand the ticket — money captured,
+  // no ticket. Passing it makes the two sides structurally consistent.
+  currency: string;
 }) {
   const preference = new Preference(getMpClient());
   const appUrl = appBaseUrl();
@@ -117,7 +124,7 @@ export async function createTicketPreference(input: {
           title: input.title,
           quantity: 1,
           unit_price: input.priceCents / 100,
-          currency_id: "BRL",
+          currency_id: input.currency,
         },
       ],
       payer: { email: input.payerEmail },

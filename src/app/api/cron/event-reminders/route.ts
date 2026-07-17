@@ -53,15 +53,32 @@ export async function GET(req: NextRequest) {
   let reminded = 0;
   let failed = 0;
 
-  // Mark ONLY what actually went out. sendEventReminderEmail resolves whether
-  // or not Resend accepted the message, so marking unconditionally (as this
-  // did) meant one provider outage silently burned the reminder for every
-  // ticket in the batch — reminderSentAt is filtered on above, so the next run
-  // skips them and nobody is ever reminded.
+  // Claim BEFORE sending, then release failures — outage-safe AND concurrency-
+  // safe at once.
+  //
+  // The previous version selected reminderSentAt:null and stamped only after a
+  // successful send. That is outage-safe (a provider failure leaves the row null
+  // so a later run retries) but NOT concurrency-safe: two overlapping runs (a
+  // Vercel cron double-fire, or a manual trigger racing the schedule) both
+  // select the same null batch and both e-mail it before either stamps.
+  //
+  // Claiming each wave with a guarded updateManyAndReturn flips null→now
+  // atomically and returns EXACTLY the rows this run won, so a concurrent run
+  // claims a disjoint set and never double-sends. A row whose send then fails is
+  // reset to null, preserving the original retry-on-outage guarantee.
   for (let i = 0; i < tickets.length; i += WAVE_SIZE) {
     const wave = tickets.slice(i, i + WAVE_SIZE);
+    const claimed = await prisma.ticket.updateManyAndReturn({
+      where: { id: { in: wave.map((t) => t.id) }, reminderSentAt: null },
+      data: { reminderSentAt: new Date() },
+      select: { id: true },
+    });
+    const claimedIds = new Set(claimed.map((c) => c.id));
+    const toSend = wave.filter((t) => claimedIds.has(t.id));
+    if (toSend.length === 0) continue;
+
     const settled = await Promise.allSettled(
-      wave.map((ticket) =>
+      toSend.map((ticket) =>
         sendEventReminderEmail({
           to: ticket.user.email,
           eventTitle: ticket.event.title,
@@ -72,20 +89,23 @@ export async function GET(req: NextRequest) {
       )
     );
 
-    const deliveredIds: string[] = [];
+    const failedIds: string[] = [];
     settled.forEach((result, idx) => {
       if (result.status === "fulfilled" && result.value) {
-        deliveredIds.push(wave[idx].id);
+        reminded += 1;
+      } else {
+        failedIds.push(toSend[idx].id);
       }
     });
-    failed += wave.length - deliveredIds.length;
 
-    if (deliveredIds.length > 0) {
+    // Release the claim on anything that did not actually go out, so a later run
+    // retries it instead of it being silently recorded as reminded.
+    if (failedIds.length > 0) {
       await prisma.ticket.updateMany({
-        where: { id: { in: deliveredIds } },
-        data: { reminderSentAt: new Date() },
+        where: { id: { in: failedIds } },
+        data: { reminderSentAt: null },
       });
-      reminded += deliveredIds.length;
+      failed += failedIds.length;
     }
   }
 

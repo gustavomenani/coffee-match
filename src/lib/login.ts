@@ -39,8 +39,8 @@ export async function verifyLogin(
 
   const email = cleanEmail(parsed.data.email);
   const [byIp, byIpEmail] = await Promise.all([
-    rateLimit(`login:ip:${ip}`, 30, 15 * 60_000),
-    rateLimit(`login:${ip}:${email}`, 10, 15 * 60_000),
+    rateLimit(`login:ip:${ip}`, 30, 15 * 60_000, { critical: true }),
+    rateLimit(`login:${ip}:${email}`, 10, 15 * 60_000, { critical: true }),
   ]);
   if (!byIp || !byIpEmail) {
     await auditLog({

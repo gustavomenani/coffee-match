@@ -90,3 +90,46 @@ export function logWarn(event: string, context: LogContext = {}): void {
 export function logInfo(event: string, context: LogContext = {}): void {
   emit("info", event, context);
 }
+
+/**
+ * A money/data anomaly a human must act on NOW — "payment captured but no
+ * ticket", a duplicate charge, a duplicate preapproval. These paths were
+ * deliberately built to detect-and-log rather than auto-remediate, which is only
+ * safe if someone is actually paged. This logs at error level AND best-effort
+ * POSTs to ALERT_WEBHOOK_URL (Slack/Discord/generic incoming webhook).
+ *
+ * Fire-and-forget with a hard timeout, and swallows everything: an alert channel
+ * being down must never turn a recoverable money anomaly into a crashed webhook
+ * (which Mercado Pago would then retry, compounding the problem).
+ */
+export function alertCritical(event: string, context: LogContext = {}): void {
+  emit("error", event, { ...context, critical: true });
+  void dispatchAlert(event, redact(context));
+}
+
+async function dispatchAlert(event: string, context: LogContext): Promise<void> {
+  const url = process.env.ALERT_WEBHOOK_URL;
+  if (!url) return; // logged already; webhook is optional
+  try {
+    const summary = Object.entries(context)
+      .map(([k, v]) => `${k}=${typeof v === "string" ? v : JSON.stringify(v)}`)
+      .join(" ");
+    const text = `🚨 coffee-match CRITICAL: ${event}\n${summary}`;
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 3000);
+    try {
+      await fetch(url, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        // Both keys so one payload works for Slack ("text") and Discord
+        // ("content") incoming webhooks; each ignores the other's field.
+        body: JSON.stringify({ text, content: text }),
+        signal: controller.signal,
+      });
+    } finally {
+      clearTimeout(timeout);
+    }
+  } catch {
+    // Alert delivery failed; the error-level log line above is the fallback.
+  }
+}

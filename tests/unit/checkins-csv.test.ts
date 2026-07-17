@@ -78,6 +78,32 @@ describe("check-in CSV export", () => {
     expect(csv).toContain('"Ana ""A"" Paula"');
   });
 
+  it("writes the check-in time in São Paulo, not UTC", async () => {
+    eventFindFirst.mockResolvedValue({
+      id: EVENT_ID,
+      slug: "noite-teste",
+      tickets: [
+        {
+          id: "ckticket0000000000000001",
+          checkedInAt: new Date("2026-07-17T23:30:00Z"), // 20:30 in São Paulo
+          user: {
+            name: "Ana",
+            email: "ana@example.com",
+            phone: "11999999999",
+            gender: "female",
+          },
+        },
+      ],
+    });
+    const res = await GET(new Request("http://localhost/x"), {
+      params: Promise.resolve({ id: EVENT_ID }),
+    });
+    const csv = await res.text();
+    // SP is UTC-3, so 23:30Z is 20:30 locally. The raw UTC ISO must not appear.
+    expect(csv).toContain("20:30");
+    expect(csv).not.toContain("2026-07-17T23:30:00.000Z");
+  });
+
   it("refuses a non-admin", async () => {
     requireAdminMock.mockResolvedValue({ ok: false, error: "Acesso negado." });
     const res = await GET(new Request("http://localhost/x"), {

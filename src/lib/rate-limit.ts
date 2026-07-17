@@ -1,6 +1,35 @@
 import { prisma } from "@/lib/prisma";
+import { logError, alertCritical } from "@/lib/observability";
 
 type Bucket = { count: number; resetAt: number };
+
+export type RateLimitOptions = {
+  /**
+   * Marks a security-critical brute-force gate (login, password reset). When the
+   * Postgres counter path errors, these keys fall back to a STRICT per-instance
+   * cap and page an operator, instead of silently degrading to the caller's full
+   * limit. The in-memory fallback is not shared across serverless instances, so
+   * on a DB outage it is the last line of defense — and since account lockout is
+   * soft by design, it is the ONLY brute-force defense. Keep the fallback tight.
+   */
+  critical?: boolean;
+};
+
+/** Per-instance cap applied to critical keys when the DB counter is unavailable. */
+const CRITICAL_FALLBACK_LIMIT = 5;
+
+/** Throttle so a sustained DB outage cannot flood the alert channel. */
+let lastFallbackAlert = 0;
+function alertDbFallback(key: string, err: unknown): void {
+  logError("rate_limit.db_fallback", err, { key });
+  const now = Date.now();
+  if (now - lastFallbackAlert >= 60_000) {
+    lastFallbackAlert = now;
+    alertCritical("rate_limit.db_fallback", {
+      note: "rate-limit DB counter failing; brute-force defense degraded to per-instance memory",
+    });
+  }
+}
 
 /** In-memory fallback for when the DB is unreachable (best-effort per instance). */
 const memoryBuckets = new Map<string, Bucket>();
@@ -46,9 +75,10 @@ function memoryRateLimit(
 export async function rateLimit(
   key: string,
   limit: number,
-  windowMs: number
+  windowMs: number,
+  opts?: RateLimitOptions
 ): Promise<boolean> {
-  return (await rateLimitDetailed(key, limit, windowMs)).ok;
+  return (await rateLimitDetailed(key, limit, windowMs, opts)).ok;
 }
 
 /**
@@ -59,7 +89,8 @@ export async function rateLimit(
 export async function rateLimitDetailed(
   key: string,
   limit: number,
-  windowMs: number
+  windowMs: number,
+  opts?: RateLimitOptions
 ): Promise<RateLimitResult> {
   if (
     process.env.E2E_DISABLE_RATE_LIMIT === "1" ||
@@ -70,6 +101,13 @@ export async function rateLimitDetailed(
 
   const now = Date.now();
   sweep(now);
+
+  // Per-instance fallback limit: clamp critical keys hard, since memory is not
+  // shared across serverless instances and the DB counter is what makes the
+  // limit global.
+  const fallbackLimit = opts?.critical
+    ? Math.min(limit, CRITICAL_FALLBACK_LIMIT)
+    : limit;
 
   try {
     // Single atomic upsert: start a new window when the old one expired,
@@ -89,13 +127,17 @@ export async function rateLimitDetailed(
       RETURNING "count", "resetAt"
     `;
     const row = rows[0];
-    if (!row) return memoryRateLimit(key, limit, windowMs, now);
+    if (!row) return memoryRateLimit(key, fallbackLimit, windowMs, now);
     return {
       ok: row.count <= limit,
       remaining: Math.max(0, limit - row.count),
       resetAt: row.resetAt.getTime(),
     };
-  } catch {
-    return memoryRateLimit(key, limit, windowMs, now);
+  } catch (err) {
+    // The DB counter is unavailable. Make this visible (silent degradation of
+    // the only brute-force defense is the real danger), then fall back to
+    // per-instance memory — clamped hard for critical keys.
+    alertDbFallback(key, err);
+    return memoryRateLimit(key, fallbackLimit, windowMs, now);
   }
 }

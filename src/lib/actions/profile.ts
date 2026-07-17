@@ -76,15 +76,23 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Muitas tentativas para este e-mail." };
   }
 
-  const exists = await prisma.user.findUnique({ where: { email } });
-  if (exists) return { ok: false, error: "E-mail já cadastrado." };
-
   const phone = cleanPhone(parsed.data.phone);
   if (phone.replace(/\D/g, "").length < 10) {
     return { ok: false, error: "Telefone inválido." };
   }
 
+  // Hash BEFORE the existence check so an already-registered e-mail and a fresh
+  // one take the same wall-clock time. The old order returned immediately on
+  // "exists" (no bcrypt) but paid ~200ms of bcrypt for a new e-mail — a timing
+  // oracle that confirms account membership on an 18+ dating platform, which
+  // login (dummy-hash) and password reset (constant-time) both go out of their
+  // way to prevent. (The explicit "E-mail já cadastrado" message is a separate,
+  // product-level enumeration tradeoff — see project notes.)
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
+
+  const exists = await prisma.user.findUnique({ where: { email } });
+  if (exists) return { ok: false, error: "E-mail já cadastrado." };
+
   let user;
   try {
     user = await prisma.user.create({

@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const subFindUnique = vi.fn();
 const subUpsert = vi.fn();
 const subUpdate = vi.fn();
+const queryRawMock = vi.fn();
 const requireUserMock = vi.fn();
 const rateLimitMock = vi.fn();
 const auditLogMock = vi.fn();
@@ -11,15 +12,26 @@ const cancelPreapprovalMock = vi.fn();
 const isMpDevBypassMock = vi.fn();
 const revalidatePathMock = vi.fn();
 
-vi.mock("@/lib/prisma", () => ({
-  prisma: {
+vi.mock("@/lib/prisma", () => {
+  // The real MP path runs inside prisma.$transaction with a tx-scoped advisory
+  // lock (tx.$queryRaw). Route tx to the SAME method mocks so the existing
+  // assertions (findUnique/upsert/cancel/create) still hold, and execute the
+  // transaction callback synchronously.
+  const client = {
     subscription: {
       findUnique: (...a: unknown[]) => subFindUnique(...a),
       upsert: (...a: unknown[]) => subUpsert(...a),
       update: (...a: unknown[]) => subUpdate(...a),
     },
-  },
-}));
+    $queryRaw: (...a: unknown[]) => queryRawMock(...a),
+  };
+  return {
+    prisma: {
+      ...client,
+      $transaction: (fn: (tx: unknown) => unknown) => fn(client),
+    },
+  };
+});
 vi.mock("@/lib/authz", () => ({
   requireUser: (...a: unknown[]) => requireUserMock(...a),
 }));
@@ -50,6 +62,7 @@ beforeEach(() => {
   });
   rateLimitMock.mockResolvedValue(true);
   isMpDevBypassMock.mockReturnValue(false);
+  queryRawMock.mockResolvedValue([]);
   subFindUnique.mockResolvedValue(null);
   subUpsert.mockResolvedValue({});
   subUpdate.mockResolvedValue({});
