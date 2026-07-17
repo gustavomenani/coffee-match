@@ -90,6 +90,47 @@ export async function listPublishedEvents(): Promise<EventWithSpots[]> {
   return events.map(reviveEventDates);
 }
 
+export type PastEvent = {
+  id: string;
+  title: string;
+  slug: string;
+  city: string;
+  venue: string;
+  startsAt: Date;
+};
+
+/**
+ * Noites já encerradas (status "closed"), mais recentes primeiro.
+ * Cached 300s — histórico muda pouco. O `limit` entra na chave do cache
+ * automaticamente por ser argumento da função cacheada.
+ */
+export async function listPastEvents(limit = 6): Promise<PastEvent[]> {
+  const events = await unstable_cache(
+    async (take: number) =>
+      prisma.event.findMany({
+        where: { status: "closed" },
+        orderBy: { startsAt: "desc" },
+        take,
+        select: {
+          id: true,
+          title: true,
+          slug: true,
+          city: true,
+          venue: true,
+          startsAt: true,
+        },
+      }),
+    ["past-events-v1"],
+    { revalidate: 300 }
+  )(limit);
+
+  // Mesmo motivo do reviveEventDates: cache hits serializam Date como string.
+  return events.map((event) => ({
+    ...event,
+    startsAt: new Date(event.startsAt),
+  }));
+}
+
 export async function getEventBySlug(
   slug: string
 ): Promise<EventWithSpots | null> {

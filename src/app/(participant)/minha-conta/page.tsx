@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ProfileForm } from "@/components/profile/profile-form";
+import { PushToggle } from "@/components/pwa/push-toggle";
 
 export default async function MinhaContaPage() {
   const session = await auth();
@@ -40,6 +41,8 @@ export default async function MinhaContaPage() {
           </Link>
         </div>
 
+        <PushToggle />
+
         <div className="surface-card mt-8 p-6 sm:p-8">
           <ProfileForm
             defaults={{
@@ -48,6 +51,7 @@ export default async function MinhaContaPage() {
               instagram: user.instagram,
               bio: user.bio,
               photoUrl: user.photoUrl,
+              interests: user.interests,
             }}
           />
         </div>

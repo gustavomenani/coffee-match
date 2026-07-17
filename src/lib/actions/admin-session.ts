@@ -7,6 +7,7 @@ import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
 import { sendMatchesReadyEmail } from "@/lib/notify";
+import { sendPushToUser } from "@/lib/push";
 import type { ActionResult } from "@/lib/action-result";
 import type { CheckInTicketRow } from "@/components/admin/checkin-list";
 
@@ -274,11 +275,20 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
       select: { id: true, email: true },
     });
     for (const voter of voters) {
+      const matchCount = matchCountByUser.get(voter.id) ?? 0;
       await sendMatchesReadyEmail({
         to: voter.email,
         eventTitle: event.title,
         eventId,
-        matchCount: matchCountByUser.get(voter.id) ?? 0,
+        matchCount,
+      });
+      await sendPushToUser(voter.id, {
+        title: "Seus resultados saíram ☕",
+        body:
+          matchCount > 0
+            ? `Você tem ${matchCount} match${matchCount > 1 ? "es" : ""}! Veja quem também disse sim.`
+            : "A votação encerrou — veja os resultados.",
+        url: `/evento/${eventId}/matches`,
       });
     }
   }

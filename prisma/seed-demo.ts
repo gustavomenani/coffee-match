@@ -6,6 +6,7 @@ import {
   Interest,
 } from "@prisma/client";
 import bcrypt from "bcryptjs";
+import { INTERESTS } from "../src/lib/domain/interests";
 
 const prisma = new PrismaClient();
 
@@ -61,6 +62,31 @@ const WOMEN_BIOS = [
   "Jornalista curiosa por natureza. Pergunto muito — vem preparado(a).",
 ];
 
+// Coherent with each bio above; values must be exact members of INTERESTS.
+type InterestTag = (typeof INTERESTS)[number];
+
+const MEN_INTERESTS: InterestTag[][] = [
+  ["Café", "Música ao vivo"], // barista + vinis
+  ["Café", "Gastronomia", "Vinho"], // cozinheiro de massas, espresso duplo
+  ["Corrida", "Academia", "Café"], // maratonista
+  ["Fotografia", "Viagens", "Café"], // fotógrafo de rua
+  ["Livros", "Gastronomia", "Café"], // professor de história + pão de queijo
+  ["Trilhas", "Café", "Viagens"], // escalada + cafeterias escondidas
+  ["Música ao vivo", "Vinho"], // músico de jazz
+  ["Cinema", "Séries", "Jogos"], // cinéfilo assumido
+];
+
+const WOMEN_INTERESTS: InterestTag[][] = [
+  ["Café", "Trilhas"], // café coado + trilhas
+  ["Café", "Gastronomia", "Viagens"], // feiras de rua + cappuccino
+  ["Livros", "Séries"], // lê três livros ao mesmo tempo
+  ["Pets", "Gastronomia", "Séries"], // dois gatos + brigadeiro
+  ["Praia", "Trilhas", "Viagens"], // bióloga, praia fora de temporada
+  ["Dança", "Música ao vivo", "Café"], // dançarina de forró
+  ["Gastronomia", "Café", "Vinho"], // chef confeiteira
+  ["Livros", "Viagens", "Fotografia"], // jornalista curiosa
+];
+
 function emailFor(name: string) {
   const first = name.split(" ")[0].toLowerCase();
   return `${first}@demo.coffeematch.local`;
@@ -71,7 +97,8 @@ async function upsertParticipant(
   gender: Gender,
   index: number,
   passwordHash: string,
-  bio: string
+  bio: string,
+  interests: string[]
 ) {
   const email = emailFor(name);
   const phone = `119${gender === Gender.male ? "8" : "7"}${String(
@@ -87,6 +114,7 @@ async function upsertParticipant(
       gender,
       phone,
       bio,
+      interests,
       role: "participant",
       failedLoginCount: 0,
       lockedUntil: null,
@@ -98,6 +126,7 @@ async function upsertParticipant(
       phone,
       gender,
       bio,
+      interests,
       birthDate: new Date(`${birthYear}-05-1${index % 9}`),
       instagram: `${name.split(" ")[0].toLowerCase()}.demo`,
     },
@@ -116,13 +145,27 @@ async function main() {
   const men = [];
   for (const [i, name] of MEN.entries()) {
     men.push(
-      await upsertParticipant(name, Gender.male, i, passwordHash, MEN_BIOS[i])
+      await upsertParticipant(
+        name,
+        Gender.male,
+        i,
+        passwordHash,
+        MEN_BIOS[i],
+        MEN_INTERESTS[i]
+      )
     );
   }
   const women = [];
   for (const [i, name] of WOMEN.entries()) {
     women.push(
-      await upsertParticipant(name, Gender.female, i, passwordHash, WOMEN_BIOS[i])
+      await upsertParticipant(
+        name,
+        Gender.female,
+        i,
+        passwordHash,
+        WOMEN_BIOS[i],
+        WOMEN_INTERESTS[i]
+      )
     );
   }
 

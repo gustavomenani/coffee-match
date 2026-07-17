@@ -1,7 +1,8 @@
 import Link from "next/link";
 import type { Metadata } from "next";
 import { EventCard } from "@/components/events/event-card";
-import { listPublishedEvents } from "@/lib/actions/events";
+import { CityFilter, slugifyCity } from "@/components/events/city-filter";
+import { listPublishedEvents, listPastEvents } from "@/lib/actions/events";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Reveal } from "@/components/ui/reveal";
 import { absoluteUrl, SITE } from "@/lib/seo";
@@ -27,18 +28,47 @@ export const metadata: Metadata = {
   },
 };
 
-export default async function EventosPage() {
-  const events = await listPublishedEvents();
+const pastDateFormatter = new Intl.DateTimeFormat("pt-BR", {
+  dateStyle: "medium",
+});
+
+export default async function EventosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ cidade?: string | string[] }>;
+}) {
+  const [events, pastEvents, { cidade }] = await Promise.all([
+    listPublishedEvents(),
+    listPastEvents(),
+    searchParams,
+  ]);
+
+  // Cidades únicas dos eventos retornados, ordenadas pt-BR.
+  const cities = [...new Set(events.map((event) => event.city))].sort((a, b) =>
+    a.localeCompare(b, "pt-BR")
+  );
+
+  // Param desconhecido (ou ausente) → "Todas".
+  const cidadeParam = Array.isArray(cidade) ? cidade[0] : cidade;
+  const activeCity =
+    cidadeParam != null
+      ? (cities.find((city) => slugifyCity(city) === cidadeParam) ?? null)
+      : null;
+  const activeSlug = activeCity ? slugifyCity(activeCity) : null;
+
+  const filteredEvents = activeCity
+    ? events.filter((event) => event.city === activeCity)
+    : events;
 
   const itemList =
-    events.length > 0
+    filteredEvents.length > 0
       ? {
           "@context": "https://schema.org",
           "@type": "ItemList",
           name: "Próximas noites Coffee Match",
           itemListOrder: "https://schema.org/ItemListOrderAscending",
-          numberOfItems: events.length,
-          itemListElement: events.map((event, index) => ({
+          numberOfItems: filteredEvents.length,
+          itemListElement: filteredEvents.map((event, index) => ({
             "@type": "ListItem",
             position: index + 1,
             url: absoluteUrl(`/eventos/${event.slug}`),
@@ -61,7 +91,11 @@ export default async function EventosPage() {
         </p>
       </div>
 
-      {events.length === 0 ? (
+      {cities.length >= 2 ? (
+        <CityFilter cities={cities} activeSlug={activeSlug} />
+      ) : null}
+
+      {filteredEvents.length === 0 ? (
         <div className="surface-card px-6 py-16 text-center sm:px-10">
           <p className="font-display text-2xl font-semibold text-[var(--ink)]">
             Em breve novos encontros
@@ -70,19 +104,60 @@ export default async function EventosPage() {
             Estamos preparando as próximas noites. Crie sua conta para estar
             pronta(o) quando as vagas abrirem.
           </p>
-          <Link href="/cadastro" className="btn btn-primary mt-8">
-            Criar conta
-          </Link>
+          {activeCity ? (
+            <Link href="/eventos" className="btn btn-primary mt-8">
+              Ver todas as cidades
+            </Link>
+          ) : (
+            <Link href="/cadastro" className="btn btn-primary mt-8">
+              Criar conta
+            </Link>
+          )}
         </div>
       ) : (
         <ul className="flex flex-col gap-5">
-          {events.map((event, i) => (
+          {filteredEvents.map((event, i) => (
             <Reveal as="li" key={event.id} delay={i * 70}>
               <EventCard event={event} />
             </Reveal>
           ))}
         </ul>
       )}
+
+      {pastEvents.length > 0 ? (
+        <section aria-labelledby="noites-anteriores" className="mt-16">
+          <p className="eyebrow mb-3">Histórico</p>
+          <h2
+            id="noites-anteriores"
+            className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)]"
+          >
+            Noites anteriores
+          </h2>
+          <p className="mt-3 text-sm leading-relaxed text-[var(--muted)]">
+            Já aconteceram — e as próximas vêm aí.
+          </p>
+          <ul className="mt-8 grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+            {pastEvents.map((event, i) => (
+              <Reveal as="li" key={event.id} delay={i * 60}>
+                <Link
+                  href={`/eventos/${event.slug}`}
+                  className="surface-card surface-card-hover block p-5"
+                >
+                  <h3 className="font-display text-lg font-semibold tracking-tight text-[var(--ink)]">
+                    {event.title}
+                  </h3>
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    {event.city} · {event.venue}
+                  </p>
+                  <p className="mt-2 text-sm font-medium text-[var(--ink-soft)]">
+                    {pastDateFormatter.format(event.startsAt)}
+                  </p>
+                </Link>
+              </Reveal>
+            ))}
+          </ul>
+        </section>
+      ) : null}
     </main>
   );
 }

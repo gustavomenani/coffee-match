@@ -15,6 +15,7 @@ export type BallotCandidate = {
   photoUrl: string | null;
   age: number;
   bio: string | null;
+  interests: string[];
   supporter: boolean;
 };
 
@@ -199,6 +200,7 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
             photoUrl: true,
             birthDate: true,
             bio: true,
+            interests: true,
             subscription: { select: { status: true } },
           },
         },
@@ -224,6 +226,7 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
         photoUrl: t.user.photoUrl,
         age: ageFrom(t.user.birthDate),
         bio: t.user.bio,
+        interests: t.user.interests,
         supporter: t.user.subscription?.status === "active",
       })),
       votes: existingVotes.map((v) => ({

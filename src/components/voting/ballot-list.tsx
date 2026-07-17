@@ -24,6 +24,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
   });
   const [error, setError] = useState<string | null>(null);
   const [pendingId, setPendingId] = useState<string | null>(null);
+  const [expandedId, setExpandedId] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const votedCount = useMemo(() => Object.keys(votes).length, [votes]);
@@ -86,53 +87,109 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
         {candidates.map((person) => {
           const current = votes[person.id];
           const busy = isPending && pendingId === person.id;
+          const expanded = expandedId === person.id;
+          const panelId = `ballot-panel-${person.id}`;
 
           return (
             <li
               key={person.id}
               className="surface-card flex flex-col gap-4 p-4 sm:flex-row sm:items-center sm:justify-between sm:p-5"
             >
-              <div className="flex items-center gap-3">
-                {person.photoUrl ? (
-                  // eslint-disable-next-line @next/next/no-img-element
-                  <img
-                    src={person.photoUrl}
-                    alt=""
-                    className="h-14 w-14 rounded-full object-cover outline outline-1 outline-[var(--line)]"
-                  />
-                ) : (
-                  <div className="grid h-14 w-14 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] text-lg font-semibold text-white">
-                    {person.name.slice(0, 1).toUpperCase()}
-                  </div>
-                )}
-                <div>
-                  <p className="font-display flex items-center gap-2 text-xl font-semibold text-[var(--ink)]">
-                    {person.name} · {person.age}
-                    {person.supporter ? (
-                      <span
-                        className="badge badge-soft !text-[0.62rem]"
-                        title="Apoiador Coffee Match"
-                      >
-                        ☕ Apoiador
-                      </span>
-                    ) : null}
-                  </p>
-                  {person.bio ? (
-                    <p className="text-sm text-[var(--muted)] line-clamp-2">
-                      {person.bio}
-                    </p>
-                  ) : null}
-                  {current ? (
-                    <p className="text-sm text-[var(--muted)]">
-                      Seu voto:{" "}
-                      <span className="font-semibold text-[var(--ink-soft)]">
-                        {current === "yes" ? "Sim" : "Não"}
-                      </span>
-                    </p>
+              <div className="min-w-0 flex-1">
+                <button
+                  type="button"
+                  aria-expanded={expanded}
+                  aria-controls={panelId}
+                  aria-label={`Ver perfil de ${person.name}`}
+                  onClick={() =>
+                    setExpandedId(expanded ? null : person.id)
+                  }
+                  className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] text-left"
+                >
+                  {person.photoUrl ? (
+                    // eslint-disable-next-line @next/next/no-img-element
+                    <img
+                      src={person.photoUrl}
+                      alt=""
+                      className={`${
+                        expanded ? "h-28 w-28" : "h-14 w-14"
+                      } shrink-0 rounded-full object-cover outline outline-1 outline-[var(--line)]`}
+                    />
                   ) : (
-                    <p className="text-sm text-[var(--muted)]">Ainda não votou</p>
+                    <div
+                      className={`grid ${
+                        expanded ? "h-28 w-28 text-3xl" : "h-14 w-14 text-lg"
+                      } shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-semibold text-white`}
+                    >
+                      {person.name.slice(0, 1).toUpperCase()}
+                    </div>
                   )}
-                </div>
+                  <div className="min-w-0">
+                    <p className="font-display flex flex-wrap items-center gap-2 text-xl font-semibold text-[var(--ink)]">
+                      {person.name} · {person.age}
+                      {person.supporter ? (
+                        <span
+                          className="badge badge-soft !text-[0.62rem]"
+                          title="Apoiador Coffee Match"
+                        >
+                          ☕ Apoiador
+                        </span>
+                      ) : null}
+                    </p>
+                    {!expanded && person.bio ? (
+                      <p className="text-sm text-[var(--muted)] line-clamp-2">
+                        {person.bio}
+                      </p>
+                    ) : null}
+                    {!expanded && person.interests.length > 0 ? (
+                      <p className="mt-1 flex flex-wrap gap-1">
+                        {person.interests.slice(0, 3).map((tag) => (
+                          <span
+                            key={tag}
+                            className="badge badge-soft !text-[0.6rem]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
+                  </div>
+                </button>
+
+                {expanded ? (
+                  <div id={panelId} className="mt-3">
+                    {person.bio ? (
+                      <p className="text-sm text-[var(--muted)]">
+                        {person.bio}
+                      </p>
+                    ) : null}
+                    {person.interests.length > 0 ? (
+                      <p className="mt-2 flex flex-wrap gap-1">
+                        {person.interests.map((tag) => (
+                          <span
+                            key={tag}
+                            className="badge badge-soft !text-[0.6rem]"
+                          >
+                            {tag}
+                          </span>
+                        ))}
+                      </p>
+                    ) : null}
+                  </div>
+                ) : null}
+
+                {current ? (
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    Seu voto:{" "}
+                    <span className="font-semibold text-[var(--ink-soft)]">
+                      {current === "yes" ? "Sim" : "Não"}
+                    </span>
+                  </p>
+                ) : (
+                  <p className="mt-1 text-sm text-[var(--muted)]">
+                    Ainda não votou
+                  </p>
+                )}
               </div>
 
               <div className="grid grid-cols-2 gap-2 sm:flex">

@@ -5,6 +5,7 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { registerSchema, profileUpdateSchema } from "@/lib/validations/auth";
 import { isAtLeast18 } from "@/lib/domain/age";
+import { sanitizeInterests } from "@/lib/domain/interests";
 import { requireUser } from "@/lib/authz";
 import { sanitizePhotoInput } from "@/lib/security/photo";
 import { auditLog } from "@/lib/audit";
@@ -112,6 +113,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
   }
 
   const bio = cleanText(parsed.data.bio || "", 160);
+  const interests = sanitizeInterests(formData.getAll("interests"));
 
   await prisma.user.update({
     where: { id: authz.user.id },
@@ -121,6 +123,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
       instagram: ig,
       bio: bio || null,
       photoUrl: photo.value,
+      interests,
     },
   });
 

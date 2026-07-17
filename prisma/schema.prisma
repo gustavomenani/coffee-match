@@ -83,6 +83,8 @@ model User {
   instagram        String?
   /// Short profile bio shown on the voting ballot (max ~160 chars).
   bio              String?
+  /// Up to 5 interest tags from the fixed app list, shown on the ballot.
+  interests        String[]  @default([])
   role             Role      @default(participant)
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
@@ -94,6 +96,20 @@ model User {
   memberships      OrganizationMember[]
   resetTokens      PasswordResetToken[]
   subscription     Subscription?
+  pushSubscriptions PushSubscription[]
+}
+
+/// Web Push endpoints (one per device/browser the user enabled).
+model PushSubscription {
+  id        String   @id @default(cuid())
+  userId    String
+  user      User     @relation(fields: [userId], references: [id])
+  endpoint  String   @unique
+  p256dh    String
+  auth      String
+  createdAt DateTime @default(now())
+
+  @@index([userId])
 }
 
 /// R$10/mês "Apoiador": badge + early access to event sales.

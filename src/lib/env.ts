@@ -18,6 +18,17 @@ const envSchema = z.object({
     .optional()
     .transform((v) => v === "1" || v === "true"),
   E2E_DISABLE_RATE_LIMIT: z.string().optional(),
+  /** Web Push (VAPID). Gere o par com: npx web-push generate-vapid-keys */
+  VAPID_PUBLIC_KEY: z.string().min(32).optional(),
+  VAPID_PRIVATE_KEY: z.string().min(32).optional(),
+  /** Contato do emissor exigido pelo protocolo: "mailto:..." ou URL https. */
+  VAPID_SUBJECT: z
+    .string()
+    .refine(
+      (v) => v.startsWith("mailto:") || v.startsWith("https://"),
+      "VAPID_SUBJECT deve ser mailto: ou URL https"
+    )
+    .optional(),
 });
 
 export type AppEnv = z.infer<typeof envSchema>;

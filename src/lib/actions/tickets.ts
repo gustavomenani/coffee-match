@@ -8,6 +8,7 @@ import { getEventOccupancy } from "@/lib/occupancy";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { parseCuid } from "@/lib/security/ids";
 import { sendSpotOpenedEmail } from "@/lib/notify";
+import { isPushConfigured, sendPushToUser } from "@/lib/push";
 import { auditLog } from "@/lib/audit";
 import type { ActionResult } from "@/lib/action-result";
 
@@ -61,6 +62,23 @@ async function notifyWaitlistSpotOpened(event: {
     } catch (err) {
       // sendEmail is already defensive, but one bad recipient must not block the rest.
       console.error("[waitlist] spot-opened e-mail failed", interest.email, err);
+    }
+  }
+
+  // O waitlist é por e-mail (pode não ter conta): envia push só para os
+  // e-mails que correspondem a usuários cadastrados, além do e-mail.
+  if (isPushConfigured()) {
+    const emails = [...new Set(interests.map((i) => i.email))];
+    const users = await prisma.user.findMany({
+      where: { email: { in: emails } },
+      select: { id: true },
+    });
+    for (const user of users) {
+      await sendPushToUser(user.id, {
+        title: "Abriu vaga! ☕",
+        body: `Uma vaga acabou de abrir em "${event.title}" (${event.city}). Garanta a sua!`,
+        url: `/eventos/${event.slug}`,
+      });
     }
   }
 

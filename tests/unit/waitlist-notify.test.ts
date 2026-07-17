@@ -8,6 +8,8 @@ const getEventOccupancyMock = vi.fn();
 const sendSpotOpenedEmailMock = vi.fn();
 const bustEventCachesMock = vi.fn();
 const auditLogMock = vi.fn();
+const isPushConfiguredMock = vi.fn(() => false);
+const sendPushToUserMock = vi.fn();
 const authMock = vi.fn();
 const revalidatePathMock = vi.fn();
 
@@ -34,6 +36,10 @@ vi.mock("@/lib/cache-bust", () => ({
 }));
 vi.mock("@/lib/audit", () => ({
   auditLog: (...args: unknown[]) => auditLogMock(...args),
+}));
+vi.mock("@/lib/push", () => ({
+  isPushConfigured: () => isPushConfiguredMock(),
+  sendPushToUser: (...a: unknown[]) => sendPushToUserMock(...a),
 }));
 vi.mock("@/lib/auth", () => ({
   auth: (...args: unknown[]) => authMock(...args),
