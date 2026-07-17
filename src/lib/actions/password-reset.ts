@@ -180,6 +180,20 @@ export async function resetPassword(
     return { ok: false, error: "Link inválido ou expirado." };
   }
 
+  // Claim the token atomically BEFORE doing anything, and make the claim itself
+  // the single-use guard. The findUnique + usedAt check above is only a fast
+  // path: under Read Committed two concurrent redeems of the same token both
+  // pass it, both run the transaction, and the second password silently
+  // overwrites the first (with tokenVersion double-incremented). updateMany on
+  // `usedAt: null` lets exactly one win.
+  const claimed = await prisma.passwordResetToken.updateMany({
+    where: { id: record.id, usedAt: null },
+    data: { usedAt: new Date() },
+  });
+  if (claimed.count === 0) {
+    return { ok: false, error: "Link inválido ou expirado." };
+  }
+
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
 
   await prisma.$transaction([
@@ -192,10 +206,6 @@ export async function resetPassword(
         // Invalidate every existing session — a stolen JWT dies here.
         tokenVersion: { increment: 1 },
       },
-    }),
-    prisma.passwordResetToken.update({
-      where: { id: record.id },
-      data: { usedAt: new Date() },
     }),
     prisma.passwordResetToken.deleteMany({
       where: { userId: record.userId, id: { not: record.id } },
