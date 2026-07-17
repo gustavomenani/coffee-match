@@ -210,18 +210,46 @@ describe("POST /api/checkout", () => {
 
   it("cancels expired pending tickets and creates a new one", async () => {
     const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
-    ticketFindMany.mockResolvedValue([
-      { id: TICKET_ID, status: "pending", createdAt: threeHoursAgo },
-    ]);
+    ticketFindMany
+      // Snapshot: one expired pending ticket.
+      .mockResolvedValueOnce([
+        { id: TICKET_ID, status: "pending", createdAt: threeHoursAgo },
+      ])
+      // Re-read after the cancel: it is gone, so the user needs a new ticket.
+      .mockResolvedValueOnce([]);
+    ticketUpdateMany.mockResolvedValue({ count: 1 });
+
     const res = await POST(checkoutRequest());
+
     expect(res.status).toBe(200);
-    expect(ticketUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: { in: [TICKET_ID] } },
-        data: { status: "cancelled" },
-      })
-    );
+    // Exact `where`: the status guard is what stops this cancelling a ticket
+    // the webhook just marked paid, so a loose matcher would not protect it.
+    expect(ticketUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: [TICKET_ID] }, status: "pending" },
+      data: { status: "cancelled" },
+    });
     expect(ticketCreate).toHaveBeenCalled();
+  });
+
+  it("does not resell when an 'expired' pending was paid during checkout", async () => {
+    const threeHoursAgo = new Date(Date.now() - 3 * 60 * 60 * 1000);
+    ticketFindMany
+      .mockResolvedValueOnce([
+        { id: TICKET_ID, status: "pending", createdAt: threeHoursAgo },
+      ])
+      // The guarded cancel matched nothing because the webhook got there first;
+      // the re-read shows the ticket alive and paid.
+      .mockResolvedValueOnce([
+        { id: TICKET_ID, status: "paid", createdAt: threeHoursAgo },
+      ]);
+    ticketUpdateMany.mockResolvedValue({ count: 0 });
+
+    const res = await POST(checkoutRequest());
+
+    // The buyer already owns a paid ticket — never charge them a second time.
+    expect(ticketCreate).not.toHaveBeenCalled();
+    expect(createPreferenceMock).not.toHaveBeenCalled();
+    expect(res.status).toBe(409);
   });
 
   it("409 when capacity for the user gender is exhausted", async () => {

@@ -106,17 +106,34 @@ export async function POST(req: NextRequest) {
     )
     .map((t) => t.id);
 
+  let activeTickets = userTickets;
+
   if (expiredPendingIds.length > 0) {
-    await prisma.ticket.updateMany({
-      where: { id: { in: expiredPendingIds } },
+    // `status: "pending"` matters: expiredPendingIds comes from the snapshot
+    // read above, and the webhook can mark one of those tickets paid in the
+    // meantime (the user pays a ~2h-old link while re-opening checkout). Keyed
+    // on id alone, this swept a freshly paid ticket into "cancelled" — money
+    // captured, ticket dead. Same guard the expire-pending cron already uses.
+    const cancelled = await prisma.ticket.updateMany({
+      where: { id: { in: expiredPendingIds }, status: "pending" },
       data: { status: "cancelled" },
     });
-    await syncEventSoldOutStatus(event.id);
-  }
+    if (cancelled.count > 0) {
+      await syncEventSoldOutStatus(event.id);
+    }
 
-  const activeTickets = userTickets.filter(
-    (t) => !expiredPendingIds.includes(t.id)
-  );
+    // Re-read rather than filtering the snapshot by intent: a ticket we meant
+    // to expire may have just been paid instead, in which case it is still
+    // active and this user must not be sent to a second checkout for it.
+    activeTickets = await prisma.ticket.findMany({
+      where: {
+        eventId: event.id,
+        userId: user.id,
+        status: { in: ["pending", "paid"] },
+      },
+      orderBy: { createdAt: "desc" },
+    });
+  }
   const decision = resolveCheckoutTicket(activeTickets, now);
 
   if (decision.action === "reject_paid") {

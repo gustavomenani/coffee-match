@@ -153,10 +153,19 @@ export async function cancelPendingTicket(
     return { ok: false, error: "Pedido pendente não encontrado." };
   }
 
-  await prisma.ticket.update({
-    where: { id: ticket.id },
+  // Guard on status, not just id. The findFirst above filtered on "pending",
+  // but the webhook can flip this exact ticket to "paid" between that read and
+  // this write — the user pays the MP link in one tab and cancels in the other.
+  // Keyed on id alone, this cancelled a ticket the buyer had just paid for:
+  // money captured, ticket dead, mpPaymentId set so nothing downstream notices.
+  const cancelled = await prisma.ticket.updateMany({
+    where: { id: ticket.id, status: "pending" },
     data: { status: "cancelled" },
   });
+
+  if (cancelled.count === 0) {
+    return { ok: false, error: "Este pedido já foi pago ou cancelado." };
+  }
 
   await syncEventSoldOutStatus(ticket.eventId);
   bustEventCaches(ticket.event.slug);
