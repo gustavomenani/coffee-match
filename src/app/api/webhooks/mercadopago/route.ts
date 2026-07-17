@@ -90,6 +90,27 @@ export async function POST(req: NextRequest) {
           meta: { preapprovalId: paymentId, via: "webhook" },
         });
       } else if (
+        status === "authorized" &&
+        sub.status === "active" &&
+        sub.mpPreapprovalId !== paymentId
+      ) {
+        // A SECOND live preapproval for someone already subscribed — MP is
+        // about to bill them twice and only one id is recorded, so
+        // cancelSubscription could never stop this one. Same shape as
+        // ticket.duplicate_payment: never overwrite the id, flag it loudly.
+        await auditLog({
+          actorId: sub.userId,
+          action: "subscription.duplicate_preapproval",
+          meta: {
+            originalPreapprovalId: sub.mpPreapprovalId,
+            duplicatePreapprovalId: paymentId,
+          },
+        });
+        console.error("[mp-webhook] duplicate authorized preapproval", {
+          userId: sub.userId,
+          duplicatePreapprovalId: paymentId,
+        });
+      } else if (
         (status === "cancelled" || status === "paused") &&
         sub.status !== "cancelled"
       ) {

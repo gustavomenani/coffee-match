@@ -58,6 +58,33 @@ export async function startSubscription(): Promise<SubscribeResult> {
     return { ok: true, initPoint: "/assinatura?ativada=1" };
   }
 
+  // Retire the previous preapproval before minting a replacement. Overwriting
+  // mpPreapprovalId left the old one live and authorizable on MP: the user
+  // starts a subscription, doesn't finish, clicks again, then authorizes the
+  // FIRST link. The webhook activates on that one, and when the second is
+  // authorized too it finds the row already active and records nothing — so MP
+  // bills R$10/month twice and cancelSubscription only ever knows about one of
+  // them, leaving the other charging forever with no in-app way to stop it.
+  //
+  // Best-effort on purpose: if MP cannot cancel the stale id, that must not
+  // block someone from subscribing. The orphan is audited so it can be found.
+  if (existing?.mpPreapprovalId) {
+    try {
+      await cancelPreapproval(existing.mpPreapprovalId);
+    } catch (err) {
+      console.error(
+        "[subscription] could not cancel superseded preapproval",
+        existing.mpPreapprovalId,
+        err
+      );
+      await auditLog({
+        actorId: user.id,
+        action: "subscription.orphaned_preapproval",
+        meta: { preapprovalId: existing.mpPreapprovalId },
+      });
+    }
+  }
+
   try {
     const { preapprovalId, initPoint } = await createSubscriptionPreapproval({
       userId: user.id,
