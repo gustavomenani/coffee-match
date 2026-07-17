@@ -1,5 +1,11 @@
-import { MercadoPagoConfig, PaymentRefund, Preference } from "mercadopago";
+import {
+  MercadoPagoConfig,
+  PaymentRefund,
+  PreApproval,
+  Preference,
+} from "mercadopago";
 import { appBaseUrl, isProduction } from "@/lib/env";
+import { SUBSCRIPTION_PRICE_CENTS } from "@/lib/domain/subscription";
 
 export function getMpClient() {
   const token = process.env.MERCADOPAGO_ACCESS_TOKEN;
@@ -48,6 +54,51 @@ export async function refundTicketPayment(mpPaymentId: string): Promise<{
     refundId: result.id ?? null,
     status: result.status ?? null,
   };
+}
+
+/** Create the R$10/month recurring subscription; buyer authorizes at init_point. */
+export async function createSubscriptionPreapproval(input: {
+  userId: string;
+  payerEmail: string;
+}): Promise<{ preapprovalId: string; initPoint: string }> {
+  const preapproval = new PreApproval(getMpClient());
+  const result = await preapproval.create({
+    body: {
+      reason: "Assinatura Coffee Match — Apoiador",
+      external_reference: input.userId,
+      payer_email: input.payerEmail,
+      back_url: `${appBaseUrl()}/assinatura`,
+      auto_recurring: {
+        frequency: 1,
+        frequency_type: "months",
+        transaction_amount: SUBSCRIPTION_PRICE_CENTS / 100,
+        currency_id: "BRL",
+      },
+    },
+  });
+  if (!result.id || !result.init_point) {
+    throw new Error("Preapproval sem id/init_point");
+  }
+  return { preapprovalId: result.id, initPoint: result.init_point };
+}
+
+export async function getPreapprovalStatus(
+  preapprovalId: string
+): Promise<{ status: string | null; externalReference: string | null }> {
+  const result = await new PreApproval(getMpClient()).get({
+    id: preapprovalId,
+  });
+  return {
+    status: result.status ?? null,
+    externalReference: result.external_reference ?? null,
+  };
+}
+
+export async function cancelPreapproval(preapprovalId: string): Promise<void> {
+  await new PreApproval(getMpClient()).update({
+    id: preapprovalId,
+    body: { status: "cancelled" },
+  });
 }
 
 export async function createTicketPreference(input: {

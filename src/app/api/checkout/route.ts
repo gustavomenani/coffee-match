@@ -9,6 +9,11 @@ import {
 import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 import { getEventOccupancy } from "@/lib/occupancy";
 import {
+  canBuyDuringEarlyAccess,
+  inEarlyAccessWindow,
+  isSubscriberActive,
+} from "@/lib/domain/subscription";
+import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
@@ -51,6 +56,22 @@ export async function POST(req: NextRequest) {
   }
 
   const now = new Date();
+
+  // Subscriber-only early-access window.
+  if (inEarlyAccessWindow(event.earlyAccessUntil, now)) {
+    const subscription = await prisma.subscription.findUnique({
+      where: { userId: user.id },
+    });
+    if (!canBuyDuringEarlyAccess(event.earlyAccessUntil, isSubscriberActive(subscription), now)) {
+      const until = event.earlyAccessUntil!.toLocaleString("pt-BR");
+      return NextResponse.json(
+        {
+          error: `Venda antecipada exclusiva para assinantes até ${until}. Assine por R$ 10/mês em /assinatura.`,
+        },
+        { status: 403 }
+      );
+    }
+  }
 
   // Cancel expired pending tickets for this user+event (>2h) so capacity frees up.
   const userTickets = await prisma.ticket.findMany({

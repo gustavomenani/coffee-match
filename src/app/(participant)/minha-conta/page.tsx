@@ -1,3 +1,4 @@
+import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
@@ -26,10 +27,12 @@ export default async function MinhaContaPage({
 
   const user = await prisma.user.findUnique({
     where: { id: session.user.id },
+    include: { subscription: { select: { status: true } } },
   });
   if (!user) {
     redirect("/login");
   }
+  const isSupporter = user.subscription?.status === "active";
 
   const params = await searchParams;
 
@@ -44,6 +47,15 @@ export default async function MinhaContaPage({
           Logado como{" "}
           <span className="font-medium text-[var(--ink)]">{user.email}</span>
         </p>
+
+        <div className="mt-4 flex flex-wrap items-center gap-3">
+          {isSupporter ? <span className="badge badge-18">☕ Apoiador</span> : null}
+          <Link href="/assinatura" className="link-coffee text-sm font-semibold">
+            {isSupporter
+              ? "Gerenciar assinatura"
+              : "Vire apoiador por R$ 10/mês →"}
+          </Link>
+        </div>
 
         <div className="surface-card mt-8 p-6 sm:p-8">
           {params.error ? (

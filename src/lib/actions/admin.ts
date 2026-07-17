@@ -31,7 +31,14 @@ function parseEventForm(formData: FormData) {
     capacityWomen: formData.get("capacityWomen"),
     priceCents,
     status: formData.get("status"),
+    earlyAccessUntil: formData.get("earlyAccessUntil") ?? "",
   });
+}
+
+function parseEarlyAccess(raw: string | undefined): Date | null | "invalid" {
+  if (!raw) return null;
+  const d = new Date(raw);
+  return Number.isNaN(d.getTime()) ? "invalid" : d;
 }
 
 export async function createEvent(formData: FormData): Promise<ActionResult> {
@@ -49,6 +56,11 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   }
   if (endsAt <= startsAt) {
     return { ok: false, error: "Término deve ser após o início." };
+  }
+
+  const earlyAccessUntil = parseEarlyAccess(data.earlyAccessUntil);
+  if (earlyAccessUntil === "invalid") {
+    return { ok: false, error: "Data de venda antecipada inválida." };
   }
 
   const org =
@@ -83,6 +95,7 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
       priceCents: data.priceCents,
       currency: "BRL",
       status: data.status,
+      earlyAccessUntil,
       session: {
         create: { status: "not_started" },
       },
@@ -126,6 +139,11 @@ export async function updateEvent(
     return { ok: false, error: "Término deve ser após o início." };
   }
 
+  const earlyAccessUntil = parseEarlyAccess(data.earlyAccessUntil);
+  if (earlyAccessUntil === "invalid") {
+    return { ok: false, error: "Data de venda antecipada inválida." };
+  }
+
   const current = await prisma.event.findFirst({
     where: { id, organizationId: membership.organizationId },
   });
@@ -156,6 +174,7 @@ export async function updateEvent(
       capacityWomen: data.capacityWomen,
       priceCents: data.priceCents,
       status: data.status,
+      earlyAccessUntil,
     },
   });
 

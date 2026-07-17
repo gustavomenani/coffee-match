@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { Payment, MercadoPagoConfig } from "mercadopago";
 import { prisma } from "@/lib/prisma";
+import { getPreapprovalStatus } from "@/lib/mercadopago";
 import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 import { verifyMercadoPagoSignature } from "@/lib/mp-webhook";
 import { isPaymentAmountValid } from "@/lib/domain/payment";
@@ -52,6 +53,60 @@ export async function POST(req: NextRequest) {
   } else if (isProduction()) {
     console.error("[mp-webhook] MERCADOPAGO_WEBHOOK_SECRET missing in production");
     return NextResponse.json({ error: "misconfigured" }, { status: 500 });
+  }
+
+  // Subscription lifecycle: data.id is a preapproval id, not a payment id.
+  if (body?.type === "subscription_preapproval") {
+    try {
+      const { status, externalReference } = await getPreapprovalStatus(
+        paymentId
+      );
+      const userId = parseCuid(externalReference);
+      const sub =
+        (await prisma.subscription.findUnique({
+          where: { mpPreapprovalId: paymentId },
+        })) ??
+        (userId
+          ? await prisma.subscription.findUnique({ where: { userId } })
+          : null);
+      if (!sub || !status) {
+        return NextResponse.json({ ok: true });
+      }
+
+      if (status === "authorized" && sub.status !== "active") {
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: {
+            status: "active",
+            mpPreapprovalId: paymentId,
+            activatedAt: sub.activatedAt ?? new Date(),
+            cancelledAt: null,
+          },
+        });
+        await auditLog({
+          actorId: sub.userId,
+          action: "subscription.activated",
+          meta: { preapprovalId: paymentId, via: "webhook" },
+        });
+      } else if (
+        (status === "cancelled" || status === "paused") &&
+        sub.status !== "cancelled"
+      ) {
+        await prisma.subscription.update({
+          where: { id: sub.id },
+          data: { status: "cancelled", cancelledAt: new Date() },
+        });
+        await auditLog({
+          actorId: sub.userId,
+          action: "subscription.cancelled",
+          meta: { preapprovalId: paymentId, via: "webhook", mpStatus: status },
+        });
+      }
+      return NextResponse.json({ ok: true });
+    } catch (err) {
+      console.error("[mp-webhook] preapproval error:", err);
+      return NextResponse.json({ error: "processing_error" }, { status: 500 });
+    }
   }
 
   try {

@@ -109,6 +109,7 @@ export default async function AdminEventoEditPage({
             capacityWomen: event.capacityWomen,
             priceCents: event.priceCents,
             status: event.status,
+            earlyAccessUntil: event.earlyAccessUntil?.toISOString(),
           }}
         />
       </div>

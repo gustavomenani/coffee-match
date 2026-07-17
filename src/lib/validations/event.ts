@@ -16,6 +16,7 @@ export const eventFormSchema = z.object({
   capacityWomen: z.coerce.number().int().min(1).max(500),
   priceCents: z.coerce.number().int().min(0),
   status: z.enum(["draft", "published", "sold_out", "live", "closed"]),
+  earlyAccessUntil: z.string().optional().or(z.literal("")),
 });
 
 export type EventFormValues = z.infer<typeof eventFormSchema>;

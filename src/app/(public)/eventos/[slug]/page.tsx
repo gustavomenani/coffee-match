@@ -4,6 +4,7 @@ import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
 import { ShareButton } from "@/components/events/share-button";
 import { getEventBySlug } from "@/lib/actions/events";
+import { inEarlyAccessWindow } from "@/lib/domain/subscription";
 import { JsonLd } from "@/components/seo/json-ld";
 import { absoluteUrl, SITE, orgId } from "@/lib/seo";
 
@@ -101,6 +102,7 @@ export default async function EventoDetailPage({
   const canBuy =
     event.status === "published" &&
     (event.remainingMen > 0 || event.remainingWomen > 0);
+  const earlyAccess = inEarlyAccessWindow(event.earlyAccessUntil);
 
   const url = absoluteUrl(`/eventos/${event.slug}`);
   const eventStatus =
@@ -311,6 +313,19 @@ export default async function EventoDetailPage({
               </p>
             </div>
             <div className="space-y-5 p-6">
+              {earlyAccess ? (
+                <p className="flash-warning rounded-[var(--radius-sm)] px-4 py-3 text-sm">
+                  <strong>Venda antecipada</strong> exclusiva para assinantes
+                  até {formatDate(event.earlyAccessUntil!)}.{" "}
+                  <Link
+                    href="/assinatura"
+                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
+                  >
+                    Assine por R$ 10/mês
+                  </Link>
+                  .
+                </p>
+              ) : null}
               {canBuy ? (
                 <BuyTicketButton eventId={event.id} />
               ) : (

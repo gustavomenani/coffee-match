@@ -26,6 +26,7 @@ export type EventWithSpots = {
   priceCents: number;
   currency: string;
   status: string;
+  earlyAccessUntil: Date | null;
   remainingMen: number;
   remainingWomen: number;
 };

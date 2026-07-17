@@ -10,6 +10,7 @@ export type EventFormDefaults = {
   capacityWomen?: number;
   priceCents?: number;
   status?: string;
+  earlyAccessUntil?: string;
 };
 
 function toDatetimeLocal(value?: string) {
@@ -168,6 +169,20 @@ export function EventForm({
           placeholder="89.90"
           className="field"
         />
+      </label>
+
+      <label className="block">
+        <span className="label">Venda antecipada para assinantes até (opcional)</span>
+        <input
+          type="datetime-local"
+          name="earlyAccessUntil"
+          defaultValue={toDatetimeLocal(defaults?.earlyAccessUntil)}
+          className="field"
+        />
+        <span className="mt-1.5 block text-xs text-[var(--muted)]">
+          Antes desse horário, só assinantes conseguem comprar. Vazio = venda
+          aberta para todos desde a publicação.
+        </span>
       </label>
 
       <label className="block">

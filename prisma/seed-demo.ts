@@ -97,6 +97,19 @@ async function main() {
     women.push(await upsertParticipant(name, Gender.female, i, passwordHash));
   }
 
+  // Two demo supporters (badge + early access): Rafael and Ana.
+  for (const supporter of [men[0], women[0]]) {
+    await prisma.subscription.upsert({
+      where: { userId: supporter.id },
+      update: { status: "active", activatedAt: new Date(), cancelledAt: null },
+      create: {
+        userId: supporter.id,
+        status: "active",
+        activatedAt: new Date(),
+      },
+    });
+  }
+
   // Reset the demo event (tickets/votes/matches) so re-running is clean.
   const existing = await prisma.event.findUnique({
     where: { slug: EVENT_SLUG },

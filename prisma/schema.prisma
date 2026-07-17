@@ -43,6 +43,12 @@ enum Interest {
   no
 }
 
+enum SubscriptionStatus {
+  pending
+  active
+  cancelled
+}
+
 model Organization {
   id        String   @id @default(cuid())
   name      String
@@ -85,6 +91,20 @@ model User {
   votesTo          Vote[]    @relation("VotesTo")
   memberships      OrganizationMember[]
   resetTokens      PasswordResetToken[]
+  subscription     Subscription?
+}
+
+/// R$10/mês "Apoiador": badge + early access to event sales.
+model Subscription {
+  id              String             @id @default(cuid())
+  userId          String             @unique
+  user            User               @relation(fields: [userId], references: [id])
+  status          SubscriptionStatus @default(pending)
+  mpPreapprovalId String?            @unique
+  activatedAt     DateTime?
+  cancelledAt     DateTime?
+  createdAt       DateTime           @default(now())
+  updatedAt       DateTime           @updatedAt
 }
 
 /// One-time password reset tokens — only the SHA-256 hash is stored.
@@ -116,6 +136,8 @@ model Event {
   priceCents     Int
   currency       String       @default("BRL")
   status         EventStatus  @default(draft)
+  /// While set and in the future, only active subscribers can buy.
+  earlyAccessUntil DateTime?
   createdAt      DateTime     @default(now())
   updatedAt      DateTime     @updatedAt
   tickets        Ticket[]

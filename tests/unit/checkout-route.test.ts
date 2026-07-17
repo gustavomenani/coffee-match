@@ -10,6 +10,7 @@ const ticketFindFirst = vi.fn();
 const ticketCreate = vi.fn();
 const ticketUpdate = vi.fn();
 const ticketUpdateMany = vi.fn();
+const subscriptionFindUnique = vi.fn();
 const getEventOccupancyMock = vi.fn();
 const syncSoldOutMock = vi.fn();
 const createPreferenceMock = vi.fn();
@@ -32,6 +33,9 @@ vi.mock("@/lib/prisma", () => ({
       create: (...a: unknown[]) => ticketCreate(...a),
       update: (...a: unknown[]) => ticketUpdate(...a),
       updateMany: (...a: unknown[]) => ticketUpdateMany(...a),
+    },
+    subscription: {
+      findUnique: (...a: unknown[]) => subscriptionFindUnique(...a),
     },
   },
 }));
@@ -92,6 +96,7 @@ beforeEach(() => {
   ticketFindMany.mockResolvedValue([]);
   ticketFindFirst.mockResolvedValue(null);
   ticketCreate.mockResolvedValue({ id: TICKET_ID, status: "pending" });
+  subscriptionFindUnique.mockResolvedValue(null);
   ticketUpdate.mockResolvedValue({});
   ticketUpdateMany.mockResolvedValue({ count: 0 });
   getEventOccupancyMock.mockResolvedValue({
@@ -128,6 +133,27 @@ describe("POST /api/checkout", () => {
     eventFindUnique.mockResolvedValue({ ...event, status: "draft" });
     const res = await POST(checkoutRequest());
     expect(res.status).toBe(404);
+  });
+
+  it("403 for non-subscriber during early-access window", async () => {
+    eventFindUnique.mockResolvedValue({
+      ...event,
+      earlyAccessUntil: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    const res = await POST(checkoutRequest());
+    expect(res.status).toBe(403);
+    expect(ticketCreate).not.toHaveBeenCalled();
+  });
+
+  it("subscriber buys normally during early-access window", async () => {
+    eventFindUnique.mockResolvedValue({
+      ...event,
+      earlyAccessUntil: new Date(Date.now() + 60 * 60 * 1000),
+    });
+    subscriptionFindUnique.mockResolvedValue({ status: "active" });
+    const res = await POST(checkoutRequest());
+    expect(res.status).toBe(200);
+    expect(ticketCreate).toHaveBeenCalled();
   });
 
   it("409 when the user already has a paid ticket", async () => {
