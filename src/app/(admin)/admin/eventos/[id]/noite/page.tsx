@@ -14,6 +14,7 @@ import {
   type CheckInTicketRow,
 } from "@/components/admin/checkin-list";
 import { CopyButton } from "@/components/ui/copy-button";
+import { SubmitButton } from "@/components/ui/submit-button";
 import { parseCuid } from "@/lib/security/ids";
 
 async function openVotingAction(formData: FormData) {
@@ -239,33 +240,40 @@ export default async function NoitePage({
           <div className="mt-5 flex flex-col gap-3 sm:flex-row sm:flex-wrap">
             <form action={openVotingAction}>
               <input type="hidden" name="eventId" value={eventId} />
-              <button
-                type="submit"
+              <SubmitButton
                 disabled={!canOpen}
+                pendingLabel="Abrindo…"
                 className="btn btn-primary btn-lg w-full sm:w-auto"
               >
                 Abrir votação
-              </button>
+              </SubmitButton>
             </form>
             <form action={closeVotingAction}>
               <input type="hidden" name="eventId" value={eventId} />
-              <button
-                type="submit"
+              {/*
+                This one matters most: closing computes the matches and then
+                notifies the whole room, which takes tens of seconds with a full
+                house. As a bare button the admin got no spinner and no disable —
+                nothing at all — at the single most important moment of the
+                night, so the natural reaction is to click it again.
+              */}
+              <SubmitButton
                 disabled={!canClose}
+                pendingLabel="Encerrando e calculando matches…"
                 className="btn btn-danger btn-lg w-full sm:w-auto"
               >
                 Encerrar votação
-              </button>
+              </SubmitButton>
             </form>
             {sessionStatus === "voting_closed" ? (
               <form action={reopenVotingAction}>
                 <input type="hidden" name="eventId" value={eventId} />
-                <button
-                  type="submit"
+                <SubmitButton
+                  pendingLabel="Reabrindo…"
                   className="btn btn-secondary btn-lg w-full sm:w-auto"
                 >
                   Reabrir votação
-                </button>
+                </SubmitButton>
               </form>
             ) : null}
             <Link

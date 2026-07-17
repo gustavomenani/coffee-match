@@ -4,6 +4,14 @@ export function oppositeGender(g: Gender): Gender {
   return g === "male" ? "female" : "male";
 }
 
+/**
+ * Single definition of "has a WhatsApp we can reveal on a match" — the ballot
+ * and the ticket page both gate on it and must agree.
+ */
+export function hasWhatsapp(phone: string | null | undefined): boolean {
+  return !!phone?.trim();
+}
+
 export function canVote(input: {
   ticketStatus: string;
   checkedIn: boolean;

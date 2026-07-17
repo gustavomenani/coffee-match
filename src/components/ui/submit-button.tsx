@@ -6,12 +6,15 @@ type SubmitButtonProps = {
   children: React.ReactNode;
   pendingLabel: string;
   className?: string;
+  /** Disabled for reasons of its own (e.g. the action is not available yet). */
+  disabled?: boolean;
 };
 
 export function SubmitButton({
   children,
   pendingLabel,
   className = "btn btn-primary mt-2 w-full",
+  disabled = false,
 }: SubmitButtonProps) {
   const { pending } = useFormStatus();
 
@@ -19,7 +22,7 @@ export function SubmitButton({
     <button
       type="submit"
       className={className}
-      disabled={pending}
+      disabled={pending || disabled}
       aria-busy={pending ? "true" : undefined}
     >
       {pending ? (

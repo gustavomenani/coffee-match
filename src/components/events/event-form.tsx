@@ -1,4 +1,5 @@
 import { toDateTimeLocalValue } from "@/lib/datetime";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 export type EventFormDefaults = {
   title?: string;
@@ -202,9 +203,15 @@ export function EventForm({
         </select>
       </label>
 
-      <button type="submit" className="btn btn-primary mt-2">
+      {/*
+        Not a bare button: this form backs both "criar evento" and "editar
+        evento", so with no pending state a double click created the event
+        twice (and slug is unique, so the second attempt fails with a raw
+        constraint error rather than being prevented).
+      */}
+      <SubmitButton pendingLabel="Salvando…" className="btn btn-primary mt-2">
         {submitLabel}
-      </button>
+      </SubmitButton>
     </form>
   );
 }

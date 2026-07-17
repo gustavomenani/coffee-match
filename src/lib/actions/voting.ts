@@ -3,7 +3,7 @@
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ageFrom } from "@/lib/domain/age";
-import { canVote, oppositeGender } from "@/lib/domain/eligibility";
+import { canVote, hasWhatsapp, oppositeGender } from "@/lib/domain/eligibility";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseCuid } from "@/lib/security/ids";
 import type { ActionResult } from "@/lib/action-result";
@@ -88,7 +88,7 @@ export async function castVote(input: {
       ticketStatus: ticket.status,
       checkedIn: !!ticket.checkedInAt,
       sessionStatus: eventSession.status,
-      hasWhatsapp: !!user.phone?.trim(),
+      hasWhatsapp: hasWhatsapp(user.phone),
     })
   ) {
     return { ok: false, error: "Você não pode votar agora." };

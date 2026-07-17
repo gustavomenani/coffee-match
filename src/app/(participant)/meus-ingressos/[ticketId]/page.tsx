@@ -6,6 +6,11 @@ import { toDataUrl } from "@/lib/qr";
 import { CopyButton } from "@/components/ui/copy-button";
 import { PrintButton } from "@/components/ui/print-button";
 import { formatDateTime as formatDate } from "@/lib/datetime";
+import {
+  canVote as canVoteNow,
+  canViewResults,
+  hasWhatsapp,
+} from "@/lib/domain/eligibility";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -38,6 +43,8 @@ export default async function TicketDetailPage({ params }: PageProps) {
   const ticket = await prisma.ticket.findFirst({
     where: { id: ticketId, userId: session.user.id },
     include: {
+      // phone drives canVote's hasWhatsapp leg — see below.
+      user: { select: { phone: true } },
       event: {
         select: {
           id: true,
@@ -69,15 +76,20 @@ export default async function TicketDetailPage({ params }: PageProps) {
     toDataUrl(votingUrl),
   ]);
 
-  const sessionStatus = ticket.event.session?.status;
-  const canVote =
-    ticket.status === "paid" &&
-    Boolean(ticket.checkedInAt) &&
-    sessionStatus === "voting_open";
-  const canSeeMatches =
-    ticket.status === "paid" &&
-    Boolean(ticket.checkedInAt) &&
-    sessionStatus === "voting_closed";
+  // Use the domain predicates rather than re-deriving them. The local copy had
+  // already drifted: it omitted hasWhatsapp, so this page promised "Votação
+  // aberta — use o link ou o QR acima" to users getBallot then rejects.
+  const sessionStatus = ticket.event.session?.status ?? "not_started";
+  const eligibility = {
+    ticketStatus: ticket.status,
+    checkedIn: Boolean(ticket.checkedInAt),
+    sessionStatus,
+  };
+  const canVote = canVoteNow({
+    ...eligibility,
+    hasWhatsapp: hasWhatsapp(ticket.user.phone),
+  });
+  const canSeeMatches = canViewResults(eligibility);
 
   return (
     <main className="print-ticket page-glow mx-auto w-full max-w-3xl px-4 py-12 sm:px-6 sm:py-16">
@@ -221,12 +233,20 @@ export default async function TicketDetailPage({ params }: PageProps) {
         </div>
 
         <div className="no-print flex flex-wrap gap-2 border-t border-[var(--line)] px-6 py-6 sm:px-8">
-          <Link
-            href={`/evento/${ticket.event.id}/votar`}
-            className="btn btn-primary !min-h-10 !px-4 !text-sm"
-          >
-            Votar
-          </Link>
+          {/*
+            Gated like its "Ver matches" sibling. Rendered unconditionally, it
+            was a primary call-to-action that dead-ends on an error page for
+            anyone who has not checked in yet — which is everyone, right up
+            until the door opens.
+          */}
+          {canVote ? (
+            <Link
+              href={`/evento/${ticket.event.id}/votar`}
+              className="btn btn-primary !min-h-10 !px-4 !text-sm"
+            >
+              Votar
+            </Link>
+          ) : null}
           {canSeeMatches ? (
             <Link
               href={`/evento/${ticket.event.id}/matches`}
