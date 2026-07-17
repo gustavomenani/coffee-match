@@ -121,9 +121,14 @@ export function isProduction(): boolean {
 }
 
 export function appBaseUrl(): string {
-  return (
+  const raw =
     process.env.NEXT_PUBLIC_APP_URL?.replace(/\/$/, "") ||
     process.env.AUTH_URL?.replace(/\/$/, "") ||
-    "http://localhost:3000"
-  );
+    "http://localhost:3000";
+  // Tolerate a scheme-less value (a common env-var mistake, e.g. setting
+  // NEXT_PUBLIC_APP_URL to "my-app.vercel.app" without https://). layout.tsx's
+  // metadataBase and robots.ts do `new URL(appBaseUrl())`, which throws on a
+  // bare host and hard-fails the production build with a cryptic error. Default
+  // a missing scheme to https so a typo can't take the whole build down.
+  return /^https?:\/\//i.test(raw) ? raw : `https://${raw}`;
 }
