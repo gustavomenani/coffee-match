@@ -23,5 +23,6 @@ export const profileUpdateSchema = z.object({
   name: z.string().min(2).max(100),
   phone: z.string().min(10).max(20),
   instagram: z.string().max(100).optional().or(z.literal("")),
+  bio: z.string().max(160).optional().or(z.literal("")),
   photoUrl: z.string().max(120_000).optional().or(z.literal("")),
 });

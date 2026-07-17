@@ -325,6 +325,30 @@ export default async function Home() {
         </div>
       </Reveal>
 
+      {/* Apoiador */}
+      <Reveal as="section" className="px-4 py-10 sm:px-6">
+        <div className="surface-card mx-auto max-w-6xl p-8 sm:p-12">
+          <div className="flex flex-col gap-8 lg:flex-row lg:items-center lg:justify-between">
+            <div className="max-w-xl">
+              <p className="eyebrow mb-3">Apoiador</p>
+              <h2 className="font-display text-3xl font-semibold tracking-tight text-[var(--ink)] sm:text-4xl">
+                Apoie as noites. Fure a fila.
+              </h2>
+              <p className="mt-4 text-sm leading-relaxed text-[var(--muted)] sm:text-base">
+                Assinantes ganham o selo ☕ ao lado do nome na cédula de votação
+                e compram ingresso antes de todo mundo nas noites concorridas.
+                R$ 10 por mês, cancele quando quiser.
+              </p>
+            </div>
+            <div className="shrink-0">
+              <Link href="/assinatura" className="btn btn-primary">
+                Conhecer a assinatura
+              </Link>
+            </div>
+          </div>
+        </div>
+      </Reveal>
+
       {/* FAQ */}
       <Reveal as="section" className="px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-3xl">

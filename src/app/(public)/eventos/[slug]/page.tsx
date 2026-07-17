@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
+import { NotifyMeForm } from "@/components/events/notify-me-form";
 import { ShareButton } from "@/components/events/share-button";
 import { getEventBySlug } from "@/lib/actions/events";
 import { inEarlyAccessWindow } from "@/lib/domain/subscription";
@@ -329,12 +330,15 @@ export default async function EventoDetailPage({
               {canBuy ? (
                 <BuyTicketButton eventId={event.id} />
               ) : (
-                <p className="rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--paper-deep)] px-4 py-3 text-sm text-[var(--muted)]">
-                  {event.status === "sold_out" ||
-                  (event.remainingMen <= 0 && event.remainingWomen <= 0)
-                    ? "Ingressos esgotados para este evento."
-                    : "Compra indisponível no momento."}
-                </p>
+                <div className="space-y-4">
+                  <p className="rounded-[var(--radius-sm)] border border-[var(--line)] bg-[var(--paper-deep)] px-4 py-3 text-sm text-[var(--muted)]">
+                    {event.status === "sold_out" ||
+                    (event.remainingMen <= 0 && event.remainingWomen <= 0)
+                      ? "Ingressos esgotados para este evento."
+                      : "Compra indisponível no momento."}
+                  </p>
+                  <NotifyMeForm eventId={event.id} />
+                </div>
               )}
               <ShareButton
                 title={event.title}

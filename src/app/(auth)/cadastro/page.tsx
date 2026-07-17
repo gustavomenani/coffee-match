@@ -3,23 +3,38 @@ import { redirect } from "next/navigation";
 import { registerUser } from "@/lib/actions/profile";
 import { SubmitButton } from "@/components/ui/submit-button";
 
+/** Aceita apenas paths internos ("/…"), rejeitando URLs absolutas e protocol-relative ("//…"). */
+function safeInternalPath(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//") || value.startsWith("/\\")) return null;
+  return value;
+}
+
 async function cadastroAction(formData: FormData) {
   "use server";
 
+  const next = safeInternalPath(formData.get("next"));
   const result = await registerUser(formData);
   if (!result.ok) {
-    redirect(`/cadastro?error=${encodeURIComponent(result.error)}`);
+    const keepNext = next ? `&next=${encodeURIComponent(next)}` : "";
+    redirect(`/cadastro?error=${encodeURIComponent(result.error)}${keepNext}`);
   }
-  redirect("/login?registered=1");
+  redirect(
+    next
+      ? `/login?registered=1&callbackUrl=${encodeURIComponent(next)}`
+      : "/login?registered=1",
+  );
 }
 
 export default async function CadastroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; next?: string }>;
 }) {
   const params = await searchParams;
   const error = params.error;
+  const next = safeInternalPath(params.next);
 
   return (
     <main className="mx-auto w-full max-w-xl px-4 py-12 sm:px-6 sm:py-16">
@@ -46,6 +61,7 @@ export default async function CadastroPage({
         ) : null}
 
         <form action={cadastroAction} className="mt-8 flex flex-col gap-4">
+          {next ? <input type="hidden" name="next" value={next} /> : null}
           {/* Honeypot anti-bot — hidden from humans */}
           <div
             aria-hidden
@@ -163,7 +179,14 @@ export default async function CadastroPage({
 
         <p className="mt-8 text-center text-sm text-[var(--muted)]">
           Já tem conta?{" "}
-          <Link href="/login" className="link-coffee font-semibold">
+          <Link
+            href={
+              next
+                ? `/login?callbackUrl=${encodeURIComponent(next)}`
+                : "/login"
+            }
+            className="link-coffee font-semibold"
+          >
             Entrar
           </Link>
         </p>

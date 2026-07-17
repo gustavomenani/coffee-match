@@ -109,6 +109,21 @@ export default async function MinhaContaPage({
               />
             </label>
 
+            <label className="block">
+              <span className="label">Bio da noite (aparece na votação)</span>
+              <textarea
+                name="bio"
+                maxLength={160}
+                rows={3}
+                defaultValue={user.bio ?? ""}
+                placeholder="Ex.: Viciada em café coado e boas conversas."
+                className="field"
+              />
+              <span className="mt-1 block text-xs text-[var(--muted)]">
+                Até 160 caracteres — é o seu cartão de visita na cédula.
+              </span>
+            </label>
+
             <PhotoField defaultValue={user.photoUrl} />
 
             <button type="submit" className="btn btn-primary mt-2 w-full">

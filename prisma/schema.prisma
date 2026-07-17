@@ -81,6 +81,8 @@ model User {
   birthDate        DateTime
   photoUrl         String?
   instagram        String?
+  /// Short profile bio shown on the voting ballot (max ~160 chars).
+  bio              String?
   role             Role      @default(participant)
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
@@ -142,9 +144,21 @@ model Event {
   updatedAt      DateTime     @updatedAt
   tickets        Ticket[]
   session        EventSession?
+  interests      EventInterest[]
 
   @@index([status, startsAt])
   @@index([organizationId, startsAt])
+}
+
+/// "Avise-me" waitlist: e-mail capture for sold-out/full events.
+model EventInterest {
+  id        String   @id @default(cuid())
+  eventId   String
+  event     Event    @relation(fields: [eventId], references: [id])
+  email     String
+  createdAt DateTime @default(now())
+
+  @@unique([eventId, email])
 }
 
 model Ticket {
@@ -156,6 +170,8 @@ model Ticket {
   status      TicketStatus @default(pending)
   mpPaymentId String?      @unique
   checkedInAt DateTime?
+  /// D-1 reminder e-mail dispatched (cron dedup).
+  reminderSentAt DateTime?
   createdAt   DateTime     @default(now())
   updatedAt   DateTime     @updatedAt
 

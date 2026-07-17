@@ -39,6 +39,28 @@ const WOMEN = [
   "Mariana Teixeira",
 ];
 
+const MEN_BIOS = [
+  "Barista de fim de semana e colecionador de vinis empoeirados.",
+  "Engenheiro de dia, cozinheiro de massas à noite. Time do espresso duplo.",
+  "Corro maratonas e fujo de conversa fiada. Café sem açúcar, por favor.",
+  "Fotógrafo de rua. Acho que todo mundo tem uma boa história — me conta a sua?",
+  "Professor de história que faz o melhor pão de queijo de São Paulo (juro).",
+  "Viciado em escalada e em descobrir cafeterias escondidas pela cidade.",
+  "Músico nas horas vagas. Prometo não falar só de jazz. Talvez.",
+  "Cinéfilo assumido: me convença de que filme dublado é aceitável.",
+];
+
+const WOMEN_BIOS = [
+  "Viciada em café coado e trilhas no fim de semana.",
+  "Arquiteta apaixonada por feiras de rua, plantas e um bom cappuccino.",
+  "Leio três livros ao mesmo tempo e nunca termino nenhum. Chá também vale?",
+  "Publicitária, dona de dois gatos e de opiniões fortes sobre brigadeiro.",
+  "Bióloga que ama praia fora de temporada e conversa que vira madrugada.",
+  "Dançarina de forró. Se pisar no meu pé, pelo menos me paga um café.",
+  "Chef confeiteira: julgo os cafés pela sobremesa da vitrine.",
+  "Jornalista curiosa por natureza. Pergunto muito — vem preparado(a).",
+];
+
 function emailFor(name: string) {
   const first = name.split(" ")[0].toLowerCase();
   return `${first}@demo.coffeematch.local`;
@@ -48,7 +70,8 @@ async function upsertParticipant(
   name: string,
   gender: Gender,
   index: number,
-  passwordHash: string
+  passwordHash: string,
+  bio: string
 ) {
   const email = emailFor(name);
   const phone = `119${gender === Gender.male ? "8" : "7"}${String(
@@ -63,6 +86,7 @@ async function upsertParticipant(
       passwordHash,
       gender,
       phone,
+      bio,
       role: "participant",
       failedLoginCount: 0,
       lockedUntil: null,
@@ -73,6 +97,7 @@ async function upsertParticipant(
       name,
       phone,
       gender,
+      bio,
       birthDate: new Date(`${birthYear}-05-1${index % 9}`),
       instagram: `${name.split(" ")[0].toLowerCase()}.demo`,
     },
@@ -90,11 +115,15 @@ async function main() {
 
   const men = [];
   for (const [i, name] of MEN.entries()) {
-    men.push(await upsertParticipant(name, Gender.male, i, passwordHash));
+    men.push(
+      await upsertParticipant(name, Gender.male, i, passwordHash, MEN_BIOS[i])
+    );
   }
   const women = [];
   for (const [i, name] of WOMEN.entries()) {
-    women.push(await upsertParticipant(name, Gender.female, i, passwordHash));
+    women.push(
+      await upsertParticipant(name, Gender.female, i, passwordHash, WOMEN_BIOS[i])
+    );
   }
 
   // Two demo supporters (badge + early access): Rafael and Ana.

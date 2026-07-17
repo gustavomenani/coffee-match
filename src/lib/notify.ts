@@ -132,6 +132,8 @@ export async function sendTicketPaidEmail(input: {
     ``,
     `Veja o QR do seu ingresso: ${ticketUrl}`,
     ``,
+    `Dica: complete seu perfil com foto e bio em ${appBaseUrl()}/minha-conta — é o que aparece na hora da votação.`,
+    ``,
     `Coffee Match — conectando pessoas, uma xícara por vez.`,
   ].join("\n");
 
@@ -143,6 +145,7 @@ export async function sendTicketPaidEmail(input: {
       `<p style="margin:0 0 4px"><strong>Quando:</strong> ${escapeHtml(input.eventWhen)}</p>`,
       `<p style="margin:0 0 4px"><strong>Local:</strong> ${escapeHtml(input.venue)}</p>`,
       `<p style="margin:12px 0 0;font-size:12px;color:#6b574c">Código do ingresso: <code>${escapeHtml(input.ticketId)}</code></p>`,
+      `<p style="margin:12px 0 0">Dica: complete seu perfil com foto e bio em <a href="${appBaseUrl()}/minha-conta" style="color:#b87333">/minha-conta</a> — é o que aparece na hora da votação.</p>`,
     ].join(""),
     ctaLabel: "Ver ingresso e QR",
     ctaUrl: ticketUrl,
@@ -154,6 +157,54 @@ export async function sendTicketPaidEmail(input: {
     text,
     html,
     auditAction: "notify.ticket_paid",
+    auditMeta: { ticketId: input.ticketId, eventTitle: input.eventTitle },
+  });
+}
+
+export async function sendEventReminderEmail(input: {
+  to: string;
+  eventTitle: string;
+  eventWhen: string;
+  venue: string;
+  ticketId: string;
+}): Promise<void> {
+  const subject = `É amanhã! ${input.eventTitle} | Coffee Match`;
+  const ticketUrl = `${appBaseUrl()}/meus-ingressos/${input.ticketId}`;
+
+  const text = [
+    `Olá!`,
+    ``,
+    `Amanhã tem "${input.eventTitle}" — e a sua xícara já tem lugar reservado.`,
+    `Quando: ${input.eventWhen}`,
+    `Onde: ${input.venue}`,
+    ``,
+    `Ver meu ingresso e QR: ${ticketUrl}`,
+    ``,
+    `Chegue 15 minutos antes para o check-in tranquilo.`,
+    `Aproveite para completar seu perfil com foto e bio em ${appBaseUrl()}/minha-conta — é o que aparece na hora da votação.`,
+    ``,
+    `Coffee Match — conectando pessoas, uma xícara por vez.`,
+  ].join("\n");
+
+  const html = brandedHtml({
+    title: "É amanhã! ☕",
+    bodyHtml: [
+      `<p style="margin:0 0 12px">Amanhã tem <strong>${escapeHtml(input.eventTitle)}</strong> — e a sua xícara já tem lugar reservado.</p>`,
+      `<p style="margin:0 0 4px"><strong>Quando:</strong> ${escapeHtml(input.eventWhen)}</p>`,
+      `<p style="margin:0 0 4px"><strong>Onde:</strong> ${escapeHtml(input.venue)}</p>`,
+      `<p style="margin:12px 0 0">Chegue <strong>15 minutos antes</strong> para o check-in tranquilo.</p>`,
+      `<p style="margin:12px 0 0">Aproveite para completar seu perfil com foto e bio em <a href="${appBaseUrl()}/minha-conta" style="color:#b87333">/minha-conta</a> — é o que aparece na hora da votação.</p>`,
+    ].join(""),
+    ctaLabel: "Ver meu ingresso e QR",
+    ctaUrl: ticketUrl,
+  });
+
+  await sendEmail({
+    to: input.to,
+    subject,
+    text,
+    html,
+    auditAction: "notify.event_reminder",
     auditMeta: { ticketId: input.ticketId, eventTitle: input.eventTitle },
   });
 }

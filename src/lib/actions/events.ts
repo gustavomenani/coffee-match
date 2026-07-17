@@ -63,15 +63,31 @@ async function fetchPublishedEventsWithSpots(): Promise<EventWithSpots[]> {
 }
 
 /**
+ * unstable_cache serializes results to JSON, so Date fields come back as
+ * strings on cache hits. Re-hydrate them before handing to consumers.
+ */
+function reviveEventDates(event: EventWithSpots): EventWithSpots {
+  return {
+    ...event,
+    startsAt: new Date(event.startsAt),
+    endsAt: new Date(event.endsAt),
+    earlyAccessUntil: event.earlyAccessUntil
+      ? new Date(event.earlyAccessUntil)
+      : null,
+  };
+}
+
+/**
  * Cached for 30s — keeps list snappy under traffic.
  * Bust with revalidatePath('/eventos') after sales/admin edits.
  */
 export async function listPublishedEvents(): Promise<EventWithSpots[]> {
-  return unstable_cache(
+  const events = await unstable_cache(
     fetchPublishedEventsWithSpots,
     ["published-events-with-spots-v2"],
     { revalidate: 30 }
   )();
+  return events.map(reviveEventDates);
 }
 
 export async function getEventBySlug(
@@ -79,7 +95,7 @@ export async function getEventBySlug(
 ): Promise<EventWithSpots | null> {
   if (!/^[a-z0-9-]{3,80}$/.test(slug)) return null;
 
-  return unstable_cache(
+  const event = await unstable_cache(
     async () => {
       const event = await prisma.event.findUnique({ where: { slug } });
       if (!event) return null;
@@ -91,4 +107,5 @@ export async function getEventBySlug(
     [`event-slug-v2-${slug}`],
     { revalidate: 20 }
   )();
+  return event ? reviveEventDates(event) : null;
 }

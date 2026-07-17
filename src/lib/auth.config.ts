@@ -35,7 +35,6 @@ export const authConfig = {
         path.startsWith("/minha-conta") ||
         path.startsWith("/meus-ingressos") ||
         path.startsWith("/evento/") ||
-        path.startsWith("/assinatura") ||
         isAdminRoute;
 
       if (isProtected && !isLoggedIn) return false;

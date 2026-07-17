@@ -107,7 +107,7 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 )}
                 <div>
                   <p className="font-display flex items-center gap-2 text-xl font-semibold text-[var(--ink)]">
-                    {person.name}
+                    {person.name} · {person.age}
                     {person.supporter ? (
                       <span
                         className="badge badge-soft !text-[0.62rem]"
@@ -117,6 +117,11 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                       </span>
                     ) : null}
                   </p>
+                  {person.bio ? (
+                    <p className="text-sm text-[var(--muted)] line-clamp-2">
+                      {person.bio}
+                    </p>
+                  ) : null}
                   {current ? (
                     <p className="text-sm text-[var(--muted)]">
                       Seu voto:{" "}

@@ -139,6 +139,12 @@ export function BuyTicketButton({
         url?: string;
         error?: string;
       };
+      if (res.status === 401) {
+        window.location.href =
+          "/login?callbackUrl=" +
+          encodeURIComponent(window.location.pathname);
+        return;
+      }
       if (!res.ok) {
         setError(data.error ?? "Não foi possível iniciar o checkout.");
         return;

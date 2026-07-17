@@ -9,6 +9,5 @@ export const config = {
     "/minha-conta/:path*",
     "/meus-ingressos/:path*",
     "/evento/:path*",
-    "/assinatura/:path*",
   ],
 };

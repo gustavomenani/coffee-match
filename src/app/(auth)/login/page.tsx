@@ -5,21 +5,33 @@ import { redirect } from "next/navigation";
 import { signIn } from "@/lib/auth";
 import { SubmitButton } from "@/components/ui/submit-button";
 
+/** Aceita apenas paths internos ("/…"), rejeitando URLs absolutas e protocol-relative ("//…"). */
+function safeInternalPath(value: unknown): string | null {
+  if (typeof value !== "string") return null;
+  if (!value.startsWith("/")) return null;
+  if (value.startsWith("//") || value.startsWith("/\\")) return null;
+  return value;
+}
+
 async function loginAction(formData: FormData) {
   "use server";
 
   const email = String(formData.get("email") ?? "");
   const password = String(formData.get("password") ?? "");
+  const callbackUrl = safeInternalPath(formData.get("callbackUrl"));
 
   try {
     await signIn("credentials", {
       email,
       password,
-      redirectTo: "/meus-ingressos",
+      redirectTo: callbackUrl ?? "/meus-ingressos",
     });
   } catch (error) {
     if (error instanceof AuthError) {
-      redirect("/login?error=CredenciaisInválidas");
+      const retry = callbackUrl
+        ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
+        : "";
+      redirect(`/login?error=CredenciaisInválidas${retry}`);
     }
     throw error;
   }
@@ -28,11 +40,18 @@ async function loginAction(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; reset?: string }>;
+  searchParams: Promise<{
+    error?: string;
+    reset?: string;
+    registered?: string;
+    callbackUrl?: string;
+  }>;
 }) {
   const params = await searchParams;
   const hasError = !!params.error;
   const passwordReset = params.reset === "1";
+  const justRegistered = params.registered === "1";
+  const callbackUrl = safeInternalPath(params.callbackUrl);
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-12 sm:px-6 sm:py-16">
@@ -81,6 +100,15 @@ export default async function LoginPage({
             </p>
           ) : null}
 
+          {justRegistered ? (
+            <p
+              role="status"
+              className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            >
+              Conta criada! Faça login para continuar.
+            </p>
+          ) : null}
+
           {hasError ? (
             <p
               role="alert"
@@ -91,6 +119,9 @@ export default async function LoginPage({
           ) : null}
 
           <form action={loginAction} className="mt-8 flex flex-col gap-4">
+            {callbackUrl ? (
+              <input type="hidden" name="callbackUrl" value={callbackUrl} />
+            ) : null}
             <label className="block">
               <span className="label">E-mail</span>
               <input
@@ -125,7 +156,14 @@ export default async function LoginPage({
 
           <p className="mt-8 text-center text-sm text-[var(--muted)]">
             Não tem conta?{" "}
-            <Link href="/cadastro" className="link-coffee font-semibold">
+            <Link
+              href={
+                callbackUrl
+                  ? `/cadastro?next=${encodeURIComponent(callbackUrl)}`
+                  : "/cadastro"
+              }
+              className="link-coffee font-semibold"
+            >
               Cadastre-se
             </Link>
           </p>

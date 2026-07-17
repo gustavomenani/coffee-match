@@ -46,6 +46,10 @@ export default async function AdminEventoEditPage({
   });
   if (!event) notFound();
 
+  const interested = await prisma.eventInterest.count({
+    where: { eventId: id },
+  });
+
   const boundUpdate = updateEventAction.bind(null, event.id);
 
   return (
@@ -62,6 +66,14 @@ export default async function AdminEventoEditPage({
           Editar evento
         </h1>
         <p className="mt-2 text-base text-[var(--muted)]">{event.title}</p>
+        {interested > 0 ? (
+          <p className="mt-3">
+            <span className="badge badge-soft">
+              Lista de espera: {interested}{" "}
+              {interested === 1 ? "e-mail" : "e-mails"}
+            </span>
+          </p>
+        ) : null}
       </div>
 
       <div className="mb-8 flex flex-wrap gap-3">

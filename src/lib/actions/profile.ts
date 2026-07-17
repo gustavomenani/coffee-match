@@ -94,6 +94,7 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     name: formData.get("name"),
     phone: formData.get("phone"),
     instagram: formData.get("instagram") || "",
+    bio: formData.get("bio") || "",
     photoUrl: formData.get("photoUrl") || "",
   });
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };
@@ -110,12 +111,15 @@ export async function updateProfile(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Instagram inválido." };
   }
 
+  const bio = cleanText(parsed.data.bio || "", 160);
+
   await prisma.user.update({
     where: { id: authz.user.id },
     data: {
       name: cleanText(parsed.data.name, 100),
       phone,
       instagram: ig,
+      bio: bio || null,
       photoUrl: photo.value,
     },
   });

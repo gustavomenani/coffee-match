@@ -3,6 +3,7 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { ageFrom } from "@/lib/domain/age";
 import { canVote, oppositeGender } from "@/lib/domain/eligibility";
 import { rateLimit } from "@/lib/rate-limit";
 import { parseCuid } from "@/lib/security/ids";
@@ -12,6 +13,8 @@ export type BallotCandidate = {
   id: string;
   name: string;
   photoUrl: string | null;
+  age: number;
+  bio: string | null;
   supporter: boolean;
 };
 
@@ -194,6 +197,8 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
             id: true,
             name: true,
             photoUrl: true,
+            birthDate: true,
+            bio: true,
             subscription: { select: { status: true } },
           },
         },
@@ -217,6 +222,8 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
         id: t.user.id,
         name: t.user.name,
         photoUrl: t.user.photoUrl,
+        age: ageFrom(t.user.birthDate),
+        bio: t.user.bio,
         supporter: t.user.subscription?.status === "active",
       })),
       votes: existingVotes.map((v) => ({

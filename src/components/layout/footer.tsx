@@ -2,6 +2,7 @@ import Link from "next/link";
 import { Logo } from "@/components/brand/logo";
 
 const links = [
+  { href: "/assinatura", label: "Assinatura" },
   { href: "/termos", label: "Termos" },
   { href: "/privacidade", label: "Privacidade" },
   { href: "/regras", label: "Regras" },
@@ -28,7 +29,7 @@ export function Footer() {
 
           <nav
             className="flex flex-wrap gap-x-6 gap-y-2.5 text-sm font-medium text-[var(--ink-soft)]"
-            aria-label="Legal"
+            aria-label="Links do rodapé"
           >
             {links.map((link) => (
               <Link

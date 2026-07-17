@@ -1,5 +1,5 @@
 import type { Metadata } from "next";
-import { redirect } from "next/navigation";
+import Link from "next/link";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import {
@@ -43,14 +43,14 @@ export default async function AssinaturaPage({
   searchParams: Promise<{ ativada?: string }>;
 }) {
   const session = await auth();
-  if (!session?.user?.id) {
-    redirect("/login");
-  }
+  const userId = session?.user?.id ?? null;
   const query = await searchParams;
 
-  const subscription = await prisma.subscription.findUnique({
-    where: { userId: session.user.id },
-  });
+  const subscription = userId
+    ? await prisma.subscription.findUnique({
+        where: { userId },
+      })
+    : null;
   const isActive = subscription?.status === "active";
 
   return (
@@ -92,13 +92,31 @@ export default async function AssinaturaPage({
             </div>
             <CancelSubscriptionButton />
           </div>
-        ) : (
+        ) : userId ? (
           <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
             <p className="font-display text-4xl font-semibold tabular text-[var(--ink)]">
               R$ 10
               <span className="text-lg text-[var(--muted)]">/mês</span>
             </p>
             <SubscribeButton />
+          </div>
+        ) : (
+          <div className="mb-8 flex flex-wrap items-end justify-between gap-4">
+            <p className="font-display text-4xl font-semibold tabular text-[var(--ink)]">
+              R$ 10
+              <span className="text-lg text-[var(--muted)]">/mês</span>
+            </p>
+            <div className="flex flex-col gap-3 sm:flex-row sm:items-center">
+              <Link href="/cadastro?next=/assinatura" className="btn btn-primary">
+                Criar conta
+              </Link>
+              <Link
+                href="/login?callbackUrl=/assinatura"
+                className="btn btn-secondary"
+              >
+                Já tenho conta
+              </Link>
+            </div>
           </div>
         )}
 
