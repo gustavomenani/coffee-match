@@ -132,6 +132,67 @@ describe("POST /api/webhooks/mercadopago", () => {
     expect(syncSoldOutMock).toHaveBeenCalledWith(EVENT_ID);
   });
 
+  it("honours the price the ticket was sold at after the admin edits the event", async () => {
+    // The MP link was minted at R$49,90 and the buyer paid it. The admin has
+    // since raised the event to R$99,90. Validating against the event's live
+    // price would reject a legitimate payment, return 200 so MP never retries,
+    // and leave the ticket pending until the cron cancels it: money captured,
+    // no ticket, no refund.
+    ticketFindUnique.mockReset();
+    ticketFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      ...ticketRow,
+      priceCents: 4990, // snapshot taken at checkout
+      currency: "BRL",
+      event: { ...ticketRow.event, priceCents: 9990 }, // edited afterwards
+    });
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    expect(ticketUpdateMany).toHaveBeenCalledWith({
+      where: { id: TICKET_ID, status: "pending" },
+      data: { status: "paid", mpPaymentId: PAYMENT_ID },
+    });
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.paid" })
+    );
+  });
+
+  it("falls back to the event price for tickets predating the snapshot", async () => {
+    ticketFindUnique.mockReset();
+    ticketFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      ...ticketRow,
+      priceCents: null,
+      currency: null,
+    });
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    expect(ticketUpdateMany).toHaveBeenCalled();
+  });
+
+  it("still rejects a payment that matches neither the snapshot nor the event", async () => {
+    ticketFindUnique.mockReset();
+    ticketFindUnique.mockResolvedValueOnce(null).mockResolvedValueOnce({
+      ...ticketRow,
+      priceCents: 4990,
+      currency: "BRL",
+    });
+    paymentGetMock.mockResolvedValue(approvedPayment({ transaction_amount: 0.01 }));
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    expect(ticketUpdateMany).not.toHaveBeenCalled();
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        action: "ticket.payment_amount_mismatch",
+        meta: expect.objectContaining({ expectedCents: 4990, snapshotted: true }),
+      })
+    );
+  });
+
   it("rejects an approved payment with the wrong amount", async () => {
     paymentGetMock.mockResolvedValue(
       approvedPayment({ transaction_amount: 0.01 })

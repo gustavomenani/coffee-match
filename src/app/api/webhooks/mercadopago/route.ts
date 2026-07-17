@@ -193,6 +193,8 @@ export async function POST(req: NextRequest) {
           mpPaymentId: true,
           eventId: true,
           userId: true,
+          priceCents: true,
+          currency: true,
           user: { select: { email: true } },
           event: {
             select: {
@@ -231,13 +233,25 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      // Only honor payments that charged the exact event price.
+      // Validate against the price THIS TICKET was sold at, not the event's
+      // current price. The MP preference was minted from the price at checkout
+      // time; comparing against a live event.priceCents meant an admin editing
+      // the price orphaned every in-flight payment — the buyer pays the old
+      // link, the amounts disagree, we return 200 on purpose so MP never
+      // retries, the ticket stays pending and the expire-pending cron cancels
+      // it. Money captured, no ticket, no retry, no refund.
+      //
+      // Falls back to the event for tickets created before the snapshot column.
+      const expected = {
+        priceCents: ticket.priceCents ?? ticket.event.priceCents,
+        currency: ticket.currency ?? ticket.event.currency,
+      };
       const amountOk = isPaymentAmountValid(
         {
           transactionAmount: payment.transaction_amount,
           currencyId: payment.currency_id,
         },
-        ticket.event
+        expected
       );
       if (!amountOk) {
         await auditLog({
@@ -248,8 +262,9 @@ export async function POST(req: NextRequest) {
             paymentId: String(paymentId),
             transactionAmount: payment.transaction_amount ?? null,
             currencyId: payment.currency_id ?? null,
-            expectedCents: ticket.event.priceCents,
-            expectedCurrency: ticket.event.currency,
+            expectedCents: expected.priceCents,
+            expectedCurrency: expected.currency,
+            snapshotted: ticket.priceCents != null,
           },
         });
         console.error("[mp-webhook] payment amount mismatch", {

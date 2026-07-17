@@ -164,10 +164,15 @@ export async function POST(req: NextRequest) {
     }
     // continue to MP preference for existing pending
     try {
+      // Mint at the price THIS TICKET was quoted at, not the event's current
+      // price. Ticket.priceCents is the single source of truth for what this
+      // ticket costs: the link charges it and the webhook validates against it,
+      // so they can never disagree — and the buyer is honoured at the price
+      // they were originally shown. (Fallback for tickets predating the column.)
       const preference = await createTicketPreference({
         ticketId: existing.id,
         title: `Ingresso: ${event.title}`,
-        priceCents: event.priceCents,
+        priceCents: existing.priceCents ?? event.priceCents,
         payerEmail: user.email,
       });
       const initPoint = preference.init_point ?? preference.sandbox_init_point;
@@ -216,6 +221,14 @@ export async function POST(req: NextRequest) {
             eventId: event.id,
             userId: user.id,
             status: "pending",
+            // Snapshot the price this ticket is being sold at. The Mercado Pago
+            // preference below is minted from event.priceCents, and the webhook
+            // has to validate the captured amount against the SAME number — if
+            // it compares against the event's live price instead, an admin
+            // editing the price between checkout and payment makes every
+            // in-flight payment fail validation.
+            priceCents: event.priceCents,
+            currency: event.currency,
           },
         });
       },

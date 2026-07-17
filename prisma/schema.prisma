@@ -188,6 +188,13 @@ model Ticket {
   event       Event        @relation(fields: [eventId], references: [id])
   user        User         @relation(fields: [userId], references: [id])
   status      TicketStatus @default(pending)
+  /// Price this ticket was actually sold at, captured when the Mercado Pago
+  /// preference is created. The webhook validates the captured amount against
+  /// THIS, not Event.priceCents — an admin editing the price would otherwise
+  /// orphan every in-flight payment. Nullable for tickets created before the
+  /// snapshot existed; those fall back to the event's current price.
+  priceCents  Int?
+  currency    String?
   mpPaymentId String?      @unique
   checkedInAt DateTime?
   /// D-1 reminder e-mail dispatched (cron dedup).
