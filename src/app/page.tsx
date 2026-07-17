@@ -1,3 +1,4 @@
+import Image from "next/image";
 import Link from "next/link";
 import type { Metadata } from "next";
 import { EventCard } from "@/components/events/event-card";
@@ -107,20 +108,17 @@ export default async function Home() {
   return (
     <div className="flex flex-1 flex-col">
       <JsonLd data={faqJsonLd} />
-      <h1 className="sr-only">
-        Coffee Match — speed dating presencial no Brasil
-      </h1>
       {/* Hero */}
       <section className="relative overflow-hidden px-4 pb-16 pt-14 sm:px-6 sm:pb-24 sm:pt-20">
         <div className="mx-auto grid w-full max-w-6xl items-center gap-12 lg:grid-cols-[1.15fr_0.85fr]">
           <div>
             <p className="eyebrow mb-5">Coffee Match · Brasil</p>
-            <p className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
+            <h1 className="font-display max-w-xl text-[2.75rem] font-semibold leading-[1.05] tracking-tight text-[var(--ink)] sm:text-6xl lg:text-[4.1rem]">
               Conectando pessoas.{" "}
               <span className="italic text-[var(--coffee)]">
                 Uma xícara por vez.
               </span>
-            </p>
+            </h1>
             <p className="pretty mt-6 max-w-lg text-base leading-relaxed text-[var(--muted)] sm:text-lg">
               Noites de speed dating com o clima de um bom café: conversas reais,
               rodadas curtas e matches mútuos no fim. Você só precisa aparecer
@@ -158,10 +156,12 @@ export default async function Home() {
             />
             <div className="relative overflow-hidden rounded-[1.75rem] border border-[var(--line)] bg-[linear-gradient(165deg,#1a100c_0%,#2a1a12_45%,#120c09_100%)] p-7 shadow-[var(--shadow-lift)] sm:p-9">
               <div className="flex flex-col items-center text-center">
-                {/* eslint-disable-next-line @next/next/no-img-element */}
-                <img
+                <Image
                   src="/logo.jpeg"
                   alt="Coffee Match"
+                  width={192}
+                  height={192}
+                  priority
                   className="float-soft h-40 w-40 rounded-full object-cover shadow-[0_16px_40px_rgba(0,0,0,0.45)] ring-2 ring-[color-mix(in_srgb,var(--champagne)_40%,transparent)] sm:h-48 sm:w-48"
                 />
                 <p className="font-display mt-6 text-3xl font-medium text-[#f5e6d3] sm:text-4xl">

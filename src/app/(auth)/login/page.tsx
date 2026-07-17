@@ -1,7 +1,9 @@
+import Image from "next/image";
 import Link from "next/link";
 import { AuthError } from "next-auth";
 import { redirect } from "next/navigation";
 import { signIn } from "@/lib/auth";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 async function loginAction(formData: FormData) {
   "use server";
@@ -40,10 +42,11 @@ export default async function LoginPage({
             className="pointer-events-none absolute inset-0 bg-[radial-gradient(500px_280px_at_20%_10%,color-mix(in_srgb,var(--coffee)_28%,transparent),transparent_60%),radial-gradient(400px_240px_at_90%_80%,color-mix(in_srgb,var(--champagne)_14%,transparent),transparent_55%)]"
           />
           <div className="relative">
-            {/* eslint-disable-next-line @next/next/no-img-element */}
-            <img
+            <Image
               src="/logo.jpeg"
               alt=""
+              width={80}
+              height={80}
               className="h-20 w-20 rounded-full object-cover shadow-[0_12px_32px_rgba(0,0,0,0.35)] ring-2 ring-[color-mix(in_srgb,var(--champagne)_40%,transparent)]"
             />
             <p className="eyebrow mt-8 !text-[var(--champagne)]">
@@ -69,7 +72,10 @@ export default async function LoginPage({
           </p>
 
           {hasError ? (
-            <p className="mt-5 rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-2 text-sm">
+            <p
+              role="alert"
+              className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            >
               E-mail ou senha inválidos.
             </p>
           ) : null}
@@ -82,6 +88,7 @@ export default async function LoginPage({
                 name="email"
                 required
                 autoComplete="email"
+                spellCheck={false}
                 className="field"
               />
             </label>
@@ -93,14 +100,11 @@ export default async function LoginPage({
                 name="password"
                 required
                 autoComplete="current-password"
-                minLength={1}
                 className="field"
               />
             </label>
 
-            <button type="submit" className="btn btn-primary mt-2 w-full">
-              Entrar
-            </button>
+            <SubmitButton pendingLabel="Entrando…">Entrar</SubmitButton>
           </form>
 
           <p className="mt-8 text-center text-sm text-[var(--muted)]">

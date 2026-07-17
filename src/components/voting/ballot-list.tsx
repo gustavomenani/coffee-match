@@ -74,7 +74,10 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
       </div>
 
       {error ? (
-        <p className="rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="alert"
+          className="flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           {error}
         </p>
       ) : null}
@@ -123,6 +126,8 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 <button
                   type="button"
                   disabled={busy}
+                  aria-pressed={current === "yes"}
+                  aria-label={`Sim para ${person.name}`}
                   onClick={() => onVote(person.id, "yes")}
                   className={`btn tap-target !min-h-12 ${
                     current === "yes"
@@ -135,6 +140,8 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 <button
                   type="button"
                   disabled={busy}
+                  aria-pressed={current === "no"}
+                  aria-label={`Não para ${person.name}`}
                   onClick={() => onVote(person.id, "no")}
                   className={`btn tap-target !min-h-12 ${
                     current === "no"

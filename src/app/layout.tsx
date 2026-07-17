@@ -27,11 +27,9 @@ const body = Outfit({
   adjustFontFallback: true,
 });
 
+// theme-color is managed at runtime (ThemeScript + ThemeToggle) because the
+// theme is toggled via html.dark, not prefers-color-scheme media queries.
 export const viewport: Viewport = {
-  themeColor: [
-    { media: "(prefers-color-scheme: light)", color: "#faf6f1" },
-    { media: "(prefers-color-scheme: dark)", color: "#1a100c" },
-  ],
   width: "device-width",
   initialScale: 1,
   maximumScale: 5,
@@ -57,10 +55,9 @@ export const metadata: Metadata = {
     address: false,
     telephone: false,
   },
+  // icon/shortcut come from the file conventions (src/app/icon.svg + favicon.ico)
   icons: {
-    icon: [{ url: "/logo.jpeg", type: "image/jpeg" }],
     apple: [{ url: "/logo.jpeg", type: "image/jpeg" }],
-    shortcut: "/logo.jpeg",
   },
   manifest: "/manifest.webmanifest",
   alternates: {
@@ -76,21 +73,12 @@ export const metadata: Metadata = {
     siteName: SITE.name,
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
-    images: [
-      {
-        url: absoluteUrl("/logo.jpeg"),
-        width: 1200,
-        height: 1200,
-        alt: `${SITE.name} logo`,
-        type: "image/jpeg",
-      },
-    ],
+    // images come from the file convention (src/app/opengraph-image.tsx)
   },
   twitter: {
     card: "summary_large_image",
     title: `${SITE.name} — ${SITE.tagline}`,
     description: SITE.description,
-    images: [absoluteUrl("/logo.jpeg")],
   },
   robots: {
     index: true,

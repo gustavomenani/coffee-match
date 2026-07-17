@@ -68,7 +68,12 @@ export function EventCard({ event }: { event: EventCardData }) {
             <span className="badge badge-live">
               {statusLabel[event.status] ?? event.status}
             </span>
-            {when ? <span className="badge badge-soft">{when}</span> : null}
+            {when ? (
+              // Rótulo depende de Date.now() e pode divergir entre SSR e cliente na virada do dia
+              <span suppressHydrationWarning className="badge badge-soft">
+                {when}
+              </span>
+            ) : null}
             <span className="text-xs font-medium uppercase tracking-[0.12em] text-[var(--muted)]">
               {event.city}
             </span>
@@ -162,7 +167,9 @@ export function BuyTicketButton({
         {loading ? "Processando…" : "Garantir ingresso"}
       </Button>
       {error ? (
-        <p className="text-sm font-medium text-[var(--danger)]">{error}</p>
+        <p role="alert" className="text-sm font-medium text-[var(--danger)]">
+          {error}
+        </p>
       ) : null}
     </div>
   );

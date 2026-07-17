@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { redirect } from "next/navigation";
 import { registerUser } from "@/lib/actions/profile";
+import { SubmitButton } from "@/components/ui/submit-button";
 
 async function cadastroAction(formData: FormData) {
   "use server";
@@ -36,7 +37,10 @@ export default async function CadastroPage({
         </p>
 
         {error ? (
-          <p className="mt-5 rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-2 text-sm">
+          <p
+            role="alert"
+            className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+          >
             {error}
           </p>
         ) : null}
@@ -73,6 +77,7 @@ export default async function CadastroPage({
               name="email"
               required
               autoComplete="email"
+              spellCheck={false}
               className="field"
             />
           </label>
@@ -104,7 +109,8 @@ export default async function CadastroPage({
               minLength={10}
               maxLength={20}
               autoComplete="tel"
-              placeholder="11999999999"
+              inputMode="tel"
+              placeholder="(11) 99999-9999"
               className="field"
             />
           </label>
@@ -152,9 +158,7 @@ export default async function CadastroPage({
             </span>
           </label>
 
-          <button type="submit" className="btn btn-primary mt-2 w-full">
-            Criar conta
-          </button>
+          <SubmitButton pendingLabel="Criando conta…">Criar conta</SubmitButton>
         </form>
 
         <p className="mt-8 text-center text-sm text-[var(--muted)]">

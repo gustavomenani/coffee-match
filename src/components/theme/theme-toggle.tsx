@@ -4,6 +4,7 @@ import {
   useEffect,
   useRef,
   useState,
+  useSyncExternalStore,
   useTransition,
   type MouseEvent,
 } from "react";
@@ -11,6 +12,12 @@ import {
 type Theme = "light" | "dark";
 
 const STORAGE_KEY = "coffee-match-theme";
+
+/** Browser-chrome colors — must match ThemeScript and --paper in globals.css */
+const THEME_COLORS: Record<Theme, string> = {
+  light: "#faf6f1",
+  dark: "#120c09",
+};
 
 function prefersReducedMotion() {
   return window.matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -20,6 +27,17 @@ function setThemeClass(theme: Theme) {
   const root = document.documentElement;
   root.classList.toggle("dark", theme === "dark");
   root.style.colorScheme = theme;
+
+  // Keep the mobile browser bar in sync (meta is created by ThemeScript on boot)
+  let meta = document.querySelector<HTMLMetaElement>(
+    'meta[name="theme-color"]',
+  );
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.setAttribute("name", "theme-color");
+    document.head.appendChild(meta);
+  }
+  meta.setAttribute("content", THEME_COLORS[theme]);
 }
 
 /** Radius from click point that covers the full viewport */
@@ -109,25 +127,33 @@ function applyTheme(
   }, 480);
 }
 
+const emptySubscribe = () => () => {};
+
+/** Mirrors the logic in ThemeScript — safe to read during client render */
+function getInitialTheme(): Theme {
+  if (typeof window === "undefined") return "light";
+  const stored = localStorage.getItem(STORAGE_KEY);
+  if (stored === "dark" || stored === "light") return stored;
+  return window.matchMedia("(prefers-color-scheme: dark)").matches
+    ? "dark"
+    : "light";
+}
+
 export function ThemeToggle({ className = "" }: { className?: string }) {
-  const [theme, setTheme] = useState<Theme>("light");
-  const [ready, setReady] = useState(false);
+  const [theme, setTheme] = useState<Theme>(getInitialTheme);
+  // false during SSR/hydration, true after — without setState-in-effect
+  const ready = useSyncExternalStore(
+    emptySubscribe,
+    () => true,
+    () => false,
+  );
   const [, startTransition] = useTransition();
   const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
-    const stored = localStorage.getItem(STORAGE_KEY) as Theme | null;
-    let initial: Theme = "light";
-    if (stored === "dark" || stored === "light") {
-      initial = stored;
-    } else if (window.matchMedia("(prefers-color-scheme: dark)").matches) {
-      initial = "dark";
-    }
-    setTheme(initial);
-    // Script already set class; keep React state in sync without animation
-    setThemeClass(initial);
-    setReady(true);
-  }, []);
+    // Script already set the class early; re-sync DOM + meta (idempotent)
+    setThemeClass(theme);
+  }, [theme]);
 
   function toggle(e: MouseEvent<HTMLButtonElement>) {
     const next: Theme = theme === "dark" ? "light" : "dark";

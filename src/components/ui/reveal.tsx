@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useRef, useState, type ReactNode, type Ref } from "react";
 
 type RevealProps = {
   children: ReactNode;
@@ -28,11 +28,8 @@ export function Reveal({
     const el = ref.current;
     if (!el) return;
 
-    if (window.matchMedia("(prefers-reduced-motion: reduce)").matches) {
-      setShown(true);
-      return;
-    }
-
+    // prefers-reduced-motion is handled in CSS: .reveal is forced visible,
+    // so the observer only toggles a class that has no visual effect there.
     const io = new IntersectionObserver(
       ([entry]) => {
         if (entry.isIntersecting) {
@@ -48,8 +45,8 @@ export function Reveal({
 
   return (
     <Tag
-      // eslint-disable-next-line @typescript-eslint/no-explicit-any
-      ref={ref as any}
+      // Dynamic tag: HTMLElement ref satisfies every allowed element via Ref<never>
+      ref={ref as Ref<never>}
       className={`reveal ${shown ? "reveal-in" : ""} ${className}`}
       style={delay ? { transitionDelay: `${delay}ms` } : undefined}
     >

@@ -113,7 +113,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
           disabled={isPending && codePending}
           className="btn btn-primary shrink-0 !min-h-12"
         >
-          {isPending && codePending ? "Confirmando..." : "Check-in por código"}
+          {isPending && codePending ? "Confirmando…" : "Check-in por código"}
         </button>
       </form>
 
@@ -127,13 +127,20 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
       ) : null}
 
       {error ? (
-        <p className="rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="alert"
+          className="flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           {error}
         </p>
       ) : null}
 
       {success ? (
-        <p className="rounded-[var(--radius-sm)] flash-success rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="status"
+          aria-live="polite"
+          className="flash-success rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           {success}
         </p>
       ) : null}
@@ -177,7 +184,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
                     onClick={() => onCheckIn(ticket.id)}
                     className="btn btn-primary shrink-0 !min-h-12"
                   >
-                    {busy ? "Confirmando..." : "Fazer check-in"}
+                    {busy ? "Confirmando…" : "Fazer check-in"}
                   </button>
                 )}
               </li>

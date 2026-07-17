@@ -77,6 +77,8 @@ html.dark {
 
 html {
   scroll-behavior: smooth;
+  /* Kill the gray flash on tap for links/buttons (mobile WebKit/Blink) */
+  -webkit-tap-highlight-color: transparent;
 }
 
 body {
@@ -299,7 +301,7 @@ body::before {
 }
 
 ::selection {
-  background: color-mix(in srgb, var(--carmine) 22%, white);
+  background: color-mix(in srgb, var(--carmine) 22%, var(--paper));
   color: var(--ink);
 }
 
@@ -338,6 +340,7 @@ p,
   border-width: 0;
 }
 
+/* Skip link — hidden like .sr-only until keyboard focus brings it up */
 /* Ambient page wash */
 .page-glow {
   position: relative;
@@ -454,6 +457,8 @@ p,
     border-color 180ms cubic-bezier(0.2, 0, 0, 1),
     color 180ms cubic-bezier(0.2, 0, 0, 1);
   will-change: transform;
+  touch-action: manipulation;
+  -webkit-tap-highlight-color: transparent;
 }
 
 .btn:active:not(:disabled) {
