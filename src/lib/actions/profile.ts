@@ -49,7 +49,14 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
   });
   if (!parsed.success) return { ok: false, error: "Dados inválidos." };
 
-  const birth = new Date(parsed.data.birthDate + "T12:00:00");
+  // Store the civil birth date as noon São Paulo. Without the explicit offset
+  // the instant depends on the server's TZ, so the same form submission would
+  // land on a different day in dev and in production. Noon (not midnight) keeps
+  // the date stable when read from any zone within 12h of São Paulo.
+  const birth = new Date(parsed.data.birthDate + "T12:00:00-03:00");
+  if (Number.isNaN(birth.getTime())) {
+    return { ok: false, error: "Data de nascimento inválida." };
+  }
   if (!isAtLeast18(birth)) {
     return { ok: false, error: "É necessário ter 18 anos ou mais." };
   }
