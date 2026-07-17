@@ -229,7 +229,27 @@ npm run build
 | `/api/cron/event-reminders` | E-mail lembrete D-1 para ingressos pagos (Bearer `CRON_SECRET`) |
 | `/api/cron/cleanup-audit` | Apaga audit logs com +90 dias (Bearer `CRON_SECRET`) |
 
-Os crons devem ser chamados por um agendador externo (Vercel Cron, GitHub Actions schedule, crontab) com o header `Authorization: Bearer $CRON_SECRET`.
+Os crons são agendados pelo **`vercel.json`** na raiz. O Vercel Cron envia
+`Authorization: Bearer $CRON_SECRET` automaticamente quando a env `CRON_SECRET`
+está definida no projeto — é só configurá-la.
+
+| Cron | Agenda | Por quê |
+|------|--------|---------|
+| `expire-pending` | `*/15 * * * *` | Ingresso `pending` **ocupa vaga** (`src/lib/occupancy.ts`). Este cron é o único que devolve a vaga; sem ele, todo checkout abandonado segura um lugar para sempre e o evento esgota com a casa vazia |
+| `event-reminders` | `0 * * * *` (de hora em hora) | A janela é de 24h corridas e o assunto diz "É amanhã!". De hora em hora, um evento das 20:00 casa pela primeira vez às ~20:00 do dia anterior e o texto é verdadeiro. **Numa agenda diária de manhã, todo lembrete mentiria** (sairia na manhã do próprio dia). `reminderSentAt` deixa a re-execução idempotente, então rodar de hora em hora não custa nada |
+| `cleanup-audit` | `30 4 * * *` | Retenção de 90 dias do audit log (01:30 em São Paulo) |
+
+> **Atenção — dois pontos a confirmar antes do primeiro deploy:**
+>
+> 1. **Plano do Vercel.** O plano Hobby limita a **2 crons, com execução diária**.
+>    As agendas acima exigem o plano Pro. Fora do Vercel, o `vercel.json` é
+>    inerte: chame as três rotas por `crontab`/GitHub Actions schedule com o
+>    header `Authorization: Bearer $CRON_SECRET`, mantendo as mesmas cadências.
+> 2. **`buildCommand` roda `prisma migrate deploy`** (recomendação oficial do
+>    Prisma para Vercel). Isso significa que um deploy de *preview* aplica
+>    migrations no banco apontado por `DATABASE_URL` daquele ambiente — se
+>    preview e produção compartilham o mesmo banco, um preview migra a produção.
+>    Use bancos separados ou mova a migration para um passo de deploy dedicado.
 
 ## Fluxo da noite (resumo)
 

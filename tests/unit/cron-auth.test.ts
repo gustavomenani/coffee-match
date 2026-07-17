@@ -2,10 +2,14 @@ import { afterEach, beforeEach, describe, expect, it, vi } from "vitest";
 import { NextRequest } from "next/server";
 
 const auditDeleteMany = vi.fn();
+const auditFindMany = vi.fn();
 
 vi.mock("@/lib/prisma", () => ({
   prisma: {
-    auditLog: { deleteMany: (...a: unknown[]) => auditDeleteMany(...a) },
+    auditLog: {
+      deleteMany: (...a: unknown[]) => auditDeleteMany(...a),
+      findMany: (...a: unknown[]) => auditFindMany(...a),
+    },
   },
 }));
 // The real getEnv() validates the whole schema and caches the first result,
@@ -29,6 +33,8 @@ const originalSecret = process.env.CRON_SECRET;
 beforeEach(() => {
   vi.clearAllMocks();
   process.env.CRON_SECRET = SECRET;
+  // One short batch: three stale rows, then nothing left to do.
+  auditFindMany.mockResolvedValue([{ id: "a" }, { id: "b" }, { id: "c" }]);
   auditDeleteMany.mockResolvedValue({ count: 3 });
 });
 
@@ -69,11 +75,12 @@ describe("GET /api/cron/cleanup-audit", () => {
   it("200 with the correct token deletes old entries and reports the count", async () => {
     const res = await GET(cronRequest(`Bearer ${SECRET}`));
     expect(res.status).toBe(200);
-    await expect(res.json()).resolves.toEqual({ deleted: 3 });
+    await expect(res.json()).resolves.toEqual({ deleted: 3, pending: false });
+    // Rows are selected by the retention cutoff, then deleted by id in batches.
     expect(auditDeleteMany).toHaveBeenCalledWith({
-      where: { createdAt: { lt: expect.any(Date) } },
+      where: { id: { in: ["a", "b", "c"] } },
     });
-    const cutoff = auditDeleteMany.mock.calls[0][0].where.createdAt.lt;
+    const cutoff = auditFindMany.mock.calls[0][0].where.createdAt.lt;
     const ninetyDaysMs = 90 * 24 * 60 * 60 * 1000;
     expect(Date.now() - cutoff.getTime()).toBeGreaterThanOrEqual(
       ninetyDaysMs - 5_000
