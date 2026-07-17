@@ -1,11 +1,12 @@
-import NextAuth from "next-auth";
+import { cache } from "react";
+import NextAuth, { type Session } from "next-auth";
 import Credentials from "next-auth/providers/credentials";
 import { authConfig } from "@/lib/auth.config";
 import { prisma } from "@/lib/prisma";
 import { verifyLogin } from "@/lib/login";
 import { clientIpFromHeaders } from "@/lib/security/ip";
 
-export const { handlers, auth, signIn, signOut } = NextAuth({
+const nextAuth = NextAuth({
   ...authConfig,
   callbacks: {
     ...authConfig.callbacks,
@@ -52,3 +53,19 @@ export const { handlers, auth, signIn, signOut } = NextAuth({
     }),
   ],
 });
+
+export const { handlers, signIn, signOut } = nextAuth;
+
+/**
+ * Request-deduplicated session read.
+ *
+ * next-auth v5 does not wrap `auth()` in React's cache(), and the jwt callback
+ * above hits the database on every call to enforce tokenVersion. The root
+ * layout awaits auth() for the dock, then renders <Header/> which awaits it
+ * again, then the page awaits it a third time — three identical user lookups
+ * per request, plus another inside requireUser. React cache() collapses them
+ * into one per request; every call site uses the zero-argument form.
+ */
+export const auth = cache(
+  nextAuth.auth as unknown as () => Promise<Session | null>
+);

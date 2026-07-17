@@ -1,6 +1,5 @@
 "use server";
 
-import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { ageFrom } from "@/lib/domain/age";
@@ -120,7 +119,14 @@ export async function castVote(input: {
     update: { interest: input.interest },
   });
 
-  revalidatePath(`/evento/${eventId}/votar`);
+  // Deliberately NO revalidatePath here. It re-ran getBallot — auth plus six
+  // queries, including a ticket->user join over the whole room and every
+  // candidate's photo — and shipped a fresh RSC payload on EVERY tap, for the
+  // whole room, at the peak of the night. All of it wasted: BallotList seeds
+  // `votes` in a useState initializer that only runs on mount, so the new
+  // initialVotes is discarded, and the client already tracks its own vote state.
+  // openVoting/closeVoting still revalidate this path, which is what actually
+  // needs to reach the page.
   return { ok: true };
 }
 

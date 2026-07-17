@@ -58,9 +58,10 @@ const nextConfig: NextConfig = {
   compress: true,
   productionBrowserSourceMaps: false,
   reactStrictMode: true,
-  experimental: {
-    optimizePackageImports: ["date-fns", "bcryptjs"],
-  },
+  // optimizePackageImports rewrites barrel imports in the CLIENT bundle. It was
+  // listing date-fns (removed — zero imports anywhere) and bcryptjs, which is
+  // server-only and never reaches a client bundle, so the option was a no-op on
+  // both. Dropped rather than left as decoration.
   images: {
     formats: ["image/avif", "image/webp"],
     minimumCacheTTL: 60 * 60 * 24 * 30,

@@ -29,14 +29,22 @@ export function Logo({
         className="relative shrink-0 overflow-hidden rounded-full bg-[var(--espresso)] shadow-[0_8px_20px_rgba(26,16,12,0.35)] ring-1 ring-[color-mix(in_srgb,var(--coffee)_25%,transparent)]"
         style={{ width: s.box, height: s.box }}
       >
+        {/*
+          No `unoptimized`: the source is 1254x1254 / 63KB and renders into a
+          40px circle, so every page shipped ~63KB of JPEG to paint ~2KB worth
+          of pixels — and with priority on the header it was preloaded, ahead of
+          real content. Letting next/image handle it uses the AVIF/WebP formats
+          already configured in next.config.ts and serves it at the requested
+          size. `sizes` keeps the srcset from offering widths we never use.
+        */}
         <Image
           src="/logo.jpeg"
           alt="Coffee Match"
           width={s.img}
           height={s.img}
+          sizes={`${s.img}px`}
           className="h-full w-full object-cover"
           priority={priority}
-          unoptimized
         />
       </span>
       {showWordmark ? (
