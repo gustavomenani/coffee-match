@@ -1,13 +1,25 @@
 import { z } from "zod";
 
+/**
+ * Prepend https:// to a scheme-less URL env var. Setting NEXT_PUBLIC_APP_URL (or
+ * AUTH_URL) to a bare host like "my-app.vercel.app" is an extremely common deploy
+ * mistake, and a strict `.url()` then throws "Invalid URL" from getEnv() inside
+ * the instrumentation hook — which crashes the whole app at boot (every page 500s)
+ * instead of just being wrong. Coerce the scheme so a typo degrades gracefully.
+ */
+const coerceHttps = (v: unknown) =>
+  typeof v === "string" && v.length > 0 && !/^https?:\/\//i.test(v)
+    ? `https://${v}`
+    : v;
+
 const envSchema = z.object({
   NODE_ENV: z
     .enum(["development", "test", "production"])
     .default("development"),
   DATABASE_URL: z.string().min(1),
   AUTH_SECRET: z.string().min(16),
-  AUTH_URL: z.string().url().optional(),
-  NEXT_PUBLIC_APP_URL: z.string().url().optional(),
+  AUTH_URL: z.preprocess(coerceHttps, z.string().url().optional()),
+  NEXT_PUBLIC_APP_URL: z.preprocess(coerceHttps, z.string().url().optional()),
   MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
   MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
   /** Bearer token required by the /api/cron/* routes (503 when unset). */
