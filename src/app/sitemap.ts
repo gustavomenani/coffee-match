@@ -2,6 +2,12 @@ import type { MetadataRoute } from "next";
 import { prisma } from "@/lib/prisma";
 import { absoluteUrl } from "@/lib/seo";
 
+// The event list is a live DB read, but a DB query is not a dynamic API — so
+// without this the route is generated ONCE at build and cached indefinitely,
+// advertising build-frozen event URLs (a new/edited/closed event never appears
+// or disappears). Revalidate hourly so the sitemap tracks the catalogue.
+export const revalidate = 3600;
+
 /**
  * Only indexable public URLs (no login/admin/private flows).
  */

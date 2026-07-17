@@ -65,19 +65,31 @@ async function notifyWaitlistSpotOpened(event: {
   slug: string;
   city: string;
 }): Promise<void> {
-  const interests = await prisma.eventInterest.findMany({
+  const candidates = await prisma.eventInterest.findMany({
     where: { eventId: event.id, notifiedAt: null },
     take: WAITLIST_BATCH,
     orderBy: { createdAt: "asc" },
+    select: { id: true, email: true },
   });
-  if (interests.length === 0) return;
+  if (candidates.length === 0) return;
 
-  // Mark ONLY the addresses the provider accepted. notifiedAt is the dedup
-  // filter above, so stamping it on a failed send retires that person from the
-  // waitlist forever — Resend down for one minute used to mean 50 people were
-  // recorded as notified and never told a spot opened.
+  // Claim BEFORE sending. The sold_out->published transition claim guarantees one
+  // run PER transition, but the room can flap sold_out->published->sold_out while
+  // this batch is mid-send (seconds), and the next transition would re-select the
+  // SAME still-null rows and e-mail them twice — select->stamp spans the whole
+  // send window. updateManyAndReturn flips notifiedAt null->now atomically and
+  // returns exactly the rows THIS run won, so a concurrent transition claims a
+  // disjoint set. Failed sends are reset to null below, preserving the "only mark
+  // what actually went out" rule (Resend down must not retire people forever).
+  const claimed = await prisma.eventInterest.updateManyAndReturn({
+    where: { id: { in: candidates.map((c) => c.id) }, notifiedAt: null },
+    data: { notifiedAt: new Date() },
+    select: { id: true, email: true },
+  });
+  if (claimed.length === 0) return;
+
   const settled = await Promise.allSettled(
-    interests.map((interest) =>
+    claimed.map((interest) =>
       sendSpotOpenedEmail({
         to: interest.email,
         eventTitle: event.title,
@@ -87,18 +99,29 @@ async function notifyWaitlistSpotOpened(event: {
     )
   );
 
-  const notifiedIds: string[] = [];
   const notifiedEmails: string[] = [];
+  const failedIds: string[] = [];
   settled.forEach((result, idx) => {
     if (result.status === "fulfilled" && result.value) {
-      notifiedIds.push(interests[idx].id);
-      notifiedEmails.push(interests[idx].email);
-    } else if (result.status === "rejected") {
-      logError("waitlist.email_threw", result.reason, {
-        interestId: interests[idx].id,
-      });
+      notifiedEmails.push(claimed[idx].email);
+    } else {
+      failedIds.push(claimed[idx].id);
+      if (result.status === "rejected") {
+        logError("waitlist.email_threw", result.reason, {
+          interestId: claimed[idx].id,
+        });
+      }
     }
   });
+
+  // Release the claim on anything that did not go out, so a later transition
+  // retries it instead of it being silently retired from the waitlist.
+  if (failedIds.length > 0) {
+    await prisma.eventInterest.updateMany({
+      where: { id: { in: failedIds } },
+      data: { notifiedAt: null },
+    });
+  }
 
   // O waitlist é por e-mail (pode não ter conta): envia push só para os
   // e-mails que correspondem a usuários cadastrados, além do e-mail.
@@ -118,21 +141,14 @@ async function notifyWaitlistSpotOpened(event: {
     );
   }
 
-  if (notifiedIds.length > 0) {
-    await prisma.eventInterest.updateMany({
-      where: { id: { in: notifiedIds } },
-      data: { notifiedAt: new Date() },
-    });
-  }
-
   await auditLog({
     action: "event.waitlist_notified",
     meta: {
       eventId: event.id,
       slug: event.slug,
-      notified: notifiedIds.length,
-      failed: interests.length - notifiedIds.length,
-      batchFull: interests.length === WAITLIST_BATCH,
+      notified: notifiedEmails.length,
+      failed: failedIds.length,
+      batchFull: candidates.length === WAITLIST_BATCH,
     },
   });
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
+import { bustEventCaches } from "@/lib/cache-bust";
 import { computeMutualMatches } from "@/lib/domain/matching";
 import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
@@ -211,6 +212,10 @@ export async function openVoting(rawEventId: string): Promise<ActionResult> {
 
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
+  // Event.status just changed to "live" — bust the public surfaces that read it
+  // through unstable_cache (listPublishedEvents/getEventBySlug), or they serve a
+  // stale status for up to their revalidate window.
+  bustEventCaches(event.slug);
   return { ok: true };
 }
 
@@ -371,6 +376,8 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
   revalidatePath(`/evento/${eventId}/matches`);
+  // Event.status -> "closed" moves it off the published lists onto the past list.
+  bustEventCaches(event.slug);
   return { ok: true };
 }
 
@@ -421,5 +428,7 @@ export async function reopenVoting(rawEventId: string): Promise<ActionResult> {
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);
   revalidatePath(`/evento/${eventId}/matches`);
+  // Event.status -> "live" again; refresh the public lists that filter on it.
+  bustEventCaches(event.slug);
   return { ok: true };
 }

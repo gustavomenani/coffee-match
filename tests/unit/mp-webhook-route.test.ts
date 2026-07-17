@@ -372,8 +372,10 @@ describe("POST /api/webhooks/mercadopago", () => {
     expect(ticketFindUnique).toHaveBeenCalledWith(
       expect.objectContaining({ where: { mpPaymentId: PAYMENT_ID } })
     );
+    // Exact where: the mpPaymentId guard binds the refund to the payment that was
+    // actually recorded, so refunding a duplicate charge can't void the ticket.
     expect(ticketUpdateMany).toHaveBeenCalledWith({
-      where: { id: TICKET_ID, status: "paid" },
+      where: { id: TICKET_ID, status: "paid", mpPaymentId: PAYMENT_ID },
       data: { status: "refunded" },
     });
     expect(syncSoldOutMock).toHaveBeenCalledWith(EVENT_ID);
@@ -381,6 +383,40 @@ describe("POST /api/webhooks/mercadopago", () => {
       expect.objectContaining({ action: "ticket.refund_webhook" })
     );
     expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("does not void a ticket when a DUPLICATE payment (not the one on record) is refunded", async () => {
+    // Ticket T is paid by payment A. A duplicate charge B was made and correctly
+    // left un-recorded (mpPaymentId stays A). An operator refunds B in the MP
+    // dashboard. The refund webhook for B must NOT flip T to refunded.
+    paymentGetMock.mockResolvedValue(approvedPayment({ status: "refunded" }));
+    ticketFindUnique.mockReset();
+    ticketFindUnique
+      .mockResolvedValueOnce(null) // lookup by mpPaymentId=B misses (B never recorded)
+      .mockResolvedValueOnce({
+        // external_reference fallback finds T, which is paid by A
+        id: TICKET_ID,
+        eventId: EVENT_ID,
+        userId: "ckuser000000000000000001",
+        status: "paid",
+        mpPaymentId: "A-original-payment",
+      });
+    // The mpPaymentId=B guard matches no row (T holds A).
+    ticketUpdateMany.mockResolvedValue({ count: 0 });
+
+    const res = await POST(webhookRequest());
+
+    expect(res.status).toBe(200);
+    // Attempted only under the payment-bound guard...
+    expect(ticketUpdateMany).toHaveBeenCalledWith({
+      where: { id: TICKET_ID, status: "paid", mpPaymentId: PAYMENT_ID },
+      data: { status: "refunded" },
+    });
+    // ...and since nothing matched, the ticket is preserved: no refund recorded.
+    expect(auditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.refund_webhook" })
+    );
+    expect(syncSoldOutMock).not.toHaveBeenCalled();
   });
 
   it("is idempotent when the refunded webhook is re-notified", async () => {

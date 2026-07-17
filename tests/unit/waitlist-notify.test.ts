@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from "vitest";
 const eventFindUnique = vi.fn();
 const eventUpdateMany = vi.fn();
 const interestFindMany = vi.fn();
+const interestUpdateManyAndReturn = vi.fn();
 const interestUpdateMany = vi.fn();
 const getEventOccupancyMock = vi.fn();
 const sendSpotOpenedEmailMock = vi.fn();
@@ -21,6 +22,7 @@ vi.mock("@/lib/prisma", () => ({
     },
     eventInterest: {
       findMany: (...a: unknown[]) => interestFindMany(...a),
+      updateManyAndReturn: (...a: unknown[]) => interestUpdateManyAndReturn(...a),
       updateMany: (...a: unknown[]) => interestUpdateMany(...a),
     },
   },
@@ -86,6 +88,9 @@ beforeEach(() => {
   // wins the row goes on to notify the waitlist.
   eventUpdateMany.mockResolvedValue({ count: 1 });
   interestFindMany.mockResolvedValue([]);
+  // Claim-and-return: by default claims nothing; tests that reopen a waitlist
+  // override this to return the rows they win.
+  interestUpdateManyAndReturn.mockResolvedValue([]);
   interestUpdateMany.mockResolvedValue({ count: 0 });
   // Mirrors the real signature: sendSpotOpenedEmail never throws, it reports
   // delivery as a boolean. A mock that resolves undefined would let the marking
@@ -95,11 +100,12 @@ beforeEach(() => {
 });
 
 describe("syncEventSoldOutStatus waitlist notifications", () => {
-  it("sold_out → published notifies pending interests and marks them", async () => {
+  it("sold_out → published claims pending interests, then notifies them", async () => {
     eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
     getEventOccupancyMock.mockResolvedValue(freeOccupancy);
     interestFindMany.mockResolvedValue(interests);
-    interestUpdateMany.mockResolvedValue({ count: 2 });
+    // The claim wins both rows.
+    interestUpdateManyAndReturn.mockResolvedValue(interests);
 
     await syncEventSoldOutStatus(EVENT_ID);
 
@@ -113,6 +119,13 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
         where: { eventId: EVENT_ID, notifiedAt: null },
       })
     );
+    // Rows are stamped BEFORE sending (guarded claim), returning what we won.
+    expect(interestUpdateManyAndReturn).toHaveBeenCalledWith(
+      expect.objectContaining({
+        where: { id: { in: interests.map((i) => i.id) }, notifiedAt: null },
+        data: { notifiedAt: expect.any(Date) },
+      })
+    );
     expect(sendSpotOpenedEmailMock).toHaveBeenCalledTimes(2);
     expect(sendSpotOpenedEmailMock).toHaveBeenCalledWith({
       to: "ana@example.com",
@@ -123,10 +136,8 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     expect(sendSpotOpenedEmailMock).toHaveBeenCalledWith(
       expect.objectContaining({ to: "bia@example.com" })
     );
-    expect(interestUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: interests.map((i) => i.id) } },
-      data: { notifiedAt: expect.any(Date) },
-    });
+    // All sends succeeded, so nothing is released back to null.
+    expect(interestUpdateMany).not.toHaveBeenCalled();
     expect(auditLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
         action: "event.waitlist_notified",
@@ -136,10 +147,11 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     expect(bustEventCachesMock).toHaveBeenCalledWith(baseEvent.slug);
   });
 
-  it("marks only the recipients whose e-mail actually went out", async () => {
+  it("releases the claim on recipients whose e-mail did not go out", async () => {
     eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
     getEventOccupancyMock.mockResolvedValue(freeOccupancy);
     interestFindMany.mockResolvedValue(interests);
+    interestUpdateManyAndReturn.mockResolvedValue(interests);
     // Ana's send is rejected by the provider, Bia's goes out.
     sendSpotOpenedEmailMock
       .mockResolvedValueOnce(false)
@@ -149,11 +161,11 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     // One bad recipient must not block the other...
     expect(sendSpotOpenedEmailMock).toHaveBeenCalledTimes(2);
-    // ...but Ana must NOT be marked, or notifiedAt retires her from the
-    // waitlist forever and she is never told a spot opened.
+    // ...and Ana's claim must be RELEASED (notifiedAt back to null), or she is
+    // retired from the waitlist forever and never told a spot opened.
     expect(interestUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: [interests[1].id] } },
-      data: { notifiedAt: expect.any(Date) },
+      where: { id: { in: [interests[0].id] } },
+      data: { notifiedAt: null },
     });
     expect(auditLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
@@ -162,16 +174,21 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     );
   });
 
-  it("marks nobody when the mail provider is down for the whole batch", async () => {
+  it("releases the whole batch when the mail provider is down", async () => {
     eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
     getEventOccupancyMock.mockResolvedValue(freeOccupancy);
     interestFindMany.mockResolvedValue(interests);
+    interestUpdateManyAndReturn.mockResolvedValue(interests);
     sendSpotOpenedEmailMock.mockResolvedValue(false);
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    // The whole waitlist stays unnotified and eligible for the next transition.
-    expect(interestUpdateMany).not.toHaveBeenCalled();
+    // Every claim is released, so the whole waitlist stays eligible for the
+    // next transition.
+    expect(interestUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: interests.map((i) => i.id) } },
+      data: { notifiedAt: null },
+    });
     expect(auditLogMock).toHaveBeenCalledWith(
       expect.objectContaining({
         meta: expect.objectContaining({ notified: 0, failed: 2 }),
@@ -179,10 +196,11 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     );
   });
 
-  it("survives a send that throws and still marks the others", async () => {
+  it("survives a send that throws and releases only that recipient", async () => {
     eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
     getEventOccupancyMock.mockResolvedValue(freeOccupancy);
     interestFindMany.mockResolvedValue(interests);
+    interestUpdateManyAndReturn.mockResolvedValue(interests);
     sendSpotOpenedEmailMock
       .mockRejectedValueOnce(new Error("unexpected"))
       .mockResolvedValueOnce(true);
@@ -190,11 +208,34 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
 
     await syncEventSoldOutStatus(EVENT_ID);
 
+    // Ana threw → her claim is released; Bia stays claimed.
     expect(interestUpdateMany).toHaveBeenCalledWith({
-      where: { id: { in: [interests[1].id] } },
-      data: { notifiedAt: expect.any(Date) },
+      where: { id: { in: [interests[0].id] } },
+      data: { notifiedAt: null },
     });
     consoleError.mockRestore();
+  });
+
+  it("does not re-select an in-flight batch: a concurrent claim wins a disjoint set", async () => {
+    // findMany returns two candidates, but a concurrent transition already
+    // claimed one of them, so this run's guarded claim only wins the other.
+    eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
+    getEventOccupancyMock.mockResolvedValue(freeOccupancy);
+    interestFindMany.mockResolvedValue(interests);
+    interestUpdateManyAndReturn.mockResolvedValue([interests[1]]); // only Bia won
+
+    await syncEventSoldOutStatus(EVENT_ID);
+
+    // We e-mail ONLY the row we actually claimed — never the one the other run took.
+    expect(sendSpotOpenedEmailMock).toHaveBeenCalledTimes(1);
+    expect(sendSpotOpenedEmailMock).toHaveBeenCalledWith(
+      expect.objectContaining({ to: "bia@example.com" })
+    );
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({ notified: 1 }),
+      })
+    );
   });
 
   it("reopening with an empty waitlist sends nothing and audits nothing", async () => {

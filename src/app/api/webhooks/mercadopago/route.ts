@@ -114,7 +114,14 @@ export async function POST(req: NextRequest) {
         });
       } else if (
         (status === "cancelled" || status === "paused") &&
-        sub.status !== "cancelled"
+        sub.status !== "cancelled" &&
+        // Must target the CURRENTLY tracked preapproval. Without this, a late
+        // 'cancelled' webhook for a SUPERSEDED preapproval (the user re-subscribed,
+        // so startSubscription cancelled the old id on MP) resolves the active row
+        // via the userId fallback above and cancels a paying subscription — MP
+        // keeps billing the live preapproval while the app shows un-subscribed.
+        // Mirrors the id guard the duplicate-authorized branch already has.
+        sub.mpPreapprovalId === paymentId
       ) {
         await prisma.subscription.update({
           where: { id: sub.id },
@@ -152,9 +159,16 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
-      // Idempotent: only a currently paid ticket transitions to refunded.
+      // Idempotent AND payment-bound: only a paid ticket whose recorded payment
+      // IS the one being refunded transitions to refunded. The mpPaymentId guard
+      // matters when a duplicate charge is refunded — ticket T is paid by payment
+      // A (mpPaymentId=A), a duplicate B is charged and correctly left un-recorded,
+      // and an operator refunds B. Without this guard, the external_reference
+      // fallback above resolves T by ticketId and the bare status:"paid" update
+      // would void a legitimately paid ticket. A refund of the real payment A is
+      // still found by the primary mpPaymentId lookup and matches this guard.
       const updated = await prisma.ticket.updateMany({
-        where: { id: ticket.id, status: "paid" },
+        where: { id: ticket.id, status: "paid", mpPaymentId: String(paymentId) },
         data: { status: "refunded" },
       });
 

@@ -97,44 +97,48 @@ export async function requestPasswordReset(
     return { ok: true };
   }
 
-  const token = randomBytes(32).toString("hex");
-  const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
-
-  // A new request invalidates every previous token for this user.
-  await prisma.$transaction([
-    prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
-    prisma.passwordResetToken.create({
-      data: { userId: user.id, tokenHash: hashToken(token), expiresAt },
-    }),
-  ]);
-
-  const resetUrl = `${appBaseUrl()}/redefinir-senha?token=${token}`;
-
-  const text = [
-    "Olá!",
-    "",
-    "Recebemos um pedido para redefinir a senha da sua conta no Coffee Match.",
-    `Para escolher uma nova senha, acesse: ${resetUrl}`,
-    "",
-    "O link vale por 1 hora e só pode ser usado uma vez.",
-    "Se você não pediu a redefinição, ignore este e-mail — nada muda na sua conta.",
-    "",
-    "Coffee Match — conectando pessoas, uma xícara por vez.",
-  ].join("\n");
-
-  const html = [
-    `<p>Olá!</p>`,
-    `<p>Recebemos um pedido para redefinir a senha da sua conta no <strong>Coffee Match</strong>.</p>`,
-    `<p><a href="${resetUrl}">Redefinir minha senha</a></p>`,
-    `<p>O link vale por 1 hora e só pode ser usado uma vez.</p>`,
-    `<p>Se você não pediu a redefinição, ignore este e-mail — nada muda na sua conta.</p>`,
-  ].join("");
-
-  // Off the response path. Awaiting a Resend round trip here made the known-
-  // email branch hundreds of milliseconds slower than the unknown one, which
-  // returns immediately after the lookup — a stable timing oracle that
-  // enumerates accounts on the one endpoint most carefully built to avoid it.
+  // Run EVERY side effect off the response path so a known e-mail returns in the
+  // same time as an unknown one (which returns immediately after this lookup).
+  // Awaiting the token-creation transaction and the audit insert here made the
+  // known branch measurably slower than the unknown one — a timing oracle that
+  // enumerates accounts on the one endpoint most carefully built to avoid it
+  // (the Resend round trip was already deferred; the DB writes were not). The
+  // token only has to exist before the e-mail is delivered, and both happen
+  // sequentially inside this after() block.
   after(async () => {
+    const token = randomBytes(32).toString("hex");
+    const expiresAt = new Date(Date.now() + TOKEN_TTL_MS);
+
+    // A new request invalidates every previous token for this user.
+    await prisma.$transaction([
+      prisma.passwordResetToken.deleteMany({ where: { userId: user.id } }),
+      prisma.passwordResetToken.create({
+        data: { userId: user.id, tokenHash: hashToken(token), expiresAt },
+      }),
+    ]);
+
+    const resetUrl = `${appBaseUrl()}/redefinir-senha?token=${token}`;
+
+    const text = [
+      "Olá!",
+      "",
+      "Recebemos um pedido para redefinir a senha da sua conta no Coffee Match.",
+      `Para escolher uma nova senha, acesse: ${resetUrl}`,
+      "",
+      "O link vale por 1 hora e só pode ser usado uma vez.",
+      "Se você não pediu a redefinição, ignore este e-mail — nada muda na sua conta.",
+      "",
+      "Coffee Match — conectando pessoas, uma xícara por vez.",
+    ].join("\n");
+
+    const html = [
+      `<p>Olá!</p>`,
+      `<p>Recebemos um pedido para redefinir a senha da sua conta no <strong>Coffee Match</strong>.</p>`,
+      `<p><a href="${resetUrl}">Redefinir minha senha</a></p>`,
+      `<p>O link vale por 1 hora e só pode ser usado uma vez.</p>`,
+      `<p>Se você não pediu a redefinição, ignore este e-mail — nada muda na sua conta.</p>`,
+    ].join("");
+
     await sendEmail({
       to: email,
       subject: "Redefinição de senha | Coffee Match",
@@ -142,12 +146,12 @@ export async function requestPasswordReset(
       html,
       auditAction: "notify.password_reset",
     });
-  });
 
-  await auditLog({
-    actorId: user.id,
-    action: "user.password_reset_request",
-    meta: { email },
+    await auditLog({
+      actorId: user.id,
+      action: "user.password_reset_request",
+      meta: { email },
+    });
   });
 
   return { ok: true };

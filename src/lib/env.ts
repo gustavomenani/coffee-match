@@ -63,6 +63,16 @@ export function getEnv(): AppEnv {
         "MERCADOPAGO_WEBHOOK_SECRET is required in production — webhook signatures cannot be verified without it."
       );
     }
+    // vercel.json unconditionally schedules expire-pending/event-reminders/
+    // cleanup-audit, and requireCronAuth 503s when CRON_SECRET is unset. Missing
+    // it means every cron silently 503s — pending tickets never expire (freezing
+    // capacity), reminders never send, audit rows never prune — with no error
+    // until someone notices the symptom. Fail closed like the other secrets.
+    if (!env.CRON_SECRET) {
+      throw new Error(
+        "CRON_SECRET is required in production — every scheduled cron 503s without it."
+      );
+    }
     if (
       env.MERCADOPAGO_ACCESS_TOKEN.startsWith("TEST-DEV-BYPASS") ||
       env.ALLOW_DEV_BYPASS

@@ -77,8 +77,9 @@ function brandedHtml(input: {
  * nothing") and the dedup markers (reminderSentAt, notifiedAt), which
  * permanently suppress a retry once set.
  *
- * Returns true only when the provider accepted the message, or when running
- * without Resend configured (console channel — nothing to fail).
+ * Returns true only when the provider accepted the message, or, in
+ * NON-production, when running without Resend (dev console channel). In
+ * production a missing Resend config returns FALSE — see the else branch.
  */
 export async function sendEmail(input: {
   to: string;
@@ -128,6 +129,19 @@ export async function sendEmail(input: {
       failure = "network_error";
       logError("email.send_failed", err, { action: input.auditAction });
     }
+  } else if (process.env.NODE_ENV === "production") {
+    // Missing Resend config in production is NOT a successful delivery. Letting
+    // `delivered` stay true here permanently stamps the caller's dedup markers
+    // (reminderSentAt/notifiedAt) and audits "delivered", so a prod deploy that
+    // omits RESEND_API_KEY/EMAIL_FROM would silently burn every notification with
+    // no retry once config is restored. Fail the send instead.
+    delivered = false;
+    failure = "email_unconfigured";
+    logError(
+      "email.unconfigured",
+      new Error("RESEND_API_KEY/EMAIL_FROM missing in production"),
+      { action: input.auditAction }
+    );
   } else {
     console.info("[notify:email:dev]", { to: input.to, subject: input.subject });
     console.info(input.text);

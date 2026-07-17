@@ -22,12 +22,42 @@ function endpointFingerprint(endpoint: string): string {
   return createHash("sha256").update(endpoint).digest("hex").slice(0, 16);
 }
 
+/**
+ * Real browser push services. web-push POSTs the payload to whatever endpoint we
+ * store, and web-push 3.6.7 has no allowlist of its own — so accepting an
+ * arbitrary https host turns a stored subscription into an authenticated blind
+ * SSRF (e.g. endpoint="https://10.0.0.10:9200/..." reached whenever we push to
+ * that user). Constrain to the known push-service host suffixes; this also blocks
+ * IP-literal and internal hosts outright. If a new browser push service appears,
+ * add its suffix here.
+ */
+const PUSH_HOST_SUFFIXES = [
+  "fcm.googleapis.com", // Chrome, Edge (FCM)
+  "push.apple.com", // Safari (web.push.apple.com / *.push.apple.com)
+  "notify.windows.com", // legacy Edge / WNS (*.notify.windows.com)
+  "push.services.mozilla.com", // Firefox (updates.push.services.mozilla.com)
+];
+
+function isAllowedPushEndpoint(raw: string): boolean {
+  let u: URL;
+  try {
+    u = new URL(raw);
+  } catch {
+    return false;
+  }
+  if (u.protocol !== "https:") return false;
+  const host = u.hostname.toLowerCase();
+  return PUSH_HOST_SUFFIXES.some(
+    (suffix) => host === suffix || host.endsWith("." + suffix)
+  );
+}
+
 const subscriptionSchema = z.object({
   endpoint: z
     .string()
     .url()
     .max(2000)
-    .refine((v) => v.startsWith("https://"), "Endpoint deve ser https."),
+    .refine(isAllowedPushEndpoint, "Endpoint de push não reconhecido."),
   keys: z.object({
     p256dh: z.string().min(1).max(512),
     auth: z.string().min(1).max(512),

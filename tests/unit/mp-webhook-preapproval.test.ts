@@ -169,6 +169,35 @@ describe("POST /api/webhooks/mercadopago — subscription_preapproval", () => {
     );
   });
 
+  it("does NOT cancel the active subscription when a SUPERSEDED preapproval is cancelled", async () => {
+    // The user re-subscribed (P_old -> P_new). startSubscription cancelled P_old
+    // on MP, which emits a late 'cancelled' webhook for P_old. The row now tracks
+    // P_new and is active. The primary lookup by P_old misses; the userId fallback
+    // resolves the ACTIVE P_new row. Cancelling it here would leave MP billing
+    // P_new while the app shows un-subscribed — the id guard must no-op instead.
+    getPreapprovalStatusMock.mockResolvedValue({
+      status: "cancelled",
+      externalReference: USER_ID,
+    });
+    subFindUnique
+      .mockResolvedValueOnce(null) // no row carries the superseded P_old
+      .mockResolvedValueOnce({
+        id: SUB_ID,
+        userId: USER_ID,
+        status: "active",
+        mpPreapprovalId: NEW_PREAPPROVAL, // row tracks the CURRENT live preapproval
+      });
+
+    const res = await POST(preapprovalWebhook(OLD_PREAPPROVAL));
+
+    expect(res.status).toBe(200);
+    // The paying subscription must be left untouched.
+    expect(subUpdate).not.toHaveBeenCalled();
+    expect(auditLogMock).not.toHaveBeenCalledWith(
+      expect.objectContaining({ action: "subscription.cancelled" })
+    );
+  });
+
   it("500s so MP retries when the preapproval lookup fails", async () => {
     getPreapprovalStatusMock.mockRejectedValue(new Error("mp down"));
     const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
