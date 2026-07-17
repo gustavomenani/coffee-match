@@ -85,7 +85,10 @@ beforeEach(() => {
   eventUpdate.mockResolvedValue({});
   interestFindMany.mockResolvedValue([]);
   interestUpdateMany.mockResolvedValue({ count: 0 });
-  sendSpotOpenedEmailMock.mockResolvedValue(undefined);
+  // Mirrors the real signature: sendSpotOpenedEmail never throws, it reports
+  // delivery as a boolean. A mock that resolves undefined would let the marking
+  // logic look correct while suppressing every retry in production.
+  sendSpotOpenedEmailMock.mockResolvedValue(true);
   auditLogMock.mockResolvedValue(undefined);
 });
 
@@ -130,25 +133,64 @@ describe("syncEventSoldOutStatus waitlist notifications", () => {
     expect(bustEventCachesMock).toHaveBeenCalledWith(baseEvent.slug);
   });
 
-  it("one failing recipient does not block the rest nor the marking", async () => {
+  it("marks only the recipients whose e-mail actually went out", async () => {
+    eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
+    getEventOccupancyMock.mockResolvedValue(freeOccupancy);
+    interestFindMany.mockResolvedValue(interests);
+    // Ana's send is rejected by the provider, Bia's goes out.
+    sendSpotOpenedEmailMock
+      .mockResolvedValueOnce(false)
+      .mockResolvedValueOnce(true);
+
+    await syncEventSoldOutStatus(EVENT_ID);
+
+    // One bad recipient must not block the other...
+    expect(sendSpotOpenedEmailMock).toHaveBeenCalledTimes(2);
+    // ...but Ana must NOT be marked, or notifiedAt retires her from the
+    // waitlist forever and she is never told a spot opened.
+    expect(interestUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: [interests[1].id] } },
+      data: { notifiedAt: expect.any(Date) },
+    });
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({ notified: 1, failed: 1 }),
+      })
+    );
+  });
+
+  it("marks nobody when the mail provider is down for the whole batch", async () => {
+    eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
+    getEventOccupancyMock.mockResolvedValue(freeOccupancy);
+    interestFindMany.mockResolvedValue(interests);
+    sendSpotOpenedEmailMock.mockResolvedValue(false);
+
+    await syncEventSoldOutStatus(EVENT_ID);
+
+    // The whole waitlist stays unnotified and eligible for the next transition.
+    expect(interestUpdateMany).not.toHaveBeenCalled();
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        meta: expect.objectContaining({ notified: 0, failed: 2 }),
+      })
+    );
+  });
+
+  it("survives a send that throws and still marks the others", async () => {
     eventFindUnique.mockResolvedValue({ ...baseEvent, status: "sold_out" });
     getEventOccupancyMock.mockResolvedValue(freeOccupancy);
     interestFindMany.mockResolvedValue(interests);
     sendSpotOpenedEmailMock
-      .mockRejectedValueOnce(new Error("smtp down"))
-      .mockResolvedValueOnce(undefined);
-    const consoleError = vi
-      .spyOn(console, "error")
-      .mockImplementation(() => {});
+      .mockRejectedValueOnce(new Error("unexpected"))
+      .mockResolvedValueOnce(true);
+    const consoleError = vi.spyOn(console, "error").mockImplementation(() => {});
 
     await syncEventSoldOutStatus(EVENT_ID);
 
-    expect(sendSpotOpenedEmailMock).toHaveBeenCalledTimes(2);
-    expect(interestUpdateMany).toHaveBeenCalledWith(
-      expect.objectContaining({
-        where: { id: { in: interests.map((i) => i.id) } },
-      })
-    );
+    expect(interestUpdateMany).toHaveBeenCalledWith({
+      where: { id: { in: [interests[1].id] } },
+      data: { notifiedAt: expect.any(Date) },
+    });
     consoleError.mockRestore();
   });
 

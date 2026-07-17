@@ -37,7 +37,14 @@ export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
   }
 }
 
-/** Notify up to 50 not-yet-notified interested people that a spot opened. */
+/**
+ * Bounded per transition: this runs inside the Mercado Pago webhook, which must
+ * answer before MP times out and retries. `batchFull` in the audit meta flags
+ * when a waitlist outgrew one pass.
+ */
+const WAITLIST_BATCH = 50;
+
+/** Notify up to WAITLIST_BATCH not-yet-notified interested people that a spot opened. */
 async function notifyWaitlistSpotOpened(event: {
   id: string;
   title: string;
@@ -46,50 +53,75 @@ async function notifyWaitlistSpotOpened(event: {
 }): Promise<void> {
   const interests = await prisma.eventInterest.findMany({
     where: { eventId: event.id, notifiedAt: null },
-    take: 50,
+    take: WAITLIST_BATCH,
     orderBy: { createdAt: "asc" },
   });
   if (interests.length === 0) return;
 
-  for (const interest of interests) {
-    try {
-      await sendSpotOpenedEmail({
+  // Mark ONLY the addresses the provider accepted. notifiedAt is the dedup
+  // filter above, so stamping it on a failed send retires that person from the
+  // waitlist forever — Resend down for one minute used to mean 50 people were
+  // recorded as notified and never told a spot opened.
+  const settled = await Promise.allSettled(
+    interests.map((interest) =>
+      sendSpotOpenedEmail({
         to: interest.email,
         eventTitle: event.title,
         eventSlug: event.slug,
         city: event.city,
-      });
-    } catch (err) {
-      // sendEmail is already defensive, but one bad recipient must not block the rest.
-      console.error("[waitlist] spot-opened e-mail failed", interest.email, err);
+      })
+    )
+  );
+
+  const notifiedIds: string[] = [];
+  const notifiedEmails: string[] = [];
+  settled.forEach((result, idx) => {
+    if (result.status === "fulfilled" && result.value) {
+      notifiedIds.push(interests[idx].id);
+      notifiedEmails.push(interests[idx].email);
+    } else if (result.status === "rejected") {
+      console.error(
+        "[waitlist] spot-opened e-mail threw",
+        interests[idx].email,
+        result.reason
+      );
     }
-  }
+  });
 
   // O waitlist é por e-mail (pode não ter conta): envia push só para os
   // e-mails que correspondem a usuários cadastrados, além do e-mail.
-  if (isPushConfigured()) {
-    const emails = [...new Set(interests.map((i) => i.email))];
+  if (isPushConfigured() && notifiedEmails.length > 0) {
     const users = await prisma.user.findMany({
-      where: { email: { in: emails } },
+      where: { email: { in: [...new Set(notifiedEmails)] } },
       select: { id: true },
     });
-    for (const user of users) {
-      await sendPushToUser(user.id, {
-        title: "Abriu vaga! ☕",
-        body: `Uma vaga acabou de abrir em "${event.title}" (${event.city}). Garanta a sua!`,
-        url: `/eventos/${event.slug}`,
-      });
-    }
+    await Promise.allSettled(
+      users.map((user) =>
+        sendPushToUser(user.id, {
+          title: "Abriu vaga! ☕",
+          body: `Uma vaga acabou de abrir em "${event.title}" (${event.city}). Garanta a sua!`,
+          url: `/eventos/${event.slug}`,
+        })
+      )
+    );
   }
 
-  await prisma.eventInterest.updateMany({
-    where: { id: { in: interests.map((i) => i.id) } },
-    data: { notifiedAt: new Date() },
-  });
+  if (notifiedIds.length > 0) {
+    await prisma.eventInterest.updateMany({
+      where: { id: { in: notifiedIds } },
+      data: { notifiedAt: new Date() },
+    });
+  }
 
   await auditLog({
     action: "event.waitlist_notified",
-    meta: { eventId: event.id, slug: event.slug, notified: interests.length },
+    meta: {
+      eventId: event.id,
+      slug: event.slug,
+      notified: notifiedIds.length,
+      failed: interests.length - notifiedIds.length,
+      batchFull: interests.length === WAITLIST_BATCH,
+    },
   });
 }
 

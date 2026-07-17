@@ -25,7 +25,7 @@ function brandedHtml(input: {
   const cta =
     input.ctaLabel && input.ctaUrl
       ? `<tr><td align="center" style="padding:28px 0 8px">
-          <a href="${input.ctaUrl}"
+          <a href="${escapeHtml(input.ctaUrl)}"
              style="display:inline-block;background:linear-gradient(165deg,#c9843f,#b87333);color:#fffaf5;text-decoration:none;font-weight:600;padding:13px 28px;border-radius:999px;font-family:Arial,Helvetica,sans-serif;font-size:15px">
             ${escapeHtml(input.ctaLabel)}
           </a>
@@ -67,6 +67,18 @@ function brandedHtml(input: {
 </html>`;
 }
 
+/**
+ * Sends an e-mail and reports whether it actually went out.
+ *
+ * Never throws: a dead mail provider must not break a payment webhook or a
+ * cron mid-loop. But callers still need the truth, because two things depend
+ * on it — the audit trail (the only evidence when a buyer says "I paid and got
+ * nothing") and the dedup markers (reminderSentAt, notifiedAt), which
+ * permanently suppress a retry once set.
+ *
+ * Returns true only when the provider accepted the message, or when running
+ * without Resend configured (console channel — nothing to fail).
+ */
 export async function sendEmail(input: {
   to: string;
   subject: string;
@@ -74,8 +86,13 @@ export async function sendEmail(input: {
   html?: string;
   auditAction: string;
   auditMeta?: Record<string, unknown>;
-}): Promise<void> {
-  if (process.env.RESEND_API_KEY && process.env.EMAIL_FROM) {
+}): Promise<boolean> {
+  const viaResend = !!(process.env.RESEND_API_KEY && process.env.EMAIL_FROM);
+  let delivered = true;
+  let providerId: string | null = null;
+  let failure: string | null = null;
+
+  if (viaResend) {
     try {
       const res = await fetch("https://api.resend.com/emails", {
         method: "POST",
@@ -91,10 +108,19 @@ export async function sendEmail(input: {
           ...(input.html ? { html: input.html } : {}),
         }),
       });
-      if (!res.ok) {
-        console.error("[notify] resend failed", await res.text());
+      if (res.ok) {
+        providerId = await res
+          .json()
+          .then((b) => (typeof b?.id === "string" ? b.id : null))
+          .catch(() => null);
+      } else {
+        delivered = false;
+        failure = `http_${res.status}`;
+        console.error("[notify] resend failed", res.status, await res.text());
       }
     } catch (err) {
+      delivered = false;
+      failure = "network_error";
       console.error("[notify] resend error", err);
     }
   } else {
@@ -107,9 +133,14 @@ export async function sendEmail(input: {
     meta: {
       to: input.to,
       ...input.auditMeta,
-      channel: process.env.RESEND_API_KEY ? "resend" : "console",
+      channel: viaResend ? "resend" : "console",
+      delivered,
+      ...(providerId ? { providerId } : {}),
+      ...(failure ? { failure } : {}),
     },
   });
+
+  return delivered;
 }
 
 export async function sendTicketPaidEmail(input: {
@@ -118,7 +149,7 @@ export async function sendTicketPaidEmail(input: {
   eventWhen: string;
   venue: string;
   ticketId: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const subject = `Ingresso confirmado — ${input.eventTitle} | Coffee Match`;
   const ticketUrl = `${appBaseUrl()}/meus-ingressos/${input.ticketId}`;
 
@@ -151,7 +182,7 @@ export async function sendTicketPaidEmail(input: {
     ctaUrl: ticketUrl,
   });
 
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject,
     text,
@@ -167,7 +198,7 @@ export async function sendEventReminderEmail(input: {
   eventWhen: string;
   venue: string;
   ticketId: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const subject = `É amanhã! ${input.eventTitle} | Coffee Match`;
   const ticketUrl = `${appBaseUrl()}/meus-ingressos/${input.ticketId}`;
 
@@ -199,7 +230,7 @@ export async function sendEventReminderEmail(input: {
     ctaUrl: ticketUrl,
   });
 
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject,
     text,
@@ -214,7 +245,7 @@ export async function sendSpotOpenedEmail(input: {
   eventTitle: string;
   eventSlug: string;
   city: string;
-}): Promise<void> {
+}): Promise<boolean> {
   const subject = `Abriu vaga! ${input.eventTitle} | Coffee Match`;
   const eventUrl = `${appBaseUrl()}/eventos/${input.eventSlug}`;
 
@@ -239,7 +270,7 @@ export async function sendSpotOpenedEmail(input: {
     ctaUrl: eventUrl,
   });
 
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject,
     text,
@@ -254,7 +285,7 @@ export async function sendMatchesReadyEmail(input: {
   eventTitle: string;
   eventId: string;
   matchCount: number;
-}): Promise<void> {
+}): Promise<boolean> {
   const subject = `Seus resultados saíram — ${input.eventTitle} | Coffee Match`;
   const matchesUrl = `${appBaseUrl()}/evento/${input.eventId}/matches`;
   const headline =
@@ -283,7 +314,7 @@ export async function sendMatchesReadyEmail(input: {
     ctaUrl: matchesUrl,
   });
 
-  await sendEmail({
+  return sendEmail({
     to: input.to,
     subject,
     text,
