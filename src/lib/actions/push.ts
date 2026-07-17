@@ -1,5 +1,6 @@
 "use server";
 
+import { createHash } from "crypto";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/authz";
@@ -14,6 +15,11 @@ import type { ActionResult } from "@/lib/action-result";
  */
 export async function getVapidPublicKey(): Promise<string | null> {
   return getVapidPublicKeyFromEnv();
+}
+
+/** Push endpoints are semi-sensitive capability URLs — audit only a hash. */
+function endpointFingerprint(endpoint: string): string {
+  return createHash("sha256").update(endpoint).digest("hex").slice(0, 16);
 }
 
 const subscriptionSchema = z.object({
@@ -61,7 +67,7 @@ export async function savePushSubscription(sub: {
   await auditLog({
     actorId: authed.user.id,
     action: "push.subscribed",
-    meta: { endpoint },
+    meta: { endpointHash: endpointFingerprint(endpoint) },
   });
 
   return { ok: true };
@@ -86,7 +92,7 @@ export async function removePushSubscription(
     await auditLog({
       actorId: authed.user.id,
       action: "push.unsubscribed",
-      meta: { endpoint },
+      meta: { endpointHash: endpointFingerprint(endpoint) },
     });
   }
 

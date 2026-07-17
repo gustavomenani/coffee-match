@@ -75,16 +75,20 @@ export async function verifyLogin(
       });
       return null;
     }
-    const failed = user.failedLoginCount + 1;
+    // Atomic increment — concurrent wrong attempts don't undercount.
+    const updated = await prisma.user.update({
+      where: { id: user.id },
+      data: { failedLoginCount: { increment: 1 } },
+    });
+    const failed = updated.failedLoginCount;
     const lockedUntil =
       failed >= MAX_FAILED ? new Date(Date.now() + LOCK_MS) : null;
-    await prisma.user.update({
-      where: { id: user.id },
-      data: {
-        failedLoginCount: failed,
-        lockedUntil,
-      },
-    });
+    if (lockedUntil) {
+      await prisma.user.update({
+        where: { id: user.id },
+        data: { lockedUntil },
+      });
+    }
     await auditLog({
       actorId: user.id,
       action: "auth.login_failed",

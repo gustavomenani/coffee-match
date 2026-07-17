@@ -28,7 +28,8 @@ async function main() {
     });
   }
 
-  const passwordHash = await bcrypt.hash("admin123456", 12);
+  // Cost 10 nos seeds (dados de dev) — alinhado a seed-demo/seed-e2e.
+  const passwordHash = await bcrypt.hash("admin123456", 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@coffeematch.local" },

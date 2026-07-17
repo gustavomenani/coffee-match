@@ -1,7 +1,6 @@
 import { describe, it, expect } from "vitest";
 import {
   computeMutualMatches,
-  whoLikedMe,
   type VoteInput,
 } from "@/lib/domain/matching";
 
@@ -32,13 +31,5 @@ describe("matching", () => {
       { fromUserId: "a", toUserId: "b", interest: "yes" },
     ];
     expect(computeMutualMatches(votes)).toHaveLength(1);
-  });
-
-  it("lists who liked me", () => {
-    const votes = [
-      { fromUserId: "b", toUserId: "a", interest: "yes" as const },
-      { fromUserId: "c", toUserId: "a", interest: "no" as const },
-    ];
-    expect(whoLikedMe(votes, "a")).toEqual(["b"]);
   });
 });

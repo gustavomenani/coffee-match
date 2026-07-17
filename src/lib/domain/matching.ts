@@ -31,9 +31,3 @@ export function computeMutualMatches(votes: VoteInput[]): MatchPair[] {
   }
   return out;
 }
-
-export function whoLikedMe(votes: VoteInput[], me: string): string[] {
-  return votes
-    .filter((v) => v.toUserId === me && v.interest === "yes")
-    .map((v) => v.fromUserId);
-}

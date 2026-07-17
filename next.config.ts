@@ -72,12 +72,22 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        // Also covers /logo.jpeg and /logo.jpg — no per-file rules needed.
-        source: "/(.*)\\.(js|css|woff2|svg|png|jpg|jpeg|webp|avif)",
+        source: "/(.*)\\.(js|css|woff2)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Public images keep their filenames when content changes (logo,
+        // icons) — immutable would strand old versions in browsers for a year.
+        source: "/(.*)\\.(svg|png|jpg|jpeg|webp|avif)",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=86400, stale-while-revalidate=604800",
           },
         ],
       },

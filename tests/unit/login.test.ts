@@ -82,26 +82,30 @@ describe("verifyLogin", () => {
     expect(update).not.toHaveBeenCalled();
   });
 
-  it("increments failedLoginCount on wrong password", async () => {
+  it("increments failedLoginCount atomically on wrong password", async () => {
     findUnique.mockResolvedValue(makeUser({ failedLoginCount: 1 }));
+    update.mockResolvedValueOnce({ failedLoginCount: 2 });
     const result = await verifyLogin(credentials("wrong-pass-1"), "1.2.3.4");
     expect(result).toBeNull();
     expect(update).toHaveBeenCalledWith(
       expect.objectContaining({
-        data: expect.objectContaining({ failedLoginCount: 2, lockedUntil: null }),
+        data: { failedLoginCount: { increment: 1 } },
       })
     );
+    // Below the threshold: no second update setting lockedUntil
+    expect(update).toHaveBeenCalledTimes(1);
   });
 
   it("locks the account when reaching MAX_FAILED", async () => {
     findUnique.mockResolvedValue(
       makeUser({ failedLoginCount: MAX_FAILED - 1 })
     );
+    update.mockResolvedValueOnce({ failedLoginCount: MAX_FAILED });
     const result = await verifyLogin(credentials("wrong-pass-1"), "1.2.3.4");
     expect(result).toBeNull();
-    const data = update.mock.calls[0][0].data;
-    expect(data.failedLoginCount).toBe(MAX_FAILED);
-    expect(data.lockedUntil).toBeInstanceOf(Date);
+    expect(update).toHaveBeenCalledTimes(2);
+    const lockData = update.mock.calls[1][0].data;
+    expect(lockData.lockedUntil).toBeInstanceOf(Date);
   });
 
   it("does not increment counters while locked with wrong password", async () => {
