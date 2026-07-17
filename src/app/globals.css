@@ -86,9 +86,87 @@ body {
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
   text-rendering: optimizeLegibility;
+}
+
+/* Smooth theme cross-fade (View Transitions API) */
+@supports (view-transition-name: root) {
+  html {
+    view-transition-name: root;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation-duration: 0.55s;
+    animation-timing-function: cubic-bezier(0.22, 1, 0.36, 1);
+  }
+
+  ::view-transition-old(root) {
+    animation-name: theme-fade-out;
+  }
+
+  ::view-transition-new(root) {
+    animation-name: theme-fade-in;
+  }
+
+  @keyframes theme-fade-out {
+    from {
+      opacity: 1;
+      filter: brightness(1);
+    }
+    to {
+      opacity: 0;
+      filter: brightness(1.05);
+    }
+  }
+
+  @keyframes theme-fade-in {
+    from {
+      opacity: 0;
+      filter: brightness(0.96);
+    }
+    to {
+      opacity: 1;
+      filter: brightness(1);
+    }
+  }
+}
+
+/*
+ * Fallback when View Transitions are unavailable:
+ * enable longer surface transitions only during theme switch.
+ */
+html.theme-switching,
+html.theme-switching body,
+html.theme-switching body *:not(svg):not(path):not(circle):not(img) {
   transition:
-    background-color 280ms cubic-bezier(0.2, 0, 0, 1),
-    color 280ms cubic-bezier(0.2, 0, 0, 1);
+    background-color 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    fill 0.48s cubic-bezier(0.22, 1, 0.36, 1),
+    stroke 0.48s cubic-bezier(0.22, 1, 0.36, 1) !important;
+}
+
+/* Always-on soft transitions for main chrome (feels smoother without lag) */
+body,
+header,
+footer,
+.surface-card,
+.btn,
+.field,
+.badge,
+.theme-toggle-btn {
+  transition:
+    background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    background 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
+    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+.page-glow::before {
+  transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
 }
 
 html.dark .page-glow::before {
@@ -558,8 +636,22 @@ p,
   .btn,
   .surface-card-hover,
   .field,
-  .reveal {
+  .reveal,
+  body,
+  header,
+  footer,
+  .surface-card,
+  .badge,
+  .theme-toggle-btn,
+  html.theme-switching,
+  html.theme-switching body,
+  html.theme-switching body * {
     transition: none !important;
+  }
+
+  ::view-transition-old(root),
+  ::view-transition-new(root) {
+    animation: none !important;
   }
 
   .btn:active:not(:disabled),
