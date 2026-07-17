@@ -242,9 +242,17 @@ export default async function NoitePage({
       </div>
 
       <section className="mt-10">
-        <h2 className="mb-4 font-display text-xl font-semibold text-[var(--ink)]">
-          Check-in
-        </h2>
+        <div className="mb-4 flex flex-wrap items-center justify-between gap-3">
+          <h2 className="font-display text-xl font-semibold text-[var(--ink)]">
+            Check-in
+          </h2>
+          <a
+            href={`/admin/eventos/${eventId}/checkins`}
+            className="btn btn-secondary !min-h-9 px-3 text-sm"
+          >
+            Exportar CSV
+          </a>
+        </div>
         <CheckInList eventId={eventId} tickets={rows} />
       </section>
     </main>

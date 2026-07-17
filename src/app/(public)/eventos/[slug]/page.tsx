@@ -2,6 +2,7 @@ import Link from "next/link";
 import { notFound } from "next/navigation";
 import type { Metadata } from "next";
 import { BuyTicketButton } from "@/components/events/event-card";
+import { ShareButton } from "@/components/events/share-button";
 import { getEventBySlug } from "@/lib/actions/events";
 import { JsonLd } from "@/components/seo/json-ld";
 import { absoluteUrl, SITE, orgId } from "@/lib/seo";
@@ -252,6 +253,16 @@ export default async function EventoDetailPage({
                 </span>
                 <br />
                 {event.address}, {event.city}
+                <a
+                  href={`https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(
+                    `${event.venue}, ${event.address}, ${event.city}`
+                  )}`}
+                  target="_blank"
+                  rel="noopener"
+                  className="link-coffee mt-2 block text-sm font-semibold"
+                >
+                  Como chegar →
+                </a>
               </dd>
             </div>
             <div className="surface-card p-5">
@@ -310,6 +321,11 @@ export default async function EventoDetailPage({
                     : "Compra indisponível no momento."}
                 </p>
               )}
+              <ShareButton
+                title={event.title}
+                text={`Vem comigo no ${event.title}, speed dating do Coffee Match em ${event.city}!`}
+                url={url}
+              />
               <div className="space-y-2 text-sm leading-relaxed text-[var(--muted)]">
                 <p>
                   Evento <strong className="text-[var(--ink-soft)]">18+</strong>.
