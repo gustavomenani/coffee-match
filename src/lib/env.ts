@@ -60,6 +60,32 @@ export function getEnv(): AppEnv {
     if (env.AUTH_SECRET.includes("change-me") || env.AUTH_SECRET.length < 32) {
       throw new Error("AUTH_SECRET must be a strong secret (32+ chars) in production");
     }
+    // Two ways to silently disable EVERY rate limit — the only brute-force
+    // protection the app has, since the account lockout is soft by design.
+    // Both were unguarded here while every other dev bypass was rejected.
+    // Matches the exact value rate-limit.ts acts on, so a harmless "0" does not
+    // block a deploy.
+    if (env.E2E_DISABLE_RATE_LIMIT === "1") {
+      throw new Error(
+        "E2E_DISABLE_RATE_LIMIT is forbidden in production — it disables every rate limit."
+      );
+    }
+    // src/lib/rate-limit.ts turns itself off when the SECRET VALUE contains
+    // this, so copying the CI secret to production would remove all limits with
+    // no other symptom.
+    if (env.AUTH_SECRET.includes("e2e-auth-secret")) {
+      throw new Error(
+        "AUTH_SECRET contains the e2e test marker, which disables every rate limit. Generate a real secret."
+      );
+    }
+    // appBaseUrl() falls back to http://localhost:3000, which would silently
+    // ship that host inside password-reset links, ticket QR links and Mercado
+    // Pago back_urls — broken, and only discovered after the first e-mail.
+    if (!env.NEXT_PUBLIC_APP_URL && !env.AUTH_URL) {
+      throw new Error(
+        "NEXT_PUBLIC_APP_URL (or AUTH_URL) is required in production — e-mail links and payment returns are built from it."
+      );
+    }
   }
 
   cached = env;

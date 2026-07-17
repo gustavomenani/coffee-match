@@ -1,11 +1,14 @@
 "use server";
 
 import { createHash, randomBytes } from "crypto";
+import { headers } from "next/headers";
+import { after } from "next/server";
 import bcrypt from "bcryptjs";
 import { z } from "zod";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { cleanEmail } from "@/lib/security/sanitize";
+import { clientIpFromHeaders } from "@/lib/security/ip";
 import { auditLog } from "@/lib/audit";
 import { sendEmail } from "@/lib/notify";
 import { appBaseUrl } from "@/lib/env";
@@ -53,13 +56,32 @@ export async function requestPasswordReset(
   }
   const email = cleanEmail(parsedEmail.data);
 
-  // Evaluate both limits (no short-circuit) so the global counter stays accurate.
+  // Per-IP, not global. "pwreset:global" was one shared counter at 20/hour for
+  // the ENTIRE app, consumed before the user lookup — so 20 requests an hour
+  // with junk addresses disabled password recovery for every real user, and did
+  // it silently (this path returns ok:true, so victims are told to check an
+  // inbox that will never receive anything). The per-email limit below is what
+  // actually protects an account; the global one is now a circuit breaker set
+  // far above any plausible legitimate hour, not a gate.
+  const ip = clientIpFromHeaders(await headers());
+  const ipAllowed = await rateLimit(`pwreset:ip:${ip}`, 10, 60 * 60_000);
   const emailAllowed = await rateLimit(`pwreset:${email}`, 3, 60 * 60_000);
-  const globalAllowed = await rateLimit("pwreset:global", 20, 60 * 60_000);
-  if (!emailAllowed || !globalAllowed) {
+  const globalAllowed = await rateLimit("pwreset:global", 500, 60 * 60_000);
+
+  if (!ipAllowed || !globalAllowed) {
     await auditLog({
       action: "user.password_reset_throttled",
-      meta: { email },
+      meta: { email, ip, scope: !ipAllowed ? "ip" : "global" },
+    });
+    // Throttling the requester says nothing about whether the account exists,
+    // so this can be honest rather than a fake success.
+    return { ok: false, error: "Muitas tentativas. Aguarde alguns minutos." };
+  }
+
+  if (!emailAllowed) {
+    await auditLog({
+      action: "user.password_reset_throttled",
+      meta: { email, ip, scope: "email" },
     });
     return { ok: true };
   }
@@ -102,12 +124,18 @@ export async function requestPasswordReset(
     `<p>Se você não pediu a redefinição, ignore este e-mail — nada muda na sua conta.</p>`,
   ].join("");
 
-  await sendEmail({
-    to: email,
-    subject: "Redefinição de senha | Coffee Match",
-    text,
-    html,
-    auditAction: "notify.password_reset",
+  // Off the response path. Awaiting a Resend round trip here made the known-
+  // email branch hundreds of milliseconds slower than the unknown one, which
+  // returns immediately after the lookup — a stable timing oracle that
+  // enumerates accounts on the one endpoint most carefully built to avoid it.
+  after(async () => {
+    await sendEmail({
+      to: email,
+      subject: "Redefinição de senha | Coffee Match",
+      text,
+      html,
+      auditAction: "notify.password_reset",
+    });
   });
 
   await auditLog({

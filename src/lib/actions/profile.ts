@@ -1,9 +1,11 @@
 "use server";
 
 import bcrypt from "bcryptjs";
+import { headers } from "next/headers";
 import { revalidatePath } from "next/cache";
 import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
+import { clientIpFromHeaders } from "@/lib/security/ip";
 import { registerSchema, profileUpdateSchema } from "@/lib/validations/auth";
 import { isAtLeast18 } from "@/lib/domain/age";
 import { sanitizeInterests } from "@/lib/domain/interests";
@@ -27,7 +29,15 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Dados inválidos." };
   }
 
-  if (!(await rateLimit("register:global", 30, 60_000))) {
+  // Per-IP, not global. "register:global" was one shared 30/min counter for the
+  // whole platform, so ~0.5 req/s from a single host blocked every legitimate
+  // signup — and launch night, when marketing goes out and more than 30 people
+  // sign up in a minute, is exactly when it would fire on real users. The
+  // global counter is now a circuit breaker, not a gate.
+  const ip = clientIpFromHeaders(await headers());
+  const ipAllowed = await rateLimit(`register:ip:${ip}`, 10, 60_000);
+  const globalAllowed = await rateLimit("register:global", 600, 60_000);
+  if (!ipAllowed || !globalAllowed) {
     return { ok: false, error: "Muitas tentativas. Aguarde um momento." };
   }
 

@@ -1,9 +1,11 @@
 "use server";
 
 import { z } from "zod";
+import { headers } from "next/headers";
 import { prisma } from "@/lib/prisma";
 import { rateLimit } from "@/lib/rate-limit";
 import { cleanEmail } from "@/lib/security/sanitize";
+import { clientIpFromHeaders } from "@/lib/security/ip";
 import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
 
@@ -35,13 +37,17 @@ export async function registerEventInterest(
   }
   const email = cleanEmail(parsedEmail.data);
 
-  // Evaluate both limits (no short-circuit) so the global counter stays accurate.
-  const globalAllowed = await rateLimit("interest:global", 30, 60_000);
+  // Per-IP, not global: "interest:global" was one 30/min counter shared by
+  // everyone, so a sold-out event announcement — the exact moment this form
+  // matters — would throttle real people. Global is now a circuit breaker.
+  const ip = clientIpFromHeaders(await headers());
+  const ipAllowed = await rateLimit(`interest:ip:${ip}`, 10, 60_000);
   const emailAllowed = await rateLimit(`interest:${email}`, 3, 60 * 60_000);
-  if (!globalAllowed || !emailAllowed) {
+  const globalAllowed = await rateLimit("interest:global", 600, 60_000);
+  if (!ipAllowed || !emailAllowed || !globalAllowed) {
     await auditLog({
       action: "event.interest_throttled",
-      meta: { eventId, email },
+      meta: { eventId, email, ip },
     });
     return { ok: true };
   }

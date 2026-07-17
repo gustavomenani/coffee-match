@@ -17,6 +17,9 @@ vi.mock("@/lib/prisma", () => ({
     eventInterest: { upsert: (...a: unknown[]) => interestUpsert(...a) },
   },
 }));
+vi.mock("next/headers", () => ({
+  headers: async () => new Headers({ "x-forwarded-for": "203.0.113.7" }),
+}));
 
 import { registerEventInterest } from "@/lib/actions/event-interest";
 
@@ -117,13 +120,25 @@ describe("registerEventInterest", () => {
     );
   });
 
-  it("evaluates both rate limits even when the first one blocks", async () => {
-    // No short-circuit: the global counter must stay accurate.
-    rateLimitMock.mockResolvedValueOnce(false).mockResolvedValueOnce(true);
+  it("evaluates every rate limit even when the first one blocks", async () => {
+    // No short-circuit: the counters must stay accurate.
+    rateLimitMock.mockResolvedValueOnce(false).mockResolvedValue(true);
     await registerEventInterest(interestForm());
     const keys = rateLimitMock.mock.calls.map((c) => c[0]);
-    expect(keys).toContain("interest:global");
+    expect(keys).toContain("interest:ip:203.0.113.7");
     expect(keys).toContain(`interest:${EMAIL}`);
+    expect(keys).toContain("interest:global");
+  });
+
+  it("throttles per IP rather than globally", async () => {
+    await registerEventInterest(interestForm());
+    const limits = Object.fromEntries(
+      rateLimitMock.mock.calls.map((c) => [c[0], c[1]])
+    );
+    // The global bucket must be a circuit breaker, far above any real hour —
+    // at 30/min it locked out every user on the platform at once.
+    expect(limits["interest:global"]).toBeGreaterThanOrEqual(500);
+    expect(limits["interest:ip:203.0.113.7"]).toBeLessThanOrEqual(30);
   });
 
   it("returns a generic success when the event does not exist", async () => {

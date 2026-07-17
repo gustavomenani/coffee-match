@@ -125,12 +125,13 @@ Espelha a validação de `src/lib/env.ts` (o app falha ao subir com config invá
 | `DATABASE_URL` | Sim | Postgres (Prisma) |
 | `AUTH_SECRET` | Sim | Min. 16 chars (32+ e sem `change-me` em produção) |
 | `AUTH_URL` | Não | URL base para o Auth.js |
-| `NEXT_PUBLIC_APP_URL` | Não | URL pública do app (links de e-mail, QR) |
+| `NEXT_PUBLIC_APP_URL` | Em produção | URL pública do app (links de e-mail, QR, retorno do MP). Em produção, `NEXT_PUBLIC_APP_URL` **ou** `AUTH_URL` é obrigatória — sem uma delas o app subiria mandando links `http://localhost:3000` em e-mail de reset de senha |
+| `TRUSTED_PROXY_HOPS` | Não | Quantos proxies confiáveis existem entre o cliente e o app (padrão `1`). Define de qual posição do `x-forwarded-for` o IP é lido — ver `src/lib/security/ip.ts`. `1` serve para Vercel e para um nginx único; use `2` se houver CDN na frente |
 | `MERCADOPAGO_ACCESS_TOKEN` | Em produção | Token do MP; `TEST-DEV-BYPASS` é proibido em produção |
 | `MERCADOPAGO_WEBHOOK_SECRET` | Não | Valida a assinatura `x-signature` do webhook (recomendado em produção) |
 | `CRON_SECRET` | Não | Min. 16 chars; protege `GET /api/cron/*` (sem ela as rotas respondem 503) |
 | `ALLOW_DEV_BYPASS` | Não | `1`/`true` libera o checkout fake em dev; ignorada/proibida em produção |
-| `E2E_DISABLE_RATE_LIMIT` | Não | `1` desliga o rate limit (somente testes) |
+| `E2E_DISABLE_RATE_LIMIT` | Não | `1` desliga o rate limit (somente testes). **Proibida em produção** — o app se recusa a subir com ela, assim como com um `AUTH_SECRET` contendo `e2e-auth-secret` (esse valor também desliga todos os limites) |
 | `VAPID_PUBLIC_KEY` / `VAPID_PRIVATE_KEY` | Não | Web Push; sem elas o recurso fica desligado (`npm run push:keys`) |
 | `VAPID_SUBJECT` | Não | `mailto:...` ou URL `https://` do responsável |
 
