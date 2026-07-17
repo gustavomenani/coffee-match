@@ -167,7 +167,14 @@ test.describe("Coffee Match night smoke", () => {
         .getByRole("button", { name: /Garantir ingresso|Comprar ingresso/i })
         .click();
       await page.waitForURL(/\/pagamento\/sucesso/, { timeout: 25_000 });
-      await expect(page.getByText(/confirmado|garantido|sucesso/i)).toBeVisible();
+      // Target the heading, not a loose text regex: the page legitimately says
+      // "Pagamento confirmado" in the <h1> AND "Pagamento confirmado! Seu
+      // ingresso está garantido." in the flash, so getByText matched two
+      // elements and failed on Playwright's strict mode — while the purchase
+      // had actually worked.
+      await expect(
+        page.getByRole("heading", { name: /Pagamento confirmado/i })
+      ).toBeVisible();
     } finally {
       await prisma.$disconnect();
     }
