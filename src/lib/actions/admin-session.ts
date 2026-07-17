@@ -72,16 +72,26 @@ export async function listCheckIns(
   };
 }
 
-export async function checkInTicket(rawTicketId: string): Promise<ActionResult> {
+export async function checkInTicket(
+  rawEventId: string,
+  rawTicketId: string
+): Promise<ActionResult> {
+  const eventId = parseCuid(rawEventId);
   const ticketId = parseCuid(rawTicketId);
-  if (!ticketId) return { ok: false, error: "Ingresso inválido." };
+  if (!eventId || !ticketId) return { ok: false, error: "Ingresso inválido." };
 
   const admin = await requireAdmin();
   if (!admin.ok) return admin;
 
+  // Scoped to the event, not just the organization — its checkInByTicketId
+  // sibling already was. Without eventId, an admin running tonight's door could
+  // check in a ticket for a DIFFERENT night of the same org, and that check-in
+  // then satisfies castVote's presence test for that other event: someone who
+  // was never in the room appears on its ballot and can match.
   const ticket = await prisma.ticket.findFirst({
     where: {
       id: ticketId,
+      eventId,
       status: "paid",
       event: { organizationId: admin.membership.organizationId },
     },

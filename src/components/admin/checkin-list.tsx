@@ -118,7 +118,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
     setSuccess(null);
     setPendingId(ticketId);
     startTransition(async () => {
-      const result = await checkInTicket(ticketId);
+      const result = await checkInTicket(eventId, ticketId);
       if (!result.ok) {
         setError(result.error);
         setPendingId(null);

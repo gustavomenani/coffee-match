@@ -8,6 +8,8 @@ import { eventFormSchema } from "@/lib/validations/event";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 import { bustEventCaches } from "@/lib/cache-bust";
+import { getEventOccupancy } from "@/lib/occupancy";
+import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { parseCuid } from "@/lib/security/ids";
 import type { ActionResultWithId as ActionResult } from "@/lib/action-result";
 import { parseAppDateTimeLocal } from "@/lib/datetime";
@@ -66,15 +68,13 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Data de venda antecipada inválida." };
   }
 
-  const org =
-    membership.organization.slug === "coffee-match"
-      ? membership.organization
-      : await prisma.organization.findUnique({
-          where: { slug: "coffee-match" },
-        });
-  if (!org) {
-    return { ok: false, error: "Organização Coffee Match não encontrada." };
-  }
+  // The caller's own organization — never a hard-coded slug. This used to fall
+  // back to whatever org has slug "coffee-match", so an admin of another org
+  // wrote the event into that catalog: a cross-tenant write, and then they
+  // could not see, edit, refund, check in or open voting on it, because every
+  // other action here scopes reads by membership.organizationId. The event was
+  // still publicly sellable, since listPublishedEvents filters only on status.
+  const org = membership.organization;
 
   const existing = await prisma.event.findUnique({
     where: { slug: data.slug },
@@ -176,6 +176,19 @@ export async function updateEvent(
     }
   }
 
+  // Capacity cannot drop below what is already sold. The schema only enforces
+  // min(1), so 40 sold with capacity set to 10 was accepted — and remainingSpots
+  // then goes negative for everyone reading it.
+  const occupancy = await getEventOccupancy(id);
+  const takenMen = occupancy.paidMen + occupancy.pendingMen;
+  const takenWomen = occupancy.paidWomen + occupancy.pendingWomen;
+  if (data.capacityMen < takenMen || data.capacityWomen < takenWomen) {
+    return {
+      ok: false,
+      error: `Capacidade menor que o já vendido (${takenMen} homens, ${takenWomen} mulheres).`,
+    };
+  }
+
   try {
     await prisma.event.update({
       where: { id },
@@ -204,6 +217,14 @@ export async function updateEvent(
     }
     throw err;
   }
+
+  // Reconcile status with the new capacity. Without this, raising capacity on a
+  // sold_out event left the row sold_out — checkout 404s, the freed seats are
+  // unbuyable, and the waitlist is never told: notifyWaitlistSpotOpened only
+  // fires from the sold_out -> published transition inside this function, so
+  // even flipping the status by hand in the form left every EventInterest row
+  // at notifiedAt: null forever.
+  await syncEventSoldOutStatus(id);
 
   await auditLog({
     actorId: user.id,
