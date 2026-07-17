@@ -92,5 +92,18 @@ jobs:
       - name: Apply migrations
         run: npx prisma migrate deploy
 
+      # The migrated database must match schema.prisma exactly. `db push` mutates
+      # a database without recording a migration, so schema changes can ship with
+      # no migration behind them — that drift already happened once and produced a
+      # database where every authenticated request failed. An empty diff here is
+      # the only thing that proves `migrate deploy` builds the schema the code expects.
+      - name: Check for schema drift
+        run: |
+          npx prisma migrate diff \
+            --from-url "$DATABASE_URL" \
+            --to-schema-datamodel ./prisma/schema.prisma \
+            --exit-code \
+          && echo "No drift: migrations match schema.prisma."
+
       - name: E2E tests
         run: npm run test:e2e
