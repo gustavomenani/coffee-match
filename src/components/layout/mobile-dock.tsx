@@ -72,7 +72,7 @@ export function MobileDock() {
   return (
     <nav
       aria-label="Navegação principal mobile"
-      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--paper-card)_94%,transparent)] px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_30px_rgba(26,16,12,0.06)] backdrop-blur-xl sm:hidden"
+      className="fixed inset-x-0 bottom-0 z-50 border-t border-[var(--line)] bg-[color-mix(in_srgb,var(--paper-card)_94%,transparent)] px-2 pb-[max(0.4rem,env(safe-area-inset-bottom))] pt-1.5 shadow-[0_-8px_30px_rgba(26,16,12,0.06)] backdrop-blur-md sm:hidden"
     >
       <ul className="mx-auto grid max-w-lg grid-cols-4 gap-0.5">
         {items.map((item) => {

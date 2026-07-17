@@ -14,7 +14,7 @@ export async function Header() {
   const isAdmin = session?.user?.role === "admin";
 
   return (
-    <header className="sticky top-0 z-50 bg-[color-mix(in_srgb,var(--paper)_84%,transparent)] backdrop-blur-xl">
+    <header className="sticky top-0 z-50 bg-[color-mix(in_srgb,var(--paper)_84%,transparent)] backdrop-blur-md">
       <div className="mx-auto flex h-[4.25rem] w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo size="md" priority />
 

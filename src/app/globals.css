@@ -243,7 +243,11 @@ html.dark header {
   background: color-mix(in srgb, var(--paper) 88%, transparent);
 }
 
-/* Subtle paper grain — CSS only, no assets */
+/* Subtle paper grain — CSS only, no assets.
+   No mix-blend-mode: a full-viewport fixed blend layer forces the browser to
+   recomposite the whole page as a blend group on every frame, which is the
+   single biggest scroll-FPS cost on a weak phone. At 0.035 opacity the blend is
+   imperceptible, so it composites as a plain overlay instead. */
 body::before {
   content: "";
   pointer-events: none;
@@ -251,7 +255,6 @@ body::before {
   inset: 0;
   z-index: 9999;
   opacity: 0.035;
-  mix-blend-mode: multiply;
   background-image: url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='n'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.85' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23n)'/%3E%3C/svg%3E");
   background-repeat: repeat;
   background-size: 180px 180px;
@@ -363,8 +366,8 @@ p,
 .surface-glass {
   background: color-mix(in srgb, var(--paper-card) 78%, transparent);
   border: 1px solid var(--line);
-  backdrop-filter: blur(16px) saturate(1.2);
-  -webkit-backdrop-filter: blur(16px) saturate(1.2);
+  backdrop-filter: blur(10px) saturate(1.15);
+  -webkit-backdrop-filter: blur(10px) saturate(1.15);
 }
 
 .gold-rule {
@@ -419,7 +422,10 @@ p,
     box-shadow 180ms cubic-bezier(0.2, 0, 0, 1),
     border-color 180ms cubic-bezier(0.2, 0, 0, 1),
     color 180ms cubic-bezier(0.2, 0, 0, 1);
-  will-change: transform;
+  /* No permanent will-change here: it promoted EVERY button to its own
+     compositor layer for the lifetime of the page — a list or dashboard with
+     10-20 buttons wastes that much GPU memory on a weak phone. The :active
+     transform is cheap enough without a standing hint. */
   touch-action: manipulation;
   -webkit-tap-highlight-color: transparent;
 }
@@ -675,6 +681,9 @@ html.dark .badge-18 {
   opacity: 1;
   transform: translateY(0);
   filter: blur(0);
+  /* Release the compositor layer once the reveal has played — otherwise every
+     revealed section keeps a standing will-change hint for the page's life. */
+  will-change: auto;
 }
 
 /* Soft float for brand marks */
