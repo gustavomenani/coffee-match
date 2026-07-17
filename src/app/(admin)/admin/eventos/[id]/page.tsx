@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
+import { RefundButton } from "@/components/admin/refund-button";
 import { EventForm } from "@/components/events/event-form";
 import { updateEventAction } from "@/lib/actions/admin";
 import { requireAdminOrThrow } from "@/lib/authz";
@@ -118,7 +119,8 @@ export default async function AdminEventoEditPage({
           Ingressos pagos
         </h2>
         <p className="mt-1 text-sm text-[var(--muted)]">
-          Lista somente leitura. Check-in e votação ficam na operação da noite.
+          Reembolso total disponível por ingresso. Check-in e votação ficam na
+          operação da noite.
         </p>
         {event.tickets.length === 0 ? (
           <div className="surface-card mt-4 px-6 py-12 text-center">
@@ -139,6 +141,7 @@ export default async function AdminEventoEditPage({
                   <th className="px-3 py-2 font-semibold">Gênero</th>
                   <th className="px-3 py-2 font-semibold">Telefone</th>
                   <th className="px-3 py-2 font-semibold">Valor</th>
+                  <th className="px-3 py-2 font-semibold">Ações</th>
                 </tr>
               </thead>
               <tbody>
@@ -161,6 +164,9 @@ export default async function AdminEventoEditPage({
                     </td>
                     <td className="px-3 py-3 tabular text-[var(--ink-soft)]">
                       {formatBRL(event.priceCents)}
+                    </td>
+                    <td className="px-3 py-3">
+                      <RefundButton ticketId={t.id} />
                     </td>
                   </tr>
                 ))}

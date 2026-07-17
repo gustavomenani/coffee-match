@@ -1,4 +1,4 @@
-import { MercadoPagoConfig, Preference } from "mercadopago";
+import { MercadoPagoConfig, PaymentRefund, Preference } from "mercadopago";
 import { appBaseUrl, isProduction } from "@/lib/env";
 
 export function getMpClient() {
@@ -24,6 +24,30 @@ export function isMpDevBypass(): boolean {
 
   if (!allow) return false;
   return !token || token.startsWith("TEST-DEV-BYPASS");
+}
+
+/**
+ * Total (full-amount) refund of a ticket payment on Mercado Pago.
+ * In dev bypass mode no API call is made — returns a simulated ok.
+ * Throws on API failure so callers can abort before mutating state.
+ */
+export async function refundTicketPayment(mpPaymentId: string): Promise<{
+  simulated: boolean;
+  refundId: number | null;
+  status: string | null;
+}> {
+  if (isMpDevBypass()) {
+    return { simulated: true, refundId: null, status: "approved" };
+  }
+
+  const refund = new PaymentRefund(getMpClient());
+  // Full refund: SDK's total() posts to /v1/payments/{id}/refunds with no amount.
+  const result = await refund.total({ payment_id: mpPaymentId });
+  return {
+    simulated: false,
+    refundId: result.id ?? null,
+    status: result.status ?? null,
+  };
 }
 
 export async function createTicketPreference(input: {

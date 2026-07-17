@@ -36,6 +36,7 @@ vi.mock("mercadopago", () => ({
       return paymentGetMock(...args);
     }
   },
+  PaymentRefund: class {},
 }));
 
 import { POST } from "@/app/api/webhooks/mercadopago/route";
@@ -179,5 +180,51 @@ describe("POST /api/webhooks/mercadopago", () => {
     paymentGetMock.mockRejectedValue(new Error("mp down"));
     const res = await POST(webhookRequest());
     expect(res.status).toBe(500);
+  });
+
+  it("marks a paid ticket refunded for a refunded payment", async () => {
+    paymentGetMock.mockResolvedValue(approvedPayment({ status: "refunded" }));
+    ticketFindUnique.mockReset();
+    // Lookup by mpPaymentId finds the paid ticket directly.
+    ticketFindUnique.mockResolvedValueOnce({
+      id: TICKET_ID,
+      eventId: EVENT_ID,
+      userId: "ckuser000000000000000001",
+      status: "paid",
+    });
+
+    const res = await POST(webhookRequest());
+    expect(res.status).toBe(200);
+    expect(ticketFindUnique).toHaveBeenCalledWith(
+      expect.objectContaining({ where: { mpPaymentId: PAYMENT_ID } })
+    );
+    expect(ticketUpdateMany).toHaveBeenCalledWith({
+      where: { id: TICKET_ID, status: "paid" },
+      data: { status: "refunded" },
+    });
+    expect(syncSoldOutMock).toHaveBeenCalledWith(EVENT_ID);
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.refund_webhook" })
+    );
+    expect(sendEmailMock).not.toHaveBeenCalled();
+  });
+
+  it("is idempotent when the refunded webhook is re-notified", async () => {
+    paymentGetMock.mockResolvedValue(approvedPayment({ status: "refunded" }));
+    ticketFindUnique.mockReset();
+    ticketFindUnique.mockResolvedValueOnce({
+      id: TICKET_ID,
+      eventId: EVENT_ID,
+      userId: "ckuser000000000000000001",
+      status: "refunded",
+    });
+    // Already refunded: the guarded update matches no row.
+    ticketUpdateMany.mockResolvedValue({ count: 0 });
+
+    const res = await POST(webhookRequest());
+    expect(res.status).toBe(200);
+    expect(syncSoldOutMock).not.toHaveBeenCalled();
+    expect(auditLogMock).not.toHaveBeenCalled();
+    expect(sendEmailMock).not.toHaveBeenCalled();
   });
 });

@@ -58,6 +58,43 @@ export async function POST(req: NextRequest) {
     const client = new MercadoPagoConfig({ accessToken: token });
     const payment = await new Payment(client).get({ id: paymentId });
     const ticketId = parseCuid(payment.external_reference);
+
+    if (payment.status === "refunded" || payment.status === "charged_back") {
+      // Amount validation does not apply here: the money already left MP.
+      // Locate by mpPaymentId first; external_reference is the fallback.
+      const ticket =
+        (await prisma.ticket.findUnique({
+          where: { mpPaymentId: String(paymentId) },
+        })) ??
+        (ticketId
+          ? await prisma.ticket.findUnique({ where: { id: ticketId } })
+          : null);
+      if (!ticket) {
+        return NextResponse.json({ ok: true });
+      }
+
+      // Idempotent: only a currently paid ticket transitions to refunded.
+      const updated = await prisma.ticket.updateMany({
+        where: { id: ticket.id, status: "paid" },
+        data: { status: "refunded" },
+      });
+
+      if (updated.count > 0) {
+        await syncEventSoldOutStatus(ticket.eventId);
+        await auditLog({
+          actorId: ticket.userId,
+          action: "ticket.refund_webhook",
+          meta: {
+            ticketId: ticket.id,
+            paymentId: String(paymentId),
+            eventId: ticket.eventId,
+            paymentStatus: payment.status,
+          },
+        });
+      }
+      return NextResponse.json({ ok: true });
+    }
+
     if (!ticketId) {
       return NextResponse.json({ ok: true });
     }
