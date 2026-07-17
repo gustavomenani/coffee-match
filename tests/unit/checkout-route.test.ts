@@ -21,7 +21,7 @@ vi.mock("@/lib/auth", () => ({
   auth: (...args: unknown[]) => authMock(...args),
 }));
 vi.mock("@/lib/rate-limit", () => ({
-  rateLimit: (...args: unknown[]) => rateLimitMock(...args),
+  rateLimitDetailed: (...args: unknown[]) => rateLimitMock(...args),
 }));
 vi.mock("@/lib/prisma", () => ({
   prisma: {
@@ -90,7 +90,11 @@ function checkoutRequest(eventId: string = EVENT_ID) {
 beforeEach(() => {
   vi.clearAllMocks();
   authMock.mockResolvedValue({ user: { id: USER_ID } });
-  rateLimitMock.mockResolvedValue(true);
+  rateLimitMock.mockResolvedValue({
+    ok: true,
+    remaining: 9,
+    resetAt: Date.now() + 60_000,
+  });
   userFindUnique.mockResolvedValue(user);
   eventFindUnique.mockResolvedValue(event);
   ticketFindMany.mockResolvedValue([]);
@@ -118,10 +122,28 @@ describe("POST /api/checkout", () => {
     expect(res.status).toBe(401);
   });
 
-  it("429 when rate limited", async () => {
-    rateLimitMock.mockResolvedValue(false);
+  it("429 when rate limited with Retry-After until the window resets", async () => {
+    rateLimitMock.mockResolvedValue({
+      ok: false,
+      remaining: 0,
+      resetAt: Date.now() + 30_000,
+    });
     const res = await POST(checkoutRequest());
     expect(res.status).toBe(429);
+    const retryAfter = Number(res.headers.get("Retry-After"));
+    expect(retryAfter).toBeGreaterThanOrEqual(1);
+    expect(retryAfter).toBeLessThanOrEqual(30);
+  });
+
+  it("429 Retry-After is at least 1 even when the window already reset", async () => {
+    rateLimitMock.mockResolvedValue({
+      ok: false,
+      remaining: 0,
+      resetAt: Date.now() - 5_000,
+    });
+    const res = await POST(checkoutRequest());
+    expect(res.status).toBe(429);
+    expect(res.headers.get("Retry-After")).toBe("1");
   });
 
   it("400 for invalid eventId", async () => {

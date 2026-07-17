@@ -19,6 +19,8 @@ export default async function VotarPage({
 
   if (!ballot.ok) {
     const phoneHint = ballot.code === "phone";
+    const votingClosed =
+      ballot.code === "session" && ballot.error.includes("encerrada");
     return (
       <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
         <div className="mx-auto max-w-lg">
@@ -32,6 +34,22 @@ export default async function VotarPage({
               <Link href="/minha-conta" className="btn btn-primary mt-5">
                 Ir para Minha conta
               </Link>
+            ) : null}
+            {votingClosed ? (
+              <div className="mt-5 flex flex-wrap gap-2">
+                <Link
+                  href={`/evento/${eventId}/matches`}
+                  className="btn btn-primary"
+                >
+                  Ver meus matches
+                </Link>
+                <Link
+                  href={`/evento/${eventId}/curtidas`}
+                  className="btn btn-secondary"
+                >
+                  Quem curtiu você
+                </Link>
+              </div>
             ) : null}
           </div>
         </div>

@@ -4,7 +4,11 @@ import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toDataUrl } from "@/lib/qr";
 import { requireAdminOrThrow } from "@/lib/authz";
-import { closeVoting, openVoting } from "@/lib/actions/admin-session";
+import {
+  closeVoting,
+  openVoting,
+  reopenVoting,
+} from "@/lib/actions/admin-session";
 import {
   CheckInList,
   type CheckInTicketRow,
@@ -36,6 +40,19 @@ async function closeVotingAction(formData: FormData) {
   }
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   redirect(`/admin/eventos/${eventId}/noite?ok=close`);
+}
+
+async function reopenVotingAction(formData: FormData) {
+  "use server";
+  const eventId = String(formData.get("eventId") ?? "");
+  const result = await reopenVoting(eventId);
+  if (!result.ok) {
+    redirect(
+      `/admin/eventos/${eventId}/noite?error=${encodeURIComponent(result.error)}`,
+    );
+  }
+  revalidatePath(`/admin/eventos/${eventId}/noite`);
+  redirect(`/admin/eventos/${eventId}/noite?ok=reopen`);
 }
 
 function sessionLabel(status: string | undefined) {
@@ -156,6 +173,12 @@ export default async function NoitePage({
         </p>
       ) : null}
 
+      {query.ok === "reopen" ? (
+        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+          Votação reaberta. Encerre de novo para recalcular os matches.
+        </p>
+      ) : null}
+
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="surface-card p-5">
           <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
@@ -212,6 +235,17 @@ export default async function NoitePage({
                 Encerrar votação
               </button>
             </form>
+            {sessionStatus === "voting_closed" ? (
+              <form action={reopenVotingAction}>
+                <input type="hidden" name="eventId" value={eventId} />
+                <button
+                  type="submit"
+                  className="btn btn-secondary w-full !min-h-12 sm:w-auto"
+                >
+                  Reabrir votação
+                </button>
+              </form>
+            ) : null}
             <Link
               href={`/admin/eventos/${eventId}/matches`}
               className="btn btn-ghost w-full !min-h-12 sm:w-auto"

@@ -8,6 +8,65 @@ import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
 import { sendMatchesReadyEmail } from "@/lib/notify";
 import type { ActionResult } from "@/lib/action-result";
+import type { CheckInTicketRow } from "@/components/admin/checkin-list";
+
+export type ListCheckInsResult =
+  | { ok: true; tickets: CheckInTicketRow[] }
+  | { ok: false; error: string };
+
+/**
+ * Current paid-ticket rows for an event (live check-in polling).
+ * Mirrors the query the noite page uses to build CheckInTicketRow.
+ */
+export async function listCheckIns(
+  rawEventId: string
+): Promise<ListCheckInsResult> {
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organizationId: admin.membership.organizationId,
+    },
+    select: { id: true },
+  });
+  if (!event) {
+    return { ok: false, error: "Evento não encontrado." };
+  }
+
+  const tickets = await prisma.ticket.findMany({
+    where: { eventId, status: "paid" },
+    include: {
+      user: {
+        select: {
+          name: true,
+          email: true,
+          gender: true,
+          phone: true,
+        },
+      },
+    },
+    orderBy: { user: { name: "asc" } },
+  });
+
+  return {
+    ok: true,
+    tickets: tickets.map((t) => ({
+      id: t.id,
+      checkedInAt: t.checkedInAt ? t.checkedInAt.toISOString() : null,
+      user: {
+        name: t.user.name,
+        email: t.user.email,
+        gender: t.user.gender,
+        phone: t.user.phone,
+      },
+    })),
+  };
+}
 
 export async function checkInTicket(rawTicketId: string): Promise<ActionResult> {
   const ticketId = parseCuid(rawTicketId);
@@ -223,6 +282,56 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
       });
     }
   }
+
+  revalidatePath(`/admin/eventos/${eventId}/noite`);
+  revalidatePath(`/evento/${eventId}/votar`);
+  revalidatePath(`/evento/${eventId}/matches`);
+  return { ok: true };
+}
+
+export async function reopenVoting(rawEventId: string): Promise<ActionResult> {
+  const eventId = parseCuid(rawEventId);
+  if (!eventId) return { ok: false, error: "Evento inválido." };
+
+  const admin = await requireAdmin();
+  if (!admin.ok) return admin;
+
+  const event = await prisma.event.findFirst({
+    where: {
+      id: eventId,
+      organizationId: admin.membership.organizationId,
+    },
+  });
+  if (!event) {
+    return { ok: false, error: "Evento não encontrado." };
+  }
+
+  const session = await prisma.eventSession.findUnique({ where: { eventId } });
+  if (!session) {
+    return { ok: false, error: "Sessão do evento não encontrada." };
+  }
+  if (session.status !== "voting_closed") {
+    return { ok: false, error: "A votação não está encerrada." };
+  }
+
+  // Matches are kept on purpose: closeVoting recalculates from scratch
+  // (deleteMany + createMany) whenever the voting is closed again.
+  await prisma.$transaction([
+    prisma.eventSession.update({
+      where: { id: session.id },
+      data: { status: "voting_open", votingClosesAt: null },
+    }),
+    prisma.event.update({
+      where: { id: eventId },
+      data: { status: "live" },
+    }),
+  ]);
+
+  await auditLog({
+    actorId: admin.user.id,
+    action: "voting.reopen",
+    meta: { eventId },
+  });
 
   revalidatePath(`/admin/eventos/${eventId}/noite`);
   revalidatePath(`/evento/${eventId}/votar`);

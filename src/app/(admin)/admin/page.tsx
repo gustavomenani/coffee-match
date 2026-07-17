@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
+import { getOccupancyByEvent } from "@/lib/occupancy";
 
 export const dynamic = "force-dynamic";
 
@@ -11,13 +12,26 @@ function formatDate(value: Date) {
   }).format(value);
 }
 
+function formatBRL(cents: number) {
+  return new Intl.NumberFormat("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  }).format(cents / 100);
+}
+
 export default async function AdminDashboardPage() {
   const { membership } = await requireAdminOrThrow();
   const orgId = membership.organizationId;
   const now = new Date();
 
-  const [eventsCount, publishedCount, paidTicketsCount, upcomingCount, nextEvent] =
-    await Promise.all([
+  const [
+    eventsCount,
+    publishedCount,
+    paidTicketsCount,
+    upcomingCount,
+    nextEvent,
+    revenueRows,
+  ] = await Promise.all([
       prisma.event.count({
         where: { organizationId: orgId },
       }),
@@ -52,9 +66,26 @@ export default async function AdminDashboardPage() {
           city: true,
           status: true,
           slug: true,
+          capacityMen: true,
+          capacityWomen: true,
         },
       }),
+      // Revenue aggregated in SQL: priceCents lives on Event, so a plain
+      // ticket aggregate can't sum it — join and SUM instead.
+      prisma.$queryRaw<{ total: bigint | null }[]>`
+        SELECT COALESCE(SUM(e."priceCents"), 0) AS "total"
+        FROM "Ticket" t
+        JOIN "Event" e ON e."id" = t."eventId"
+        WHERE t."status" = 'paid'
+          AND e."organizationId" = ${orgId}
+      `,
     ]);
+
+  const revenueCents = Number(revenueRows[0]?.total ?? 0);
+
+  const nextEventOccupancy = nextEvent
+    ? (await getOccupancyByEvent([nextEvent.id])).get(nextEvent.id) ?? null
+    : null;
 
   const stats = [
     {
@@ -76,6 +107,11 @@ export default async function AdminDashboardPage() {
       label: "Próximos",
       value: upcomingCount,
       hint: "Com data futura",
+    },
+    {
+      label: "Receita confirmada",
+      value: formatBRL(revenueCents),
+      hint: "Ingressos pagos",
     },
   ];
 
@@ -117,6 +153,15 @@ export default async function AdminDashboardPage() {
           <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
             {formatDate(nextEvent.startsAt)}
           </p>
+          {nextEventOccupancy ? (
+            <p className="mt-1 text-sm text-[var(--muted)]">
+              Ocupação (pagos):{" "}
+              <span className="tabular font-semibold text-[var(--ink)]">
+                H {nextEventOccupancy.paidMen}/{nextEvent.capacityMen} · M{" "}
+                {nextEventOccupancy.paidWomen}/{nextEvent.capacityWomen}
+              </span>
+            </p>
+          ) : null}
           <div className="mt-4 flex flex-wrap gap-2">
             <Link
               href={`/admin/eventos/${nextEvent.id}`}

@@ -1,9 +1,6 @@
 import Image from "next/image";
 import Link from "next/link";
-import { AuthError } from "next-auth";
-import { redirect } from "next/navigation";
-import { signIn } from "@/lib/auth";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { LoginForm } from "@/components/auth/login-form";
 
 /** Aceita apenas paths internos ("/…"), rejeitando URLs absolutas e protocol-relative ("//…"). */
 function safeInternalPath(value: unknown): string | null {
@@ -13,42 +10,16 @@ function safeInternalPath(value: unknown): string | null {
   return value;
 }
 
-async function loginAction(formData: FormData) {
-  "use server";
-
-  const email = String(formData.get("email") ?? "");
-  const password = String(formData.get("password") ?? "");
-  const callbackUrl = safeInternalPath(formData.get("callbackUrl"));
-
-  try {
-    await signIn("credentials", {
-      email,
-      password,
-      redirectTo: callbackUrl ?? "/meus-ingressos",
-    });
-  } catch (error) {
-    if (error instanceof AuthError) {
-      const retry = callbackUrl
-        ? `&callbackUrl=${encodeURIComponent(callbackUrl)}`
-        : "";
-      redirect(`/login?error=CredenciaisInválidas${retry}`);
-    }
-    throw error;
-  }
-}
-
 export default async function LoginPage({
   searchParams,
 }: {
   searchParams: Promise<{
-    error?: string;
     reset?: string;
     registered?: string;
     callbackUrl?: string;
   }>;
 }) {
   const params = await searchParams;
-  const hasError = !!params.error;
   const passwordReset = params.reset === "1";
   const justRegistered = params.registered === "1";
   const callbackUrl = safeInternalPath(params.callbackUrl);
@@ -109,50 +80,7 @@ export default async function LoginPage({
             </p>
           ) : null}
 
-          {hasError ? (
-            <p
-              role="alert"
-              className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
-            >
-              E-mail ou senha inválidos.
-            </p>
-          ) : null}
-
-          <form action={loginAction} className="mt-8 flex flex-col gap-4">
-            {callbackUrl ? (
-              <input type="hidden" name="callbackUrl" value={callbackUrl} />
-            ) : null}
-            <label className="block">
-              <span className="label">E-mail</span>
-              <input
-                type="email"
-                name="email"
-                required
-                autoComplete="email"
-                spellCheck={false}
-                className="field"
-              />
-            </label>
-
-            <label className="block">
-              <span className="label">Senha</span>
-              <input
-                type="password"
-                name="password"
-                required
-                autoComplete="current-password"
-                className="field"
-              />
-            </label>
-
-            <p className="-mt-1 text-right">
-              <Link href="/esqueci-senha" className="link-coffee text-sm">
-                Esqueci minha senha
-              </Link>
-            </p>
-
-            <SubmitButton pendingLabel="Entrando…">Entrar</SubmitButton>
-          </form>
+          <LoginForm callbackUrl={callbackUrl} />
 
           <p className="mt-8 text-center text-sm text-[var(--muted)]">
             Não tem conta?{" "}

@@ -1,7 +1,5 @@
 import Link from "next/link";
-import { redirect } from "next/navigation";
-import { registerUser } from "@/lib/actions/profile";
-import { SubmitButton } from "@/components/ui/submit-button";
+import { SignupForm } from "@/components/auth/signup-form";
 
 /** Aceita apenas paths internos ("/…"), rejeitando URLs absolutas e protocol-relative ("//…"). */
 function safeInternalPath(value: unknown): string | null {
@@ -11,29 +9,12 @@ function safeInternalPath(value: unknown): string | null {
   return value;
 }
 
-async function cadastroAction(formData: FormData) {
-  "use server";
-
-  const next = safeInternalPath(formData.get("next"));
-  const result = await registerUser(formData);
-  if (!result.ok) {
-    const keepNext = next ? `&next=${encodeURIComponent(next)}` : "";
-    redirect(`/cadastro?error=${encodeURIComponent(result.error)}${keepNext}`);
-  }
-  redirect(
-    next
-      ? `/login?registered=1&callbackUrl=${encodeURIComponent(next)}`
-      : "/login?registered=1",
-  );
-}
-
 export default async function CadastroPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string; next?: string }>;
+  searchParams: Promise<{ next?: string }>;
 }) {
   const params = await searchParams;
-  const error = params.error;
   const next = safeInternalPath(params.next);
 
   return (
@@ -51,131 +32,7 @@ export default async function CadastroPage({
           Perfil leve, 18+. Você usa isso para comprar ingresso e votar na noite.
         </p>
 
-        {error ? (
-          <p
-            role="alert"
-            className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
-          >
-            {error}
-          </p>
-        ) : null}
-
-        <form action={cadastroAction} className="mt-8 flex flex-col gap-4">
-          {next ? <input type="hidden" name="next" value={next} /> : null}
-          {/* Honeypot anti-bot — hidden from humans */}
-          <div
-            aria-hidden
-            className="absolute -left-[9999px] h-0 w-0 overflow-hidden opacity-0"
-          >
-            <label>
-              Website
-              <input type="text" name="_hp" tabIndex={-1} autoComplete="off" />
-            </label>
-          </div>
-
-          <label className="block">
-            <span className="label">Nome</span>
-            <input
-              type="text"
-              name="name"
-              required
-              minLength={2}
-              maxLength={100}
-              autoComplete="name"
-              className="field"
-            />
-          </label>
-
-          <label className="block">
-            <span className="label">E-mail</span>
-            <input
-              type="email"
-              name="email"
-              required
-              autoComplete="email"
-              spellCheck={false}
-              className="field"
-            />
-          </label>
-
-          <label className="block">
-            <span className="label">Senha</span>
-            <input
-              type="password"
-              name="password"
-              required
-              minLength={8}
-              maxLength={100}
-              autoComplete="new-password"
-              className="field"
-              pattern="(?=.*[A-Za-z])(?=.*[0-9]).{8,}"
-              title="Mínimo 8 caracteres, com letras e números"
-            />
-            <span className="mt-1.5 block text-xs text-[var(--muted)]">
-              Mínimo 8 caracteres, com letras e números.
-            </span>
-          </label>
-
-          <label className="block">
-            <span className="label">WhatsApp</span>
-            <input
-              type="tel"
-              name="phone"
-              required
-              minLength={10}
-              maxLength={20}
-              autoComplete="tel"
-              inputMode="tel"
-              placeholder="(11) 99999-9999"
-              className="field"
-            />
-          </label>
-
-          <div className="grid gap-4 sm:grid-cols-2">
-            <label className="block">
-              <span className="label">Gênero</span>
-              <select
-                name="gender"
-                required
-                defaultValue=""
-                className="field"
-              >
-                <option value="" disabled>
-                  Selecione
-                </option>
-                <option value="male">Masculino</option>
-                <option value="female">Feminino</option>
-              </select>
-            </label>
-
-            <label className="block">
-              <span className="label">Nascimento</span>
-              <input type="date" name="birthDate" required className="field" />
-            </label>
-          </div>
-
-          <label className="flex items-start gap-3 text-sm text-[var(--ink-soft)]">
-            <input
-              type="checkbox"
-              name="acceptTerms"
-              value="1"
-              required
-              className="mt-1 h-4 w-4 rounded border-[var(--line-strong)] accent-[var(--coffee)]"
-            />
-            <span>
-              Li e aceito os{" "}
-              <Link href="/termos" className="link-coffee font-semibold">
-                Termos
-              </Link>{" "}
-              e a{" "}
-              <Link href="/privacidade" className="link-coffee font-semibold">
-                Política de Privacidade
-              </Link>
-            </span>
-          </label>
-
-          <SubmitButton pendingLabel="Criando conta…">Criar conta</SubmitButton>
-        </form>
+        <SignupForm next={next} />
 
         <p className="mt-8 text-center text-sm text-[var(--muted)]">
           Já tem conta?{" "}

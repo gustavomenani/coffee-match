@@ -17,7 +17,7 @@ import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
-import { rateLimit } from "@/lib/rate-limit";
+import { rateLimitDetailed } from "@/lib/rate-limit";
 import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
 
@@ -27,10 +27,22 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  if (!(await rateLimit(`checkout:${session.user.id}`, 10, 60_000))) {
+  const limit = await rateLimitDetailed(
+    `checkout:${session.user.id}`,
+    10,
+    60_000
+  );
+  if (!limit.ok) {
+    const retryAfterSeconds = Math.max(
+      1,
+      Math.ceil((limit.resetAt - Date.now()) / 1000)
+    );
     return NextResponse.json(
       { error: "Muitas tentativas. Aguarde um momento." },
-      { status: 429 }
+      {
+        status: 429,
+        headers: { "Retry-After": String(retryAfterSeconds) },
+      }
     );
   }
 

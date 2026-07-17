@@ -1,9 +1,16 @@
 "use client";
 
-import { useState, useTransition, type FormEvent } from "react";
+import {
+  useEffect,
+  useRef,
+  useState,
+  useTransition,
+  type FormEvent,
+} from "react";
 import {
   checkInByTicketId,
   checkInTicket,
+  listCheckIns,
 } from "@/lib/actions/admin-session";
 import { QrScanner } from "@/components/admin/qr-scanner";
 
@@ -55,6 +62,48 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
   const [pendingId, setPendingId] = useState<string | null>(null);
   const [codePending, setCodePending] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  // Live refresh: poll the server every 10s so check-ins made by another
+  // admin (another phone at the door) show up without a manual reload.
+  const isPendingRef = useRef(isPending);
+  useEffect(() => {
+    isPendingRef.current = isPending;
+  }, [isPending]);
+
+  useEffect(() => {
+    let cancelled = false;
+    let timer: ReturnType<typeof setInterval> | null = null;
+
+    async function tick() {
+      // Never clobber an optimistic update while a check-in is in flight.
+      if (isPendingRef.current) return;
+      const result = await listCheckIns(eventId);
+      if (cancelled || isPendingRef.current) return;
+      if (result.ok) setTickets(result.tickets);
+    }
+
+    function start() {
+      if (timer === null) timer = setInterval(() => void tick(), 10_000);
+    }
+    function stop() {
+      if (timer !== null) {
+        clearInterval(timer);
+        timer = null;
+      }
+    }
+    function onVisibilityChange() {
+      if (document.hidden) stop();
+      else start();
+    }
+
+    onVisibilityChange();
+    document.addEventListener("visibilitychange", onVisibilityChange);
+    return () => {
+      cancelled = true;
+      stop();
+      document.removeEventListener("visibilitychange", onVisibilityChange);
+    };
+  }, [eventId]);
 
   function markCheckedIn(ticketId: string) {
     setTickets((prev) =>
@@ -150,10 +199,15 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
       </form>
 
       {tickets.length > 0 ? (
-        <p className="text-sm font-medium text-[var(--muted)]">
-          Check-in ·{" "}
-          <span className="tabular text-[var(--ink)]">
-            {checkedIn}/{tickets.length}
+        <p className="flex flex-wrap items-baseline gap-x-3 text-sm font-medium text-[var(--muted)]">
+          <span>
+            Check-in ·{" "}
+            <span className="tabular text-[var(--ink)]">
+              {checkedIn}/{tickets.length}
+            </span>
+          </span>
+          <span className="text-xs font-normal text-[var(--muted)]">
+            Atualizado automaticamente
           </span>
         </p>
       ) : null}
