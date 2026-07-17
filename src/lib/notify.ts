@@ -1,5 +1,6 @@
 import { auditLog } from "@/lib/audit";
 import { appBaseUrl } from "@/lib/env";
+import { logError } from "@/lib/observability";
 
 /**
  * Transactional notifications.
@@ -116,12 +117,16 @@ export async function sendEmail(input: {
       } else {
         delivered = false;
         failure = `http_${res.status}`;
-        console.error("[notify] resend failed", res.status, await res.text());
+        logError("email.provider_rejected", new Error(`resend ${res.status}`), {
+          status: res.status,
+          detail: await res.text().catch(() => null),
+          action: input.auditAction,
+        });
       }
     } catch (err) {
       delivered = false;
       failure = "network_error";
-      console.error("[notify] resend error", err);
+      logError("email.send_failed", err, { action: input.auditAction });
     }
   } else {
     console.info("[notify:email:dev]", { to: input.to, subject: input.subject });

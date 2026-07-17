@@ -1,6 +1,7 @@
 import webpush from "web-push";
 import { prisma } from "@/lib/prisma";
 import { getEnv } from "@/lib/env";
+import { logError } from "@/lib/observability";
 
 export type PushPayload = {
   title: string;
@@ -64,7 +65,7 @@ async function sendToSubscription(
       // Endpoint morto (usuário desinstalou/limpou o navegador): remove.
       await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
     } else {
-      console.error("[push] send failed", sub.endpoint, err);
+      logError("push.send_failed", err, { subscriptionId: sub.id });
     }
   }
 }
@@ -92,7 +93,7 @@ export async function sendPushToUser(
     );
   } catch (err) {
     // Push é best-effort: nunca pode quebrar a ação que o disparou.
-    console.error("[push] sendPushToUser failed", userId, err);
+    logError("push.user_failed", err, { userId });
   }
 }
 
@@ -123,6 +124,6 @@ export async function sendPushToUsers(
       )
     );
   } catch (err) {
-    console.error("[push] sendPushToUsers failed", err);
+    logError("push.batch_failed", err);
   }
 }

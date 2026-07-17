@@ -11,6 +11,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { clientIpFromHeaders } from "@/lib/security/ip";
 import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
+import { logError, logWarn } from "@/lib/observability";
 import { formatDateTime } from "@/lib/datetime";
 
 export async function POST(req: NextRequest) {
@@ -48,11 +49,11 @@ export async function POST(req: NextRequest) {
       secret,
     });
     if (!valid) {
-      console.error("[mp-webhook] invalid signature");
+      logWarn("mp_webhook.invalid_signature", { xRequestId });
       return NextResponse.json({ error: "invalid signature" }, { status: 401 });
     }
   } else if (isProduction()) {
-    console.error("[mp-webhook] MERCADOPAGO_WEBHOOK_SECRET missing in production");
+    logError("mp_webhook.secret_missing", new Error("MERCADOPAGO_WEBHOOK_SECRET missing in production"));
     return NextResponse.json({ error: "misconfigured" }, { status: 500 });
   }
 
@@ -106,7 +107,7 @@ export async function POST(req: NextRequest) {
             duplicatePreapprovalId: paymentId,
           },
         });
-        console.error("[mp-webhook] duplicate authorized preapproval", {
+        logWarn("mp_webhook.duplicate_preapproval", {
           userId: sub.userId,
           duplicatePreapprovalId: paymentId,
         });
@@ -126,7 +127,7 @@ export async function POST(req: NextRequest) {
       }
       return NextResponse.json({ ok: true });
     } catch (err) {
-      console.error("[mp-webhook] preapproval error:", err);
+      logError("mp_webhook.preapproval_failed", err, { preapprovalId: paymentId });
       return NextResponse.json({ error: "processing_error" }, { status: 500 });
     }
   }
@@ -226,7 +227,7 @@ export async function POST(req: NextRequest) {
             eventId: ticket.eventId,
           },
         });
-        console.error("[mp-webhook] duplicate approved payment", {
+        logWarn("mp_webhook.duplicate_payment", {
           ticketId,
           duplicatePaymentId: String(paymentId),
         });
@@ -267,7 +268,7 @@ export async function POST(req: NextRequest) {
             snapshotted: ticket.priceCents != null,
           },
         });
-        console.error("[mp-webhook] payment amount mismatch", {
+        logWarn("mp_webhook.amount_mismatch", {
           ticketId,
           paymentId: String(paymentId),
         });
@@ -330,14 +331,17 @@ export async function POST(req: NextRequest) {
             currencyId: payment.currency_id ?? null,
           },
         });
-        console.error(
-          "[mp-webhook] approved payment for a non-pending ticket — buyer charged with no ticket, refund required",
-          { ticketId, paymentId: String(paymentId), ticketStatus: ticket.status }
-        );
+        // Highest-severity business alert in the app: money captured, no ticket.
+        logWarn("mp_webhook.paid_but_not_pending", {
+          ticketId,
+          paymentId: String(paymentId),
+          ticketStatus: ticket.status,
+          refundRequired: true,
+        });
       }
     }
   } catch (err) {
-    console.error("Mercado Pago webhook error:", err);
+    logError("mp_webhook.processing_failed", err, { paymentId: String(paymentId) });
     // 500 so MP retries on transient failures
     return NextResponse.json({ error: "processing_error" }, { status: 500 });
   }

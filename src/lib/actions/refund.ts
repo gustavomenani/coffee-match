@@ -9,6 +9,7 @@ import { syncEventSoldOutStatus } from "@/lib/sold-out";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { isMpDevBypass, refundTicketPayment } from "@/lib/mercadopago";
 import type { ActionResult } from "@/lib/action-result";
+import { logError } from "@/lib/observability";
 
 /**
  * Admin-only total refund of a paid ticket.
@@ -42,10 +43,9 @@ export async function refundTicket(rawTicketId: string): Promise<ActionResult> {
       refundId = refund.refundId;
       simulated = refund.simulated;
     } catch (err) {
-      console.error("[refund] Mercado Pago refund failed", {
+      logError("refund.mp_failed", err, {
         ticketId,
         mpPaymentId: ticket.mpPaymentId,
-        err,
       });
       return {
         ok: false,

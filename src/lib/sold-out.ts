@@ -5,6 +5,7 @@ import { bustEventCaches } from "@/lib/cache-bust";
 import { sendSpotOpenedEmail } from "@/lib/notify";
 import { isPushConfigured, sendPushToUser } from "@/lib/push";
 import { auditLog } from "@/lib/audit";
+import { logError } from "@/lib/observability";
 
 /**
  * Keeps Event.status in sync with real occupancy.
@@ -93,11 +94,9 @@ async function notifyWaitlistSpotOpened(event: {
       notifiedIds.push(interests[idx].id);
       notifiedEmails.push(interests[idx].email);
     } else if (result.status === "rejected") {
-      console.error(
-        "[waitlist] spot-opened e-mail threw",
-        interests[idx].email,
-        result.reason
-      );
+      logError("waitlist.email_threw", result.reason, {
+        interestId: interests[idx].id,
+      });
     }
   });
 

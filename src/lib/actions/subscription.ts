@@ -5,6 +5,7 @@ import { prisma } from "@/lib/prisma";
 import { requireUser } from "@/lib/authz";
 import { rateLimit } from "@/lib/rate-limit";
 import { auditLog } from "@/lib/audit";
+import { logError } from "@/lib/observability";
 import {
   cancelPreapproval,
   createSubscriptionPreapproval,
@@ -72,11 +73,9 @@ export async function startSubscription(): Promise<SubscribeResult> {
     try {
       await cancelPreapproval(existing.mpPreapprovalId);
     } catch (err) {
-      console.error(
-        "[subscription] could not cancel superseded preapproval",
-        existing.mpPreapprovalId,
-        err
-      );
+      logError("subscription.orphan_cancel_failed", err, {
+        preapprovalId: existing.mpPreapprovalId,
+      });
       await auditLog({
         actorId: user.id,
         action: "subscription.orphaned_preapproval",
@@ -110,7 +109,7 @@ export async function startSubscription(): Promise<SubscribeResult> {
     });
     return { ok: true, initPoint };
   } catch (err) {
-    console.error("[subscription] preapproval failed", err);
+    logError("subscription.preapproval_failed", err, { userId: user.id });
     return {
       ok: false,
       error: "Não foi possível iniciar a assinatura. Tente novamente.",
@@ -138,7 +137,7 @@ export async function cancelSubscription(): Promise<CancelResult> {
     try {
       await cancelPreapproval(sub.mpPreapprovalId);
     } catch (err) {
-      console.error("[subscription] cancel failed", err);
+      logError("subscription.cancel_failed", err, { userId: user.id });
       return {
         ok: false,
         error: "Falha ao cancelar no Mercado Pago. Tente novamente.",
