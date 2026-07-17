@@ -30,7 +30,11 @@ export default async function CurtidasPage({
       </div>
 
       {!result.ok ? (
-        <div className="surface-card max-w-2xl border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-4 text-sm text-[var(--ink-soft)]">
+        // var(--paper-card) (não `white`): mantém contraste no tema escuro
+        <div
+          role="status"
+          className="surface-card max-w-2xl border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,var(--paper-card))] px-5 py-4 text-sm text-[var(--ink-soft)]"
+        >
           {result.error}
         </div>
       ) : result.likes.length === 0 ? (
@@ -50,7 +54,7 @@ export default async function CurtidasPage({
               className="flex items-center gap-3 px-5 py-4 sm:px-6"
             >
               <span
-                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--carmine)_12%,white)] font-display text-sm font-semibold text-[var(--carmine-deep)]"
+                className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-[color-mix(in_srgb,var(--carmine)_12%,var(--paper-card))] font-display text-sm font-semibold text-[var(--carmine-deep)]"
                 aria-hidden
               >
                 {like.name.slice(0, 1).toUpperCase()}

@@ -1,7 +1,7 @@
 import { z } from "zod";
 
 /** CUID-like ids used by Prisma @default(cuid()) */
-export const cuidSchema = z
+const cuidSchema = z
   .string()
   .min(20)
   .max(40)
@@ -10,10 +10,4 @@ export const cuidSchema = z
 export function parseCuid(raw: unknown): string | null {
   const r = cuidSchema.safeParse(raw);
   return r.success ? r.data : null;
-}
-
-export function assertCuid(raw: unknown, label = "id"): string {
-  const id = parseCuid(raw);
-  if (!id) throw new Error(`${label} inválido`);
-  return id;
 }

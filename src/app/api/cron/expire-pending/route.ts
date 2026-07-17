@@ -1,20 +1,12 @@
-import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { PENDING_TICKET_TTL_MS } from "@/lib/domain/checkout";
 import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { auditLog } from "@/lib/audit";
-import { getEnv } from "@/lib/env";
+import { requireCronAuth } from "@/lib/security/cron-auth";
 
 export const dynamic = "force-dynamic";
-
-/** Constant-time comparison that does not leak length differences. */
-function secretMatches(provided: string, expected: string): boolean {
-  const a = createHash("sha256").update(provided).digest();
-  const b = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(a, b);
-}
 
 /**
  * Cancels every pending ticket older than PENDING_TICKET_TTL_MS.
@@ -22,22 +14,8 @@ function secretMatches(provided: string, expected: string): boolean {
  * `Authorization: Bearer ${CRON_SECRET}` (see .env.example).
  */
 export async function GET(req: NextRequest) {
-  const secret = getEnv().CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json(
-      { error: "CRON_SECRET não configurado." },
-      { status: 503 }
-    );
-  }
-
-  const authorization = req.headers.get("authorization");
-  const token = authorization?.startsWith("Bearer ")
-    ? authorization.slice("Bearer ".length)
-    : null;
-
-  if (!token || !secretMatches(token, secret)) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  }
+  const unauthorized = requireCronAuth(req);
+  if (unauthorized) return unauthorized;
 
   const cutoff = new Date(Date.now() - PENDING_TICKET_TTL_MS);
   const where = {

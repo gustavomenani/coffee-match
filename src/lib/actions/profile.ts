@@ -2,6 +2,7 @@
 
 import bcrypt from "bcryptjs";
 import { revalidatePath } from "next/cache";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { registerSchema, profileUpdateSchema } from "@/lib/validations/auth";
 import { isAtLeast18 } from "@/lib/domain/age";
@@ -67,16 +68,29 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
   }
 
   const passwordHash = await bcrypt.hash(parsed.data.password, 12);
-  const user = await prisma.user.create({
-    data: {
-      name: cleanText(parsed.data.name, 100),
-      email,
-      passwordHash,
-      phone,
-      gender: parsed.data.gender,
-      birthDate: birth,
-    },
-  });
+  let user;
+  try {
+    user = await prisma.user.create({
+      data: {
+        name: cleanText(parsed.data.name, 100),
+        email,
+        passwordHash,
+        phone,
+        gender: parsed.data.gender,
+        birthDate: birth,
+      },
+    });
+  } catch (err) {
+    // Race with a concurrent registration for the same e-mail: the earlier
+    // findUnique passed but the unique constraint fired on create.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { ok: false, error: "E-mail já cadastrado." };
+    }
+    throw err;
+  }
 
   await auditLog({
     actorId: user.id,
@@ -90,6 +104,12 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
 export async function updateProfile(formData: FormData): Promise<ActionResult> {
   const authz = await requireUser();
   if (!authz.ok) return authz;
+
+  // Mutável e aceita foto em data URL (~120KB): limite por usuário, como as
+  // demais actions mutáveis (registerUser, castVote, startSubscription...).
+  if (!(await rateLimit(`profile:${authz.user.id}`, 10, 60_000))) {
+    return { ok: false, error: "Muitas tentativas. Aguarde um momento." };
+  }
 
   const parsed = profileUpdateSchema.safeParse({
     name: formData.get("name"),

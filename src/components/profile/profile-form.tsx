@@ -80,6 +80,8 @@ export function ProfileForm({ defaults }: ProfileFormProps) {
             required
             minLength={10}
             maxLength={20}
+            inputMode="tel"
+            placeholder="(11) 99999-9999"
             defaultValue={defaults.phone}
             className="field"
           />

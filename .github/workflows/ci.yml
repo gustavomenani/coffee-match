@@ -9,6 +9,7 @@ on:
 jobs:
   ci:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       # Fake values so `next build` can validate env — build never connects
       # to the database (all pages are dynamic) nor uses real auth.
@@ -39,6 +40,7 @@ jobs:
 
   e2e:
     runs-on: ubuntu-latest
+    timeout-minutes: 30
     needs: ci
     services:
       postgres:

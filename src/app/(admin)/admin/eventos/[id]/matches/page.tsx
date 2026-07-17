@@ -1,6 +1,10 @@
 import Link from "next/link";
 import { getAdminSessionMatches } from "@/lib/actions/results";
 
+function genderLabel(gender: string) {
+  return gender === "male" ? "Homem" : gender === "female" ? "Mulher" : gender;
+}
+
 export default async function AdminMatchesPage({
   params,
 }: {
@@ -33,7 +37,10 @@ export default async function AdminMatchesPage({
       </div>
 
       {!result.ok ? (
-        <div className="flash-error max-w-2xl rounded-[var(--radius-sm)] px-4 py-3 text-sm">
+        <div
+          role="alert"
+          className="flash-error max-w-2xl rounded-[var(--radius-sm)] px-4 py-3 text-sm"
+        >
           {result.error}
         </div>
       ) : result.matches.length === 0 ? (
@@ -62,7 +69,7 @@ export default async function AdminMatchesPage({
                       {m.userA.name}
                     </p>
                     <p className="text-xs text-[var(--muted)]">
-                      {m.userA.phone} · {m.userA.gender}
+                      {m.userA.phone} · {genderLabel(m.userA.gender)}
                     </p>
                   </td>
                   <td className="px-4 py-4">
@@ -70,7 +77,7 @@ export default async function AdminMatchesPage({
                       {m.userB.name}
                     </p>
                     <p className="text-xs text-[var(--muted)]">
-                      {m.userB.phone} · {m.userB.gender}
+                      {m.userB.phone} · {genderLabel(m.userB.gender)}
                     </p>
                   </td>
                 </tr>

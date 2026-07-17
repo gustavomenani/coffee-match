@@ -34,7 +34,7 @@ test.describe("Coffee Match night smoke", () => {
   test.beforeAll(async () => {
     process.env.DATABASE_URL =
       process.env.DATABASE_URL ??
-      "postgresql://postgres:postgres@localhost:5437/speeddate?schema=public";
+      "postgresql://postgres:postgres@localhost:5437/coffeematch?schema=public";
     fixture = await seedE2eFixtures();
   });
 
@@ -93,7 +93,7 @@ test.describe("Coffee Match night smoke", () => {
   }) => {
     process.env.DATABASE_URL =
       process.env.DATABASE_URL ??
-      "postgresql://postgres:postgres@localhost:5437/speeddate?schema=public";
+      "postgresql://postgres:postgres@localhost:5437/coffeematch?schema=public";
 
     const { PrismaClient, Gender, Role, EventStatus } = await import(
       "@prisma/client"

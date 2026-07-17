@@ -28,8 +28,11 @@ export default async function VotarPage({
           <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
             Votação
           </h1>
-          <div className="surface-card mt-8 border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,white)] px-5 py-5 text-base text-[var(--ink-soft)]">
-            <p className="leading-relaxed">{ballot.error}</p>
+          {/* var(--paper-card) (não `white`): mantém contraste no tema escuro */}
+          <div className="surface-card mt-8 border-[color-mix(in_srgb,var(--champagne)_40%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_12%,var(--paper-card))] px-5 py-5 text-base text-[var(--ink-soft)]">
+            <p role="status" className="leading-relaxed">
+              {ballot.error}
+            </p>
             {phoneHint ? (
               <Link href="/minha-conta" className="btn btn-primary mt-5">
                 Ir para Minha conta

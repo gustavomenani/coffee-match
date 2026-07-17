@@ -114,10 +114,10 @@ async function main() {
       priceCents: 8900,
       currency: "BRL",
       status: EventStatus.published,
-      session: { create: { status: "not_started" } },
     },
   });
 
+  // Covers both branches of the upsert above (create and update).
   await prisma.eventSession.upsert({
     where: { eventId: event.id },
     update: {},

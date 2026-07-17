@@ -55,6 +55,14 @@ async function reopenVotingAction(formData: FormData) {
   redirect(`/admin/eventos/${eventId}/noite?ok=reopen`);
 }
 
+const eventStatusLabel: Record<string, string> = {
+  draft: "Rascunho",
+  published: "Publicado",
+  sold_out: "Esgotado",
+  live: "Ao vivo",
+  closed: "Encerrado",
+};
+
 function sessionLabel(status: string | undefined) {
   switch (status) {
     case "voting_open":
@@ -152,29 +160,43 @@ export default async function NoitePage({
         </span>
         {" · "}
         Evento:{" "}
-        <span className="font-semibold text-[var(--ink)]">{event.status}</span>
+        <span className="font-semibold text-[var(--ink)]">
+          {eventStatusLabel[event.status] ?? event.status}
+        </span>
       </p>
 
       {query.error ? (
-        <p className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="alert"
+          className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           {query.error}
         </p>
       ) : null}
 
       {query.ok === "open" ? (
-        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="status"
+          className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           Votação aberta com sucesso.
         </p>
       ) : null}
 
       {query.ok === "close" ? (
-        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="status"
+          className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           Votação encerrada. Matches mútuos calculados.
         </p>
       ) : null}
 
       {query.ok === "reopen" ? (
-        <p className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+        <p
+          role="status"
+          className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-3 text-sm"
+        >
           Votação reaberta. Encerre de novo para recalcular os matches.
         </p>
       ) : null}

@@ -6,6 +6,13 @@ import { PageShell, EmptyState } from "@/components/ui/page-shell";
 
 export const dynamic = "force-dynamic";
 
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(value);
+}
+
 function toWhatsappUrl(phone: string): string {
   const digits = phone.replace(/\D/g, "");
   const withCountry = digits.startsWith("55") ? digits : `55${digits}`;
@@ -110,7 +117,7 @@ export default async function MeusMatchesPage() {
                 {event.title}
               </h2>
               <p className="mt-1 text-sm text-[var(--muted)]">
-                {new Date(event.startsAt).toLocaleString("pt-BR")}
+                {formatDate(event.startsAt)}
                 {event.city ? ` · ${event.city}` : ""}
               </p>
 

@@ -1,18 +1,10 @@
-import { createHash, timingSafeEqual } from "crypto";
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEventReminderEmail } from "@/lib/notify";
 import { auditLog } from "@/lib/audit";
-import { getEnv } from "@/lib/env";
+import { requireCronAuth } from "@/lib/security/cron-auth";
 
 export const dynamic = "force-dynamic";
-
-/** Constant-time comparison that does not leak length differences. */
-function secretMatches(provided: string, expected: string): boolean {
-  const a = createHash("sha256").update(provided).digest();
-  const b = createHash("sha256").update(expected).digest();
-  return timingSafeEqual(a, b);
-}
 
 /**
  * D-1 reminder: e-mails every paid ticket of events starting in the next 24h
@@ -20,22 +12,8 @@ function secretMatches(provided: string, expected: string): boolean {
  * by an external scheduler with `Authorization: Bearer ${CRON_SECRET}`.
  */
 export async function GET(req: NextRequest) {
-  const secret = getEnv().CRON_SECRET;
-  if (!secret) {
-    return NextResponse.json(
-      { error: "CRON_SECRET não configurado." },
-      { status: 503 }
-    );
-  }
-
-  const authorization = req.headers.get("authorization");
-  const token = authorization?.startsWith("Bearer ")
-    ? authorization.slice("Bearer ".length)
-    : null;
-
-  if (!token || !secretMatches(token, secret)) {
-    return NextResponse.json({ error: "Não autorizado." }, { status: 401 });
-  }
+  const unauthorized = requireCronAuth(req);
+  if (unauthorized) return unauthorized;
 
   const now = new Date();
   const windowEnd = new Date(now.getTime() + 24 * 60 * 60 * 1000);

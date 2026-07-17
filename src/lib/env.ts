@@ -10,7 +10,7 @@ const envSchema = z.object({
   NEXT_PUBLIC_APP_URL: z.string().url().optional(),
   MERCADOPAGO_ACCESS_TOKEN: z.string().optional(),
   MERCADOPAGO_WEBHOOK_SECRET: z.string().optional(),
-  /** Bearer token required by GET /api/cron/expire-pending (503 when unset). */
+  /** Bearer token required by the /api/cron/* routes (503 when unset). */
   CRON_SECRET: z.string().min(16).optional(),
   /** Only honored when NODE_ENV !== production */
   ALLOW_DEV_BYPASS: z

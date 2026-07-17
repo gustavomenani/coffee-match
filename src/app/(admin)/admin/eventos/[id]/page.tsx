@@ -95,12 +95,18 @@ export default async function AdminEventoEditPage({
       </div>
 
       {query.error ? (
-        <p className="flash-error mb-4 max-w-2xl rounded-[var(--radius-sm)] px-3 py-2 text-sm">
+        <p
+          role="alert"
+          className="flash-error mb-4 max-w-2xl rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+        >
           {query.error}
         </p>
       ) : null}
       {query.saved ? (
-        <p className="mb-4 max-w-2xl rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
+        <p
+          role="status"
+          className="flash-success mb-4 max-w-2xl rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+        >
           Evento atualizado.
         </p>
       ) : null}

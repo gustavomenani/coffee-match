@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { redirect } from "next/navigation";
+import { Prisma } from "@prisma/client";
 import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
 import { requireAdminOrThrow } from "@/lib/authz";
@@ -80,27 +81,39 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Slug já em uso." };
   }
 
-  const event = await prisma.event.create({
-    data: {
-      organizationId: org.id,
-      title: data.title,
-      slug: data.slug,
-      venue: data.venue,
-      address: data.address,
-      city: data.city,
-      startsAt,
-      endsAt,
-      capacityMen: data.capacityMen,
-      capacityWomen: data.capacityWomen,
-      priceCents: data.priceCents,
-      currency: "BRL",
-      status: data.status,
-      earlyAccessUntil,
-      session: {
-        create: { status: "not_started" },
+  let event;
+  try {
+    event = await prisma.event.create({
+      data: {
+        organizationId: org.id,
+        title: data.title,
+        slug: data.slug,
+        venue: data.venue,
+        address: data.address,
+        city: data.city,
+        startsAt,
+        endsAt,
+        capacityMen: data.capacityMen,
+        capacityWomen: data.capacityWomen,
+        priceCents: data.priceCents,
+        currency: "BRL",
+        status: data.status,
+        earlyAccessUntil,
+        session: {
+          create: { status: "not_started" },
+        },
       },
-    },
-  });
+    });
+  } catch (err) {
+    // Race: the slug uniqueness pre-check passed but the constraint fired.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { ok: false, error: "Slug já em uso." };
+    }
+    throw err;
+  }
 
   await auditLog({
     actorId: user.id,
@@ -160,23 +173,34 @@ export async function updateEvent(
     }
   }
 
-  await prisma.event.update({
-    where: { id },
-    data: {
-      title: data.title,
-      slug: data.slug,
-      venue: data.venue,
-      address: data.address,
-      city: data.city,
-      startsAt,
-      endsAt,
-      capacityMen: data.capacityMen,
-      capacityWomen: data.capacityWomen,
-      priceCents: data.priceCents,
-      status: data.status,
-      earlyAccessUntil,
-    },
-  });
+  try {
+    await prisma.event.update({
+      where: { id },
+      data: {
+        title: data.title,
+        slug: data.slug,
+        venue: data.venue,
+        address: data.address,
+        city: data.city,
+        startsAt,
+        endsAt,
+        capacityMen: data.capacityMen,
+        capacityWomen: data.capacityWomen,
+        priceCents: data.priceCents,
+        status: data.status,
+        earlyAccessUntil,
+      },
+    });
+  } catch (err) {
+    // Race: the slug uniqueness pre-check passed but the constraint fired.
+    if (
+      err instanceof Prisma.PrismaClientKnownRequestError &&
+      err.code === "P2002"
+    ) {
+      return { ok: false, error: "Slug já em uso." };
+    }
+    throw err;
+  }
 
   await auditLog({
     actorId: user.id,

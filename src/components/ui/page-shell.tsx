@@ -22,7 +22,7 @@ export function PageShell({
           narrow ? "max-w-2xl" : ""
         }`}
       >
-        <div className={narrow ? "max-w-2xl" : "max-w-2xl"}>
+        <div className="max-w-2xl">
           {eyebrow ? <p className="eyebrow mb-3">{eyebrow}</p> : null}
           <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
             {title}

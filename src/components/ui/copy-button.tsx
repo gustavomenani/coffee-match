@@ -35,6 +35,7 @@ export function CopyButton({
     <button
       type="button"
       onClick={onCopy}
+      aria-live="polite"
       className={`btn btn-secondary !min-h-10 !px-4 !text-sm ${className}`}
     >
       {done ? "Copiado ✓" : label}

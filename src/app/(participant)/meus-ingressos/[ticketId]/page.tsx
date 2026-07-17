@@ -13,6 +13,13 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(value);
+}
+
 type PageProps = {
   params: Promise<{ ticketId: string }>;
 };
@@ -101,7 +108,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
                 Data
               </p>
               <p className="mt-1 font-medium text-[var(--ink-soft)]">
-                {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+                {formatDate(ticket.event.startsAt)}
               </p>
             </div>
             <div>
@@ -125,7 +132,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
 
           {ticket.checkedInAt ? (
             <p className="mt-5 text-xs font-semibold uppercase tracking-wider text-[var(--success)]">
-              Check-in · {new Date(ticket.checkedInAt).toLocaleString("pt-BR")}
+              Check-in · {formatDate(ticket.checkedInAt)}
             </p>
           ) : ticket.status === "paid" ? (
             <p className="mt-5 text-xs font-medium text-[var(--muted)]">

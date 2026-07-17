@@ -33,7 +33,9 @@ export function RefundButton({ ticketId }: Props) {
         {isPending ? "Reembolsando…" : "Reembolsar"}
       </button>
       {error ? (
-        <p className="text-xs font-medium text-[var(--danger)]">{error}</p>
+        <p role="alert" className="text-xs font-medium text-[var(--danger)]">
+          {error}
+        </p>
       ) : null}
     </div>
   );

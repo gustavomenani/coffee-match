@@ -24,7 +24,7 @@ test.describe("Coffee Match core flows", () => {
   test.beforeAll(async () => {
     process.env.DATABASE_URL =
       process.env.DATABASE_URL ??
-      "postgresql://postgres:postgres@localhost:5437/speeddate?schema=public";
+      "postgresql://postgres:postgres@localhost:5437/coffeematch?schema=public";
     await seedE2eFixtures();
   });
 
@@ -55,7 +55,7 @@ test.describe("Coffee Match core flows", () => {
   test("participant becomes supporter via dev bypass", async ({ page }) => {
     process.env.DATABASE_URL =
       process.env.DATABASE_URL ??
-      "postgresql://postgres:postgres@localhost:5437/speeddate?schema=public";
+      "postgresql://postgres:postgres@localhost:5437/coffeematch?schema=public";
 
     // Reset any previous subscription so the flow is repeatable.
     const { PrismaClient } = await import("@prisma/client");

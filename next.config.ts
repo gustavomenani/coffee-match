@@ -72,29 +72,23 @@ const nextConfig: NextConfig = {
         headers: securityHeaders,
       },
       {
-        source: "/logo.jpeg",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
-        source: "/logo.jpg",
-        headers: [
-          {
-            key: "Cache-Control",
-            value: "public, max-age=31536000, immutable",
-          },
-        ],
-      },
-      {
+        // Also covers /logo.jpeg and /logo.jpg — no per-file rules needed.
         source: "/(.*)\\.(js|css|woff2|svg|png|jpg|jpeg|webp|avif)",
         headers: [
           {
             key: "Cache-Control",
             value: "public, max-age=31536000, immutable",
+          },
+        ],
+      },
+      {
+        // Service worker must never be immutable-cached (overrides the
+        // generic .js rule above — for equal keys, the last match wins).
+        source: "/sw.js",
+        headers: [
+          {
+            key: "Cache-Control",
+            value: "public, max-age=0, must-revalidate",
           },
         ],
       },

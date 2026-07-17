@@ -10,6 +10,13 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
+function formatDate(value: Date) {
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "short",
+    timeStyle: "short",
+  }).format(value);
+}
+
 export default async function PagamentoPendentePage({
   searchParams,
 }: {
@@ -60,11 +67,17 @@ export default async function PagamentoPendentePage({
         ) : (
           <div className="surface-card mt-8 p-6 sm:p-7">
             {ticket.status === "paid" ? (
-              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--success)_25%,transparent)] bg-[color-mix(in_srgb,var(--success)_8%,white)] px-3 py-2 text-sm text-[var(--success)]">
+              <p
+                role="status"
+                className="flash-success mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+              >
                 Boa notícia: o pagamento já foi confirmado.
               </p>
             ) : (
-              <p className="mb-4 rounded-[var(--radius-sm)] border border-[color-mix(in_srgb,var(--champagne)_45%,var(--line))] bg-[color-mix(in_srgb,var(--champagne)_14%,white)] px-3 py-2 text-sm text-[var(--ink-soft)]">
+              <p
+                role="status"
+                className="flash-warning mb-4 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+              >
                 Seu pagamento ainda está sendo processado. Você receberá a
                 confirmação em breve.
               </p>
@@ -77,7 +90,7 @@ export default async function PagamentoPendentePage({
               {ticket.event.venue} · {ticket.event.city}
             </p>
             <p className="mt-1 text-sm font-medium text-[var(--ink-soft)]">
-              {new Date(ticket.event.startsAt).toLocaleString("pt-BR")}
+              {formatDate(ticket.event.startsAt)}
             </p>
             <p className="mt-4 text-sm text-[var(--ink-soft)]">
               Status do ingresso:{" "}

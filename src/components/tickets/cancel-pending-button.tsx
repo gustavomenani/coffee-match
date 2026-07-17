@@ -32,7 +32,10 @@ export function CancelPendingButton({ ticketId }: Props) {
         {isPending ? "Cancelando…" : "Cancelar pedido"}
       </button>
       {error ? (
-        <p className="text-xs font-medium text-[var(--danger,var(--carmine))]">
+        <p
+          role="alert"
+          className="text-xs font-medium text-[var(--danger,var(--carmine))]"
+        >
           {error}
         </p>
       ) : null}
