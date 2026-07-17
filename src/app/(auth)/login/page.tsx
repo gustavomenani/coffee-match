@@ -28,10 +28,11 @@ async function loginAction(formData: FormData) {
 export default async function LoginPage({
   searchParams,
 }: {
-  searchParams: Promise<{ error?: string }>;
+  searchParams: Promise<{ error?: string; reset?: string }>;
 }) {
   const params = await searchParams;
   const hasError = !!params.error;
+  const passwordReset = params.reset === "1";
 
   return (
     <main className="mx-auto flex w-full max-w-6xl flex-1 items-center px-4 py-12 sm:px-6 sm:py-16">
@@ -71,6 +72,15 @@ export default async function LoginPage({
             Acesse sua conta para comprar e votar.
           </p>
 
+          {passwordReset ? (
+            <p
+              role="status"
+              className="flash-success mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm"
+            >
+              Senha redefinida. Faça login.
+            </p>
+          ) : null}
+
           {hasError ? (
             <p
               role="alert"
@@ -103,6 +113,12 @@ export default async function LoginPage({
                 className="field"
               />
             </label>
+
+            <p className="-mt-1 text-right">
+              <Link href="/esqueci-senha" className="link-coffee text-sm">
+                Esqueci minha senha
+              </Link>
+            </p>
 
             <SubmitButton pendingLabel="Entrando…">Entrar</SubmitButton>
           </form>

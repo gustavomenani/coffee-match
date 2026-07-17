@@ -84,6 +84,20 @@ model User {
   votesFrom        Vote[]    @relation("VotesFrom")
   votesTo          Vote[]    @relation("VotesTo")
   memberships      OrganizationMember[]
+  resetTokens      PasswordResetToken[]
+}
+
+/// One-time password reset tokens — only the SHA-256 hash is stored.
+model PasswordResetToken {
+  id        String    @id @default(cuid())
+  userId    String
+  user      User      @relation(fields: [userId], references: [id])
+  tokenHash String    @unique
+  expiresAt DateTime
+  usedAt    DateTime?
+  createdAt DateTime  @default(now())
+
+  @@index([userId])
 }
 
 model Event {
