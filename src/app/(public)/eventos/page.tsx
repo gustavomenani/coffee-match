@@ -6,6 +6,7 @@ import { listPublishedEvents, listPastEvents } from "@/lib/actions/events";
 import { JsonLd } from "@/components/seo/json-ld";
 import { Reveal } from "@/components/ui/reveal";
 import { absoluteUrl, SITE } from "@/lib/seo";
+import { formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -27,10 +28,6 @@ export const metadata: Metadata = {
     description: "Agenda de speed dating presencial Coffee Match.",
   },
 };
-
-const pastDateFormatter = new Intl.DateTimeFormat("pt-BR", {
-  dateStyle: "medium",
-});
 
 export default async function EventosPage({
   searchParams,
@@ -150,7 +147,7 @@ export default async function EventosPage({
                     {event.city} · {event.venue}
                   </p>
                   <p className="mt-2 text-sm font-medium text-[var(--ink-soft)]">
-                    {pastDateFormatter.format(event.startsAt)}
+                    {formatDate(event.startsAt)}
                   </p>
                 </Link>
               </Reveal>

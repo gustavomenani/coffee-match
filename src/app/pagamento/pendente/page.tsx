@@ -2,6 +2,7 @@ import Link from "next/link";
 import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
+import { formatDateTime as formatDate } from "@/lib/datetime";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -9,13 +10,6 @@ const statusLabel: Record<string, string> = {
   cancelled: "Cancelado",
   refunded: "Reembolsado",
 };
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
-}
 
 export default async function PagamentoPendentePage({
   searchParams,

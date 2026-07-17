@@ -6,6 +6,7 @@ import {
   CancelSubscriptionButton,
   SubscribeButton,
 } from "@/components/subscription/subscription-buttons";
+import { APP_TZ } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -34,7 +35,10 @@ const benefits = [
 ] as const;
 
 function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", { dateStyle: "long" }).format(value);
+  return new Intl.DateTimeFormat("pt-BR", {
+    dateStyle: "long",
+    timeZone: APP_TZ,
+  }).format(value);
 }
 
 export default async function AssinaturaPage({

@@ -3,6 +3,7 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { CancelPendingButton } from "@/components/tickets/cancel-pending-button";
+import { formatDateTime as formatDate } from "@/lib/datetime";
 
 const statusLabel: Record<string, string> = {
   pending: "Pendente",
@@ -10,13 +11,6 @@ const statusLabel: Record<string, string> = {
   cancelled: "Cancelado",
   refunded: "Reembolsado",
 };
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
-}
 
 const PAGE_SIZE = 20;
 

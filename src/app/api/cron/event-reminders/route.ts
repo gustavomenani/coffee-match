@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 import { sendEventReminderEmail } from "@/lib/notify";
+import { formatDateTime } from "@/lib/datetime";
 import { auditLog } from "@/lib/audit";
 import { requireCronAuth } from "@/lib/security/cron-auth";
 
@@ -40,7 +41,7 @@ export async function GET(req: NextRequest) {
     await sendEventReminderEmail({
       to: ticket.user.email,
       eventTitle: ticket.event.title,
-      eventWhen: ticket.event.startsAt.toLocaleString("pt-BR"),
+      eventWhen: formatDateTime(ticket.event.startsAt),
       venue: `${ticket.event.venue}, ${ticket.event.city}`,
       ticketId: ticket.id,
     });

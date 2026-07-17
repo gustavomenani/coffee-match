@@ -2,15 +2,9 @@ import Link from "next/link";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { getOccupancyByEvent } from "@/lib/occupancy";
+import { formatDateTime as formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
-}
 
 function formatBRL(cents: number) {
   return new Intl.NumberFormat("pt-BR", {

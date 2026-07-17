@@ -1,4 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
+import { Prisma } from "@prisma/client";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canSellTicket } from "@/lib/domain/capacity";
@@ -20,6 +21,10 @@ import {
 import { rateLimitDetailed } from "@/lib/rate-limit";
 import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
+import { formatDateTime } from "@/lib/datetime";
+
+/** Thrown inside the sale transaction when the gender capacity is full. */
+class CapacityError extends Error {}
 
 export async function POST(req: NextRequest) {
   const session = await auth();
@@ -75,7 +80,7 @@ export async function POST(req: NextRequest) {
       where: { userId: user.id },
     });
     if (!canBuyDuringEarlyAccess(event.earlyAccessUntil, isSubscriberActive(subscription), now)) {
-      const until = event.earlyAccessUntil!.toLocaleString("pt-BR");
+      const until = formatDateTime(event.earlyAccessUntil!);
       return NextResponse.json(
         {
           error: `Venda antecipada exclusiva para assinantes até ${until}. Assine por R$ 10/mês em /assinatura.`,
@@ -132,7 +137,7 @@ export async function POST(req: NextRequest) {
       await sendTicketPaidEmail({
         to: user.email,
         eventTitle: event.title,
-        eventWhen: event.startsAt.toLocaleString("pt-BR"),
+        eventWhen: formatDateTime(event.startsAt),
         venue: `${event.venue}, ${event.city}`,
         ticketId: existing.id,
       });
@@ -164,15 +169,6 @@ export async function POST(req: NextRequest) {
     }
   }
 
-  // New ticket: capacity must allow sale for this gender.
-  const occupancy = await getEventOccupancy(event.id);
-  if (!canSellTicket(event, user.gender, occupancy)) {
-    return NextResponse.json(
-      { error: "Esgotado para o seu gênero." },
-      { status: 409 }
-    );
-  }
-
   // Re-check race: another request may have paid meanwhile
   const raced = await prisma.ticket.findFirst({
     where: {
@@ -188,16 +184,34 @@ export async function POST(req: NextRequest) {
     );
   }
 
+  // Capacity check + insert in ONE serializable transaction so two
+  // concurrent buyers cannot both pass the count and oversell the night.
   let ticket;
   try {
-    ticket = await prisma.ticket.create({
-      data: {
-        eventId: event.id,
-        userId: user.id,
-        status: "pending",
+    ticket = await prisma.$transaction(
+      async (tx) => {
+        const occupancy = await getEventOccupancy(event.id, tx);
+        if (!canSellTicket(event, user.gender, occupancy)) {
+          throw new CapacityError();
+        }
+        return tx.ticket.create({
+          data: {
+            eventId: event.id,
+            userId: user.id,
+            status: "pending",
+          },
+        });
       },
-    });
-  } catch {
+      { isolationLevel: Prisma.TransactionIsolationLevel.Serializable }
+    );
+  } catch (err) {
+    if (err instanceof CapacityError) {
+      return NextResponse.json(
+        { error: "Esgotado para o seu gênero." },
+        { status: 409 }
+      );
+    }
+    // Serialization conflict (P2034) or unique race — safe to just retry.
     return NextResponse.json(
       { error: "Não foi possível criar o ingresso. Tente de novo." },
       { status: 409 }
@@ -215,7 +229,7 @@ export async function POST(req: NextRequest) {
     await sendTicketPaidEmail({
       to: user.email,
       eventTitle: event.title,
-      eventWhen: event.startsAt.toLocaleString("pt-BR"),
+      eventWhen: formatDateTime(event.startsAt),
       venue: `${event.venue}, ${event.city}`,
       ticketId: ticket.id,
     });

@@ -13,17 +13,22 @@ type CountRow = {
   count: bigint;
 };
 
+/** Subset of the Prisma client the queries here need (works inside $transaction). */
+type QueryClient = Pick<typeof prisma, "$queryRaw">;
+
 /**
  * Occupancy per event aggregated in SQL (GROUP BY), so cost stays constant
  * as ticket volume grows — never load individual ticket rows for counting.
+ * Pass a transaction client to read inside an open transaction.
  */
 export async function getOccupancyByEvent(
-  eventIds: string[]
+  eventIds: string[],
+  client: QueryClient = prisma
 ): Promise<Map<string, Occupancy>> {
   const result = new Map<string, Occupancy>();
   if (eventIds.length === 0) return result;
 
-  const rows = await prisma.$queryRaw<CountRow[]>`
+  const rows = await client.$queryRaw<CountRow[]>`
     SELECT t."eventId",
            t."status"::text AS "status",
            u."gender"::text AS "gender",
@@ -61,7 +66,10 @@ export async function getOccupancyByEvent(
   return result;
 }
 
-export async function getEventOccupancy(eventId: string): Promise<Occupancy> {
-  const map = await getOccupancyByEvent([eventId]);
+export async function getEventOccupancy(
+  eventId: string,
+  client: QueryClient = prisma
+): Promise<Occupancy> {
+  const map = await getOccupancyByEvent([eventId], client);
   return map.get(eventId) ?? emptyOccupancy();
 }

@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { listAdminEvents } from "@/lib/actions/admin";
+import { formatDateTime as formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -8,13 +9,6 @@ function formatBRL(cents: number) {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
-}
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
 }
 
 const statusLabel: Record<string, string> = {

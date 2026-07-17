@@ -17,6 +17,7 @@ export type VerifiedUser = {
   email: string;
   name: string;
   role: "participant" | "admin";
+  tokenVersion: number;
 };
 
 /**
@@ -110,5 +111,6 @@ export async function verifyLogin(
     email: user.email,
     name: user.name,
     role: user.role,
+    tokenVersion: user.tokenVersion,
   };
 }

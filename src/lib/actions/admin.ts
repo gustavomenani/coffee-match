@@ -10,6 +10,7 @@ import { auditLog } from "@/lib/audit";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { parseCuid } from "@/lib/security/ids";
 import type { ActionResultWithId as ActionResult } from "@/lib/action-result";
+import { parseAppDateTimeLocal } from "@/lib/datetime";
 
 function parseEventForm(formData: FormData) {
   const priceReaisRaw = formData.get("priceReais");
@@ -37,9 +38,9 @@ function parseEventForm(formData: FormData) {
 }
 
 function parseEarlyAccess(raw: string | undefined): Date | null | "invalid" {
+  // Vazio = sem venda antecipada; preenchido é interpretado como horário SP.
   if (!raw) return null;
-  const d = new Date(raw);
-  return Number.isNaN(d.getTime()) ? "invalid" : d;
+  return parseAppDateTimeLocal(raw) ?? "invalid";
 }
 
 export async function createEvent(formData: FormData): Promise<ActionResult> {
@@ -50,9 +51,10 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   }
 
   const data = parsed.data;
-  const startsAt = new Date(data.startsAt);
-  const endsAt = new Date(data.endsAt);
-  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+  // datetime-local do form é interpretado como horário de São Paulo.
+  const startsAt = parseAppDateTimeLocal(data.startsAt);
+  const endsAt = parseAppDateTimeLocal(data.endsAt);
+  if (!startsAt || !endsAt) {
     return { ok: false, error: "Datas inválidas." };
   }
   if (endsAt <= startsAt) {
@@ -143,9 +145,10 @@ export async function updateEvent(
   }
 
   const data = parsed.data;
-  const startsAt = new Date(data.startsAt);
-  const endsAt = new Date(data.endsAt);
-  if (Number.isNaN(startsAt.getTime()) || Number.isNaN(endsAt.getTime())) {
+  // datetime-local do form é interpretado como horário de São Paulo.
+  const startsAt = parseAppDateTimeLocal(data.startsAt);
+  const endsAt = parseAppDateTimeLocal(data.endsAt);
+  if (!startsAt || !endsAt) {
     return { ok: false, error: "Datas inválidas." };
   }
   if (endsAt <= startsAt) {

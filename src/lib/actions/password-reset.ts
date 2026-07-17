@@ -157,7 +157,13 @@ export async function resetPassword(
   await prisma.$transaction([
     prisma.user.update({
       where: { id: record.userId },
-      data: { passwordHash, failedLoginCount: 0, lockedUntil: null },
+      data: {
+        passwordHash,
+        failedLoginCount: 0,
+        lockedUntil: null,
+        // Invalidate every existing session — a stolen JWT dies here.
+        tokenVersion: { increment: 1 },
+      },
     }),
     prisma.passwordResetToken.update({
       where: { id: record.id },

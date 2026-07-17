@@ -8,6 +8,7 @@ import { getEventBySlug } from "@/lib/actions/events";
 import { inEarlyAccessWindow } from "@/lib/domain/subscription";
 import { JsonLd } from "@/components/seo/json-ld";
 import { absoluteUrl, SITE, orgId } from "@/lib/seo";
+import { formatDateTimeLong } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
 
@@ -75,13 +76,6 @@ function formatBRL(cents: number) {
     style: "currency",
     currency: "BRL",
   }).format(cents / 100);
-}
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "full",
-    timeStyle: "short",
-  }).format(value);
 }
 
 const statusLabel: Record<string, string> = {
@@ -236,12 +230,12 @@ export default async function EventoDetailPage({
               </dt>
               <dd className="mt-2 text-base text-[var(--ink-soft)]">
                 <time dateTime={event.startsAt.toISOString()}>
-                  {formatDate(event.startsAt)}
+                  {formatDateTimeLong(event.startsAt)}
                 </time>
                 <span className="mt-1 block text-sm text-[var(--muted)]">
                   até{" "}
                   <time dateTime={event.endsAt.toISOString()}>
-                    {formatDate(event.endsAt)}
+                    {formatDateTimeLong(event.endsAt)}
                   </time>
                 </span>
               </dd>
@@ -317,7 +311,7 @@ export default async function EventoDetailPage({
               {earlyAccess ? (
                 <p className="flash-warning rounded-[var(--radius-sm)] px-4 py-3 text-sm">
                   <strong>Venda antecipada</strong> exclusiva para assinantes
-                  até {formatDate(event.earlyAccessUntil!)}.{" "}
+                  até {formatDateTimeLong(event.earlyAccessUntil!)}.{" "}
                   <Link
                     href="/assinatura"
                     className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"

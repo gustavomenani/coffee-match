@@ -3,6 +3,7 @@
 import Link from "next/link";
 import { useState } from "react";
 import { Button } from "@/components/ui/button";
+import { APP_TZ, formatWeekdayTime } from "@/lib/datetime";
 
 export type EventCardData = {
   title: string;
@@ -25,19 +26,26 @@ function formatBRL(cents: number) {
 
 function formatDate(value: Date | string) {
   const d = typeof value === "string" ? new Date(value) : value;
-  return new Intl.DateTimeFormat("pt-BR", {
-    weekday: "short",
-    day: "2-digit",
-    month: "short",
-    hour: "2-digit",
-    minute: "2-digit",
-  }).format(d);
+  return formatWeekdayTime(d);
+}
+
+const spDayParts = new Intl.DateTimeFormat("en-CA", {
+  timeZone: APP_TZ,
+  year: "numeric",
+  month: "2-digit",
+  day: "2-digit",
+});
+
+/** Número do dia-calendário de São Paulo (dias desde a época), para comparar datas. */
+function spDayNumber(d: Date): number {
+  const [y, m, day] = spDayParts.format(d).split("-").map(Number);
+  return Date.UTC(y, m - 1, day) / 86_400_000;
 }
 
 function relativeLabel(value: Date | string) {
   const d = typeof value === "string" ? new Date(value) : value;
-  const diff = d.getTime() - Date.now();
-  const days = Math.ceil(diff / (1000 * 60 * 60 * 24));
+  // Compara dias-calendário no fuso do evento (SP), não diff bruto de ms.
+  const days = spDayNumber(d) - spDayNumber(new Date());
   if (days < 0) return "Passado";
   if (days === 0) return "Hoje";
   if (days === 1) return "Amanhã";

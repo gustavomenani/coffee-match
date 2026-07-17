@@ -3,15 +3,9 @@ import { redirect } from "next/navigation";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { PageShell, EmptyState } from "@/components/ui/page-shell";
+import { formatDateTime as formatDate } from "@/lib/datetime";
 
 export const dynamic = "force-dynamic";
-
-function formatDate(value: Date) {
-  return new Intl.DateTimeFormat("pt-BR", {
-    dateStyle: "short",
-    timeStyle: "short",
-  }).format(value);
-}
 
 function toWhatsappUrl(phone: string): string {
   const digits = phone.replace(/\D/g, "");

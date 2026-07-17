@@ -37,6 +37,13 @@ vi.mock("@/lib/prisma", () => ({
     subscription: {
       findUnique: (...a: unknown[]) => subscriptionFindUnique(...a),
     },
+    // Sale transaction: run the callback with a tx exposing the same mocks
+    // so thrown errors (CapacityError) propagate like the real client.
+    $transaction: (fn: (tx: unknown) => unknown) =>
+      fn({
+        ticket: { create: (...a: unknown[]) => ticketCreate(...a) },
+        $queryRaw: () => Promise.resolve([]),
+      }),
   },
 }));
 vi.mock("@/lib/occupancy", () => ({

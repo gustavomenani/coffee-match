@@ -46,6 +46,8 @@ const EVENT_ID = "ckevent00000000000000001";
 const PAYMENT_ID = "12345678901";
 
 const ticketRow = {
+  status: "pending",
+  mpPaymentId: null,
   eventId: EVENT_ID,
   userId: "ckuser000000000000000001",
   user: { email: "ana@example.com" },
@@ -160,6 +162,24 @@ describe("POST /api/webhooks/mercadopago", () => {
     expect(ticketUpdateMany).not.toHaveBeenCalled();
     expect(sendEmailMock).not.toHaveBeenCalled();
     expect(syncSoldOutMock).toHaveBeenCalledWith(EVENT_ID);
+  });
+
+  it("flags a duplicate approved payment for an already-paid ticket", async () => {
+    ticketFindUnique.mockReset();
+    ticketFindUnique
+      .mockResolvedValueOnce(null) // no ticket carries THIS payment id
+      .mockResolvedValueOnce({
+        ...ticketRow,
+        status: "paid",
+        mpPaymentId: "999-original",
+      });
+    const res = await POST(webhookRequest());
+    expect(res.status).toBe(200);
+    expect(ticketUpdateMany).not.toHaveBeenCalled();
+    expect(sendEmailMock).not.toHaveBeenCalled();
+    expect(auditLogMock).toHaveBeenCalledWith(
+      expect.objectContaining({ action: "ticket.duplicate_payment" })
+    );
   });
 
   it("ignores non-approved payments", async () => {

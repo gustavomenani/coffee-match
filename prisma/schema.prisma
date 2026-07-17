@@ -88,6 +88,8 @@ model User {
   role             Role      @default(participant)
   failedLoginCount Int       @default(0)
   lockedUntil      DateTime?
+  /// Bumped on password reset — JWTs carrying an older version are rejected.
+  tokenVersion     Int       @default(0)
   createdAt        DateTime  @default(now())
   updatedAt        DateTime  @updatedAt
   tickets          Ticket[]

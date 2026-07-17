@@ -11,6 +11,7 @@ import { rateLimit } from "@/lib/rate-limit";
 import { clientIpFromHeaders } from "@/lib/security/ip";
 import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
+import { formatDateTime } from "@/lib/datetime";
 
 export async function POST(req: NextRequest) {
   const ip = clientIpFromHeaders(req.headers);
@@ -167,6 +168,8 @@ export async function POST(req: NextRequest) {
       const ticket = await prisma.ticket.findUnique({
         where: { id: ticketId },
         select: {
+          status: true,
+          mpPaymentId: true,
           eventId: true,
           userId: true,
           user: { select: { email: true } },
@@ -183,6 +186,27 @@ export async function POST(req: NextRequest) {
         },
       });
       if (!ticket) {
+        return NextResponse.json({ ok: true });
+      }
+
+      // A DIFFERENT approved payment for an already-paid ticket is a
+      // duplicate charge. Never overwrite mpPaymentId (it would orphan the
+      // original payment for refunds) — flag loudly for manual refund.
+      if (ticket.status === "paid" && ticket.mpPaymentId !== String(paymentId)) {
+        await auditLog({
+          actorId: ticket.userId,
+          action: "ticket.duplicate_payment",
+          meta: {
+            ticketId,
+            originalPaymentId: ticket.mpPaymentId,
+            duplicatePaymentId: String(paymentId),
+            eventId: ticket.eventId,
+          },
+        });
+        console.error("[mp-webhook] duplicate approved payment", {
+          ticketId,
+          duplicatePaymentId: String(paymentId),
+        });
         return NextResponse.json({ ok: true });
       }
 
@@ -215,10 +239,13 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
+      // Only a pending ticket may transition to paid here — same-payment
+      // retries are handled by the mpPaymentId lookup above, and paid
+      // tickets with another payment are flagged as duplicates.
       const updated = await prisma.ticket.updateMany({
         where: {
           id: ticketId,
-          status: { in: ["pending", "paid"] },
+          status: "pending",
         },
         data: {
           status: "paid",
@@ -240,7 +267,7 @@ export async function POST(req: NextRequest) {
         await sendTicketPaidEmail({
           to: ticket.user.email,
           eventTitle: ticket.event.title,
-          eventWhen: ticket.event.startsAt.toLocaleString("pt-BR"),
+          eventWhen: formatDateTime(ticket.event.startsAt),
           venue: `${ticket.event.venue}, ${ticket.event.city}`,
           ticketId,
         });

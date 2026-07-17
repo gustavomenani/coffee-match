@@ -1,3 +1,5 @@
+import { toDateTimeLocalValue } from "@/lib/datetime";
+
 export type EventFormDefaults = {
   title?: string;
   slug?: string;
@@ -17,8 +19,8 @@ function toDatetimeLocal(value?: string) {
   if (!value) return "";
   const d = new Date(value);
   if (Number.isNaN(d.getTime())) return value.slice(0, 16);
-  const pad = (n: number) => String(n).padStart(2, "0");
-  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}T${pad(d.getHours())}:${pad(d.getMinutes())}`;
+  // Sempre exibe o horário de São Paulo, independente do TZ do runtime.
+  return toDateTimeLocalValue(d);
 }
 
 const statuses = [
