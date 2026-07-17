@@ -6,29 +6,9 @@ import { prisma } from "@/lib/prisma";
 import { eventFormSchema } from "@/lib/validations/event";
 import { requireAdminOrThrow } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
-
-function bustPublicEventCache(slug?: string) {
-  revalidatePath("/eventos");
-  revalidatePath("/");
-  if (slug) revalidatePath(`/eventos/${slug}`);
-}
+import { bustEventCaches } from "@/lib/cache-bust";
 import { parseCuid } from "@/lib/security/ids";
-
-export type ActionResult =
-  | { ok: true; id?: string }
-  | { ok: false; error: string };
-
-/** Page/server helper — always re-checks role in DB via authz. */
-export async function requireAdmin() {
-  const result = await requireAdminOrThrow();
-  return {
-    session: { user: result.user },
-    membership: {
-      organizationId: result.membership.organizationId,
-      organization: result.membership.organization,
-    },
-  };
-}
+import type { ActionResultWithId as ActionResult } from "@/lib/action-result";
 
 function parseEventForm(formData: FormData) {
   const priceReaisRaw = formData.get("priceReais");
@@ -55,7 +35,7 @@ function parseEventForm(formData: FormData) {
 }
 
 export async function createEvent(formData: FormData): Promise<ActionResult> {
-  const { membership, session } = await requireAdmin();
+  const { membership, user } = await requireAdminOrThrow();
   const parsed = parseEventForm(formData);
   if (!parsed.success) {
     return { ok: false, error: "Dados inválidos." };
@@ -110,12 +90,12 @@ export async function createEvent(formData: FormData): Promise<ActionResult> {
   });
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "event.create",
     meta: { eventId: event.id, slug: event.slug },
   });
 
-  bustPublicEventCache(event.slug);
+  bustEventCaches(event.slug);
   revalidatePath("/admin/eventos");
   revalidatePath("/admin");
   return { ok: true, id: event.id };
@@ -125,7 +105,7 @@ export async function updateEvent(
   rawId: string,
   formData: FormData
 ): Promise<ActionResult> {
-  const { session, membership } = await requireAdmin();
+  const { membership, user } = await requireAdminOrThrow();
   const id = parseCuid(rawId);
   if (!id) {
     return { ok: false, error: "Evento inválido." };
@@ -180,29 +160,45 @@ export async function updateEvent(
   });
 
   await auditLog({
-    actorId: session.user.id,
+    actorId: user.id,
     action: "event.update",
     meta: { eventId: id, slug: data.slug },
   });
 
-  bustPublicEventCache(data.slug);
-  if (current.slug !== data.slug) bustPublicEventCache(current.slug);
+  bustEventCaches(data.slug);
+  if (current.slug !== data.slug) bustEventCaches(current.slug);
   revalidatePath("/admin/eventos");
   revalidatePath(`/admin/eventos/${id}`);
   revalidatePath("/admin");
   return { ok: true, id };
 }
 
-export async function listAdminEvents() {
-  const { membership } = await requireAdmin();
-  return prisma.event.findMany({
-    where: { organizationId: membership.organizationId },
-    orderBy: { startsAt: "desc" },
-    include: {
-      _count: { select: { tickets: true } },
-      session: { select: { status: true } },
-    },
-  });
+// Not exported: "use server" modules may only export async functions.
+const ADMIN_EVENTS_PAGE_SIZE = 20;
+
+export async function listAdminEvents(page = 1) {
+  const { membership } = await requireAdminOrThrow();
+  const safePage = Number.isFinite(page) && page >= 1 ? Math.floor(page) : 1;
+  const [events, total] = await Promise.all([
+    prisma.event.findMany({
+      where: { organizationId: membership.organizationId },
+      orderBy: { startsAt: "desc" },
+      skip: (safePage - 1) * ADMIN_EVENTS_PAGE_SIZE,
+      take: ADMIN_EVENTS_PAGE_SIZE,
+      include: {
+        _count: { select: { tickets: true } },
+        session: { select: { status: true } },
+      },
+    }),
+    prisma.event.count({
+      where: { organizationId: membership.organizationId },
+    }),
+  ]);
+  return {
+    events,
+    page: safePage,
+    totalPages: Math.max(1, Math.ceil(total / ADMIN_EVENTS_PAGE_SIZE)),
+  };
 }
 
 export async function createEventAction(formData: FormData) {

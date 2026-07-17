@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { EventForm } from "@/components/events/event-form";
-import { createEventAction, requireAdmin } from "@/lib/actions/admin";
+import { createEventAction } from "@/lib/actions/admin";
+import { requireAdminOrThrow } from "@/lib/authz";
 
 export const dynamic = "force-dynamic";
 
@@ -9,7 +10,7 @@ export default async function NovoEventoPage({
 }: {
   searchParams: Promise<{ error?: string }>;
 }) {
-  await requireAdmin();
+  await requireAdminOrThrow();
   const params = await searchParams;
 
   return (
@@ -31,7 +32,7 @@ export default async function NovoEventoPage({
         </p>
 
         {params.error ? (
-          <p className="mt-5 rounded-[var(--radius-sm)] flash-error rounded-[var(--radius-sm)] px-3 py-2 text-sm">
+          <p role="alert" className="flash-error mt-5 rounded-[var(--radius-sm)] px-3 py-2 text-sm">
             {params.error}
           </p>
         ) : null}

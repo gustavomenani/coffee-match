@@ -6,15 +6,14 @@ import {
   isPendingTicketExpired,
   resolveCheckoutTicket,
 } from "@/lib/domain/checkout";
-import {
-  getEventOccupancy,
-  syncEventSoldOutStatus,
-} from "@/lib/actions/tickets";
+import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
+import { getEventOccupancy } from "@/lib/occupancy";
 import {
   createTicketPreference,
   isMpDevBypass,
 } from "@/lib/mercadopago";
 import { rateLimit } from "@/lib/rate-limit";
+import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
@@ -23,7 +22,7 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ error: "Não autenticado." }, { status: 401 });
   }
 
-  if (!rateLimit(`checkout:${session.user.id}`, 10, 60_000)) {
+  if (!(await rateLimit(`checkout:${session.user.id}`, 10, 60_000))) {
     return NextResponse.json(
       { error: "Muitas tentativas. Aguarde um momento." },
       { status: 429 }
@@ -31,7 +30,6 @@ export async function POST(req: NextRequest) {
   }
 
   const body = await req.json().catch(() => null);
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(body?.eventId);
   if (!eventId) {
     return NextResponse.json({ error: "eventId inválido." }, { status: 400 });

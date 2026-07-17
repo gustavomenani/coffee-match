@@ -2,7 +2,15 @@
 
 import { unstable_cache } from "next/cache";
 import { prisma } from "@/lib/prisma";
-import { remainingSpots, type Occupancy } from "@/lib/domain/capacity";
+import {
+  emptyOccupancy,
+  remainingSpots,
+  type Occupancy,
+} from "@/lib/domain/capacity";
+import { getOccupancyByEvent, getEventOccupancy } from "@/lib/occupancy";
+
+/** Hard cap for the public listing — the agenda is only upcoming nights. */
+const MAX_PUBLIC_EVENTS = 60;
 
 export type EventWithSpots = {
   id: string;
@@ -22,27 +30,6 @@ export type EventWithSpots = {
   remainingWomen: number;
 };
 
-function occupancyFromTickets(
-  tickets: { status: string; user: { gender: string } }[]
-): Occupancy {
-  const occ: Occupancy = {
-    paidMen: 0,
-    paidWomen: 0,
-    pendingMen: 0,
-    pendingWomen: 0,
-  };
-  for (const t of tickets) {
-    if (t.status === "paid") {
-      if (t.user.gender === "male") occ.paidMen += 1;
-      else occ.paidWomen += 1;
-    } else if (t.status === "pending") {
-      if (t.user.gender === "male") occ.pendingMen += 1;
-      else occ.pendingWomen += 1;
-    }
-  }
-  return occ;
-}
-
 function withSpots<
   T extends {
     id: string;
@@ -60,26 +47,18 @@ function withSpots<
   };
 }
 
-/** Single query: events + tickets (no N+1). */
+/** Two queries total: events + aggregated occupancy (no ticket fan-out). */
 async function fetchPublishedEventsWithSpots(): Promise<EventWithSpots[]> {
   const events = await prisma.event.findMany({
     where: { status: { in: ["published", "sold_out", "live"] } },
     orderBy: { startsAt: "asc" },
-    include: {
-      tickets: {
-        where: { status: { in: ["pending", "paid"] } },
-        select: {
-          status: true,
-          user: { select: { gender: true } },
-        },
-      },
-    },
+    take: MAX_PUBLIC_EVENTS,
   });
 
-  return events.map((row) => {
-    const { tickets, ...event } = row;
-    return withSpots(event, occupancyFromTickets(tickets));
-  });
+  const occupancy = await getOccupancyByEvent(events.map((e) => e.id));
+  return events.map((event) =>
+    withSpots(event, occupancy.get(event.id) ?? emptyOccupancy())
+  );
 }
 
 /**
@@ -89,7 +68,7 @@ async function fetchPublishedEventsWithSpots(): Promise<EventWithSpots[]> {
 export async function listPublishedEvents(): Promise<EventWithSpots[]> {
   return unstable_cache(
     fetchPublishedEventsWithSpots,
-    ["published-events-with-spots-v1"],
+    ["published-events-with-spots-v2"],
     { revalidate: 30 }
   )();
 }
@@ -101,26 +80,14 @@ export async function getEventBySlug(
 
   return unstable_cache(
     async () => {
-      const row = await prisma.event.findUnique({
-        where: { slug },
-        include: {
-          tickets: {
-            where: { status: { in: ["pending", "paid"] } },
-            select: {
-              status: true,
-              user: { select: { gender: true } },
-            },
-          },
-        },
-      });
-      if (!row) return null;
-      if (!["published", "sold_out", "live", "closed"].includes(row.status)) {
+      const event = await prisma.event.findUnique({ where: { slug } });
+      if (!event) return null;
+      if (!["published", "sold_out", "live", "closed"].includes(event.status)) {
         return null;
       }
-      const { tickets, ...event } = row;
-      return withSpots(event, occupancyFromTickets(tickets));
+      return withSpots(event, await getEventOccupancy(event.id));
     },
-    [`event-slug-v1-${slug}`],
+    [`event-slug-v2-${slug}`],
     { revalidate: 20 }
   )();
 }

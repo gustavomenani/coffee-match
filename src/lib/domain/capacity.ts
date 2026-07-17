@@ -12,6 +12,32 @@ export type Occupancy = {
   pendingWomen: number;
 };
 
+export function emptyOccupancy(): Occupancy {
+  return { paidMen: 0, paidWomen: 0, pendingMen: 0, pendingWomen: 0 };
+}
+
+export type OccupancyCountRow = {
+  status: string;
+  gender: string;
+  count: number;
+};
+
+/** Build an Occupancy from SQL GROUP BY (status, gender) count rows. */
+export function occupancyFromCounts(rows: OccupancyCountRow[]): Occupancy {
+  const occ = emptyOccupancy();
+  for (const row of rows) {
+    const isMale = row.gender === "male";
+    if (row.status === "paid") {
+      if (isMale) occ.paidMen += row.count;
+      else occ.paidWomen += row.count;
+    } else if (row.status === "pending") {
+      if (isMale) occ.pendingMen += row.count;
+      else occ.pendingWomen += row.count;
+    }
+  }
+  return occ;
+}
+
 export function remainingSpots(
   event: CapacityEvent,
   gender: Gender,

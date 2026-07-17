@@ -3,7 +3,7 @@ import { redirect } from "next/navigation";
 import { revalidatePath } from "next/cache";
 import { prisma } from "@/lib/prisma";
 import { toDataUrl } from "@/lib/qr";
-import { requireAdmin } from "@/lib/actions/admin";
+import { requireAdminOrThrow } from "@/lib/authz";
 import { closeVoting, openVoting } from "@/lib/actions/admin-session";
 import {
   CheckInList,
@@ -58,7 +58,7 @@ export default async function NoitePage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; ok?: string }>;
 }) {
-  const { membership } = await requireAdmin();
+  const { membership } = await requireAdminOrThrow();
   const { id: rawEventId } = await params;
   const query = await searchParams;
   const eventId = parseCuid(rawEventId);

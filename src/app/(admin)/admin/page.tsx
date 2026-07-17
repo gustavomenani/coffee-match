@@ -1,5 +1,5 @@
 import Link from "next/link";
-import { requireAdmin } from "@/lib/actions/admin";
+import { requireAdminOrThrow } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 
 export const dynamic = "force-dynamic";
@@ -12,7 +12,7 @@ function formatDate(value: Date) {
 }
 
 export default async function AdminDashboardPage() {
-  const { membership } = await requireAdmin();
+  const { membership } = await requireAdminOrThrow();
   const orgId = membership.organizationId;
   const now = new Date();
 

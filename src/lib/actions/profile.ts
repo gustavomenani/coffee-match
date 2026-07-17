@@ -16,7 +16,7 @@ import {
   cleanText,
 } from "@/lib/security/sanitize";
 
-export type ActionResult = { ok: true } | { ok: false; error: string };
+import type { ActionResult } from "@/lib/action-result";
 
 export async function registerUser(formData: FormData): Promise<ActionResult> {
   const ipHint = String(formData.get("_hp") ?? "");
@@ -25,7 +25,7 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
     return { ok: false, error: "Dados inválidos." };
   }
 
-  if (!rateLimit("register:global", 30, 60_000)) {
+  if (!(await rateLimit("register:global", 30, 60_000))) {
     return { ok: false, error: "Muitas tentativas. Aguarde um momento." };
   }
 
@@ -53,7 +53,7 @@ export async function registerUser(formData: FormData): Promise<ActionResult> {
   }
 
   const email = cleanEmail(parsed.data.email);
-  if (!rateLimit(`register:${email}`, 5, 60 * 60_000)) {
+  if (!(await rateLimit(`register:${email}`, 5, 60 * 60_000))) {
     return { ok: false, error: "Muitas tentativas para este e-mail." };
   }
 

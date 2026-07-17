@@ -3,11 +3,21 @@ import { Payment, MercadoPagoConfig } from "mercadopago";
 import { prisma } from "@/lib/prisma";
 import { syncEventSoldOutStatus } from "@/lib/actions/tickets";
 import { verifyMercadoPagoSignature } from "@/lib/mp-webhook";
+import { isPaymentAmountValid } from "@/lib/domain/payment";
 import { isProduction } from "@/lib/env";
 import { auditLog } from "@/lib/audit";
+import { rateLimit } from "@/lib/rate-limit";
+import { clientIpFromHeaders } from "@/lib/security/ip";
+import { parseCuid } from "@/lib/security/ids";
 import { sendTicketPaidEmail } from "@/lib/notify";
 
 export async function POST(req: NextRequest) {
+  const ip = clientIpFromHeaders(req.headers);
+  if (!(await rateLimit(`mp-webhook:${ip}`, 60, 60_000))) {
+    // MP retries with backoff, so throttling floods is safe.
+    return NextResponse.json({ error: "rate_limited" }, { status: 429 });
+  }
+
   const body = await req.json().catch(() => null);
   const paymentId =
     body?.data?.id?.toString() ||
@@ -47,7 +57,6 @@ export async function POST(req: NextRequest) {
   try {
     const client = new MercadoPagoConfig({ accessToken: token });
     const payment = await new Payment(client).get({ id: paymentId });
-    const { parseCuid } = await import("@/lib/security/ids");
     const ticketId = parseCuid(payment.external_reference);
     if (!ticketId) {
       return NextResponse.json({ ok: true });
@@ -63,6 +72,57 @@ export async function POST(req: NextRequest) {
         return NextResponse.json({ ok: true });
       }
 
+      const ticket = await prisma.ticket.findUnique({
+        where: { id: ticketId },
+        select: {
+          eventId: true,
+          userId: true,
+          user: { select: { email: true } },
+          event: {
+            select: {
+              title: true,
+              startsAt: true,
+              venue: true,
+              city: true,
+              priceCents: true,
+              currency: true,
+            },
+          },
+        },
+      });
+      if (!ticket) {
+        return NextResponse.json({ ok: true });
+      }
+
+      // Only honor payments that charged the exact event price.
+      const amountOk = isPaymentAmountValid(
+        {
+          transactionAmount: payment.transaction_amount,
+          currencyId: payment.currency_id,
+        },
+        ticket.event
+      );
+      if (!amountOk) {
+        await auditLog({
+          actorId: ticket.userId,
+          action: "ticket.payment_amount_mismatch",
+          meta: {
+            ticketId,
+            paymentId: String(paymentId),
+            transactionAmount: payment.transaction_amount ?? null,
+            currencyId: payment.currency_id ?? null,
+            expectedCents: ticket.event.priceCents,
+            expectedCurrency: ticket.event.currency,
+          },
+        });
+        console.error("[mp-webhook] payment amount mismatch", {
+          ticketId,
+          paymentId: String(paymentId),
+        });
+        // 200 so MP does not retry a payment we will never accept.
+        return NextResponse.json({ ok: true });
+      }
+
       const updated = await prisma.ticket.updateMany({
         where: {
           id: ticketId,
@@ -75,41 +135,23 @@ export async function POST(req: NextRequest) {
       });
 
       if (updated.count > 0) {
-        const ticket = await prisma.ticket.findUnique({
-          where: { id: ticketId },
-          select: {
-            eventId: true,
-            userId: true,
-            user: { select: { email: true } },
-            event: {
-              select: {
-                title: true,
-                startsAt: true,
-                venue: true,
-                city: true,
-              },
-            },
+        await syncEventSoldOutStatus(ticket.eventId);
+        await auditLog({
+          actorId: ticket.userId,
+          action: "ticket.paid",
+          meta: {
+            ticketId,
+            paymentId: String(paymentId),
+            eventId: ticket.eventId,
           },
         });
-        if (ticket) {
-          await syncEventSoldOutStatus(ticket.eventId);
-          await auditLog({
-            actorId: ticket.userId,
-            action: "ticket.paid",
-            meta: {
-              ticketId,
-              paymentId: String(paymentId),
-              eventId: ticket.eventId,
-            },
-          });
-          await sendTicketPaidEmail({
-            to: ticket.user.email,
-            eventTitle: ticket.event.title,
-            eventWhen: ticket.event.startsAt.toLocaleString("pt-BR"),
-            venue: `${ticket.event.venue}, ${ticket.event.city}`,
-            ticketId,
-          });
-        }
+        await sendTicketPaidEmail({
+          to: ticket.user.email,
+          eventTitle: ticket.event.title,
+          eventWhen: ticket.event.startsAt.toLocaleString("pt-BR"),
+          venue: `${ticket.event.venue}, ${ticket.event.city}`,
+          ticketId,
+        });
       }
     }
   } catch (err) {

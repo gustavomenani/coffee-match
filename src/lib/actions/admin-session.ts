@@ -5,11 +5,10 @@ import { prisma } from "@/lib/prisma";
 import { computeMutualMatches } from "@/lib/domain/matching";
 import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
-
-export type ActionResult = { ok: true } | { ok: false; error: string };
+import { parseCuid } from "@/lib/security/ids";
+import type { ActionResult } from "@/lib/action-result";
 
 export async function checkInTicket(rawTicketId: string): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const ticketId = parseCuid(rawTicketId);
   if (!ticketId) return { ok: false, error: "Ingresso inválido." };
 
@@ -50,7 +49,6 @@ export async function checkInByTicketId(
   rawEventId: string,
   rawTicketId: string
 ): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   const id = parseCuid(rawTicketId.trim());
   if (!eventId || !id) {
@@ -95,7 +93,6 @@ export async function checkInByTicketId(
 }
 
 export async function openVoting(rawEventId: string): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) return { ok: false, error: "Evento inválido." };
 
@@ -144,7 +141,6 @@ export async function openVoting(rawEventId: string): Promise<ActionResult> {
 }
 
 export async function closeVoting(rawEventId: string): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) return { ok: false, error: "Evento inválido." };
 

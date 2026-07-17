@@ -1,10 +1,8 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { EventForm } from "@/components/events/event-form";
-import {
-  requireAdmin,
-  updateEventAction,
-} from "@/lib/actions/admin";
+import { updateEventAction } from "@/lib/actions/admin";
+import { requireAdminOrThrow } from "@/lib/authz";
 import { prisma } from "@/lib/prisma";
 import { parseCuid } from "@/lib/security/ids";
 
@@ -24,7 +22,7 @@ export default async function AdminEventoEditPage({
   params: Promise<{ id: string }>;
   searchParams: Promise<{ error?: string; saved?: string }>;
 }) {
-  const { membership } = await requireAdmin();
+  const { membership } = await requireAdminOrThrow();
   const { id: rawId } = await params;
   const query = await searchParams;
   const id = parseCuid(rawId);

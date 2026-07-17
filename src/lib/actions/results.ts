@@ -4,6 +4,7 @@ import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canViewResults } from "@/lib/domain/eligibility";
 import { requireAdmin } from "@/lib/authz";
+import { parseCuid } from "@/lib/security/ids";
 
 export type MatchContact = {
   matchId: string;
@@ -54,7 +55,6 @@ async function loadEligibleTicket(eventId: string, userId: string) {
 }
 
 export async function getMyMatches(rawEventId: string): Promise<MyMatchesResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) return { ok: false, error: "Evento inválido." };
 
@@ -118,7 +118,6 @@ export async function getMyMatches(rawEventId: string): Promise<MyMatchesResult>
 }
 
 export async function getWhoLikedMe(rawEventId: string): Promise<WhoLikedMeResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) return { ok: false, error: "Evento inválido." };
 
@@ -168,7 +167,6 @@ export async function getWhoLikedMe(rawEventId: string): Promise<WhoLikedMeResul
 export async function getAdminSessionMatches(
   rawEventId: string
 ): Promise<AdminMatchesResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) return { ok: false, error: "Evento inválido." };
 

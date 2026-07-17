@@ -4,8 +4,9 @@ import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
 import { canVote, oppositeGender } from "@/lib/domain/eligibility";
-
-export type ActionResult = { ok: true } | { ok: false; error: string };
+import { rateLimit } from "@/lib/rate-limit";
+import { parseCuid } from "@/lib/security/ids";
+import type { ActionResult } from "@/lib/action-result";
 
 export type BallotCandidate = {
   id: string;
@@ -33,7 +34,6 @@ export async function castVote(input: {
   toUserId: string;
   interest: "yes" | "no";
 }): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(input.eventId);
   const toUserId = parseCuid(input.toUserId);
   if (!eventId || !toUserId) {
@@ -52,17 +52,30 @@ export async function castVote(input: {
     return { ok: false, error: "Voto inválido." };
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  if (!(await rateLimit(`vote:${session.user.id}`, 60, 60_000))) {
+    return { ok: false, error: "Muitos votos seguidos. Aguarde um momento." };
+  }
+
+  const [user, ticket, eventSession, target, targetTicket] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.ticket.findFirst({
+      where: { eventId, userId: session.user.id, status: "paid" },
+    }),
+    prisma.eventSession.findUnique({ where: { eventId } }),
+    prisma.user.findUnique({ where: { id: toUserId } }),
+    prisma.ticket.findFirst({
+      where: {
+        eventId,
+        userId: toUserId,
+        status: "paid",
+        checkedInAt: { not: null },
+      },
+    }),
+  ]);
+
   if (!user) {
     return { ok: false, error: "Não autenticado." };
   }
-
-  const ticket = await prisma.ticket.findFirst({
-    where: { eventId, userId: user.id, status: "paid" },
-  });
-  const eventSession = await prisma.eventSession.findUnique({
-    where: { eventId },
-  });
 
   if (
     !ticket ||
@@ -77,19 +90,10 @@ export async function castVote(input: {
     return { ok: false, error: "Você não pode votar agora." };
   }
 
-  const target = await prisma.user.findUnique({ where: { id: toUserId } });
   if (!target || target.gender !== oppositeGender(user.gender)) {
     return { ok: false, error: "Voto inválido." };
   }
 
-  const targetTicket = await prisma.ticket.findFirst({
-    where: {
-      eventId,
-      userId: target.id,
-      status: "paid",
-      checkedInAt: { not: null },
-    },
-  });
   if (!targetTicket) {
     return { ok: false, error: "Pessoa não está no evento." };
   }
@@ -116,7 +120,6 @@ export async function castVote(input: {
 }
 
 export async function getBallot(rawEventId: string): Promise<BallotResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const eventId = parseCuid(rawEventId);
   if (!eventId) {
     return { ok: false, error: "Evento não encontrado." };
@@ -127,19 +130,23 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
     return { ok: false, error: "Faça login para votar.", code: "auth" };
   }
 
-  const user = await prisma.user.findUnique({ where: { id: session.user.id } });
+  const [user, event, ticket, eventSession] = await Promise.all([
+    prisma.user.findUnique({ where: { id: session.user.id } }),
+    prisma.event.findUnique({ where: { id: eventId } }),
+    prisma.ticket.findFirst({
+      where: { eventId, userId: session.user.id, status: "paid" },
+    }),
+    prisma.eventSession.findUnique({ where: { eventId } }),
+  ]);
+
   if (!user) {
     return { ok: false, error: "Faça login para votar.", code: "auth" };
   }
 
-  const event = await prisma.event.findUnique({ where: { id: eventId } });
   if (!event) {
     return { ok: false, error: "Evento não encontrado." };
   }
 
-  const ticket = await prisma.ticket.findFirst({
-    where: { eventId, userId: user.id, status: "paid" },
-  });
   if (!ticket) {
     return {
       ok: false,
@@ -163,9 +170,6 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
     };
   }
 
-  const eventSession = await prisma.eventSession.findUnique({
-    where: { eventId },
-  });
   if (!eventSession || eventSession.status !== "voting_open") {
     const msg =
       eventSession?.status === "voting_closed"
@@ -175,26 +179,27 @@ export async function getBallot(rawEventId: string): Promise<BallotResult> {
   }
 
   const targetGender = oppositeGender(user.gender);
-  const tickets = await prisma.ticket.findMany({
-    where: {
-      eventId,
-      status: "paid",
-      checkedInAt: { not: null },
-      user: { gender: targetGender },
-    },
-    include: {
-      user: { select: { id: true, name: true, photoUrl: true } },
-    },
-    orderBy: { user: { name: "asc" } },
-  });
-
-  const existingVotes = await prisma.vote.findMany({
-    where: {
-      sessionId: eventSession.id,
-      fromUserId: user.id,
-    },
-    select: { toUserId: true, interest: true },
-  });
+  const [tickets, existingVotes] = await Promise.all([
+    prisma.ticket.findMany({
+      where: {
+        eventId,
+        status: "paid",
+        checkedInAt: { not: null },
+        user: { gender: targetGender },
+      },
+      include: {
+        user: { select: { id: true, name: true, photoUrl: true } },
+      },
+      orderBy: { user: { name: "asc" } },
+    }),
+    prisma.vote.findMany({
+      where: {
+        sessionId: eventSession.id,
+        fromUserId: user.id,
+      },
+      select: { toUserId: true, interest: true },
+    }),
+  ]);
 
   return {
     ok: true,

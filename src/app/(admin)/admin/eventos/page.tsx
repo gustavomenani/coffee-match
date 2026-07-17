@@ -25,8 +25,14 @@ const statusLabel: Record<string, string> = {
   closed: "Encerrado",
 };
 
-export default async function AdminEventosPage() {
-  const events = await listAdminEvents();
+export default async function AdminEventosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
+  const query = await searchParams;
+  const requestedPage = Number(query.page ?? "1");
+  const { events, page, totalPages } = await listAdminEvents(requestedPage);
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -111,6 +117,37 @@ export default async function AdminEventosPage() {
           </table>
         </div>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Paginação de eventos"
+          className="mt-8 flex items-center justify-between gap-4"
+        >
+          {page > 1 ? (
+            <Link
+              href={`/admin/eventos?page=${page - 1}`}
+              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            >
+              ← Anteriores
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-sm text-[var(--muted)]">
+            Página {page} de {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/admin/eventos?page=${page + 1}`}
+              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            >
+              Próximos →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </main>
   );
 }

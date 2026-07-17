@@ -1,15 +1,22 @@
+import { prisma } from "@/lib/prisma";
+
 type Bucket = { count: number; resetAt: number };
 
-const buckets = new Map<string, Bucket>();
+/** In-memory fallback for when the DB is unreachable (best-effort per instance). */
+const memoryBuckets = new Map<string, Bucket>();
 
-/** Periodic cleanup to avoid unbounded memory growth */
+/** Periodic cleanup to avoid unbounded growth (memory map + expired DB rows). */
 let lastSweep = 0;
 function sweep(now: number) {
   if (now - lastSweep < 60_000) return;
   lastSweep = now;
-  for (const [k, b] of buckets) {
-    if (now > b.resetAt) buckets.delete(k);
+  for (const [k, b] of memoryBuckets) {
+    if (now > b.resetAt) memoryBuckets.delete(k);
   }
+  // Fire-and-forget: expired rows are harmless, this just keeps the table small.
+  prisma.rateLimitBucket
+    .deleteMany({ where: { resetAt: { lt: new Date(now - 60_000) } } })
+    .catch(() => {});
 }
 
 export type RateLimitResult = {
@@ -18,22 +25,42 @@ export type RateLimitResult = {
   resetAt: number;
 };
 
-/**
- * Sliding fixed-window counter. For multi-instance deploy, replace with Redis.
- */
-export function rateLimit(
+function memoryRateLimit(
   key: string,
   limit: number,
-  windowMs: number
-): boolean {
-  return rateLimitDetailed(key, limit, windowMs).ok;
+  windowMs: number,
+  now: number
+): RateLimitResult {
+  const b = memoryBuckets.get(key);
+  if (!b || now > b.resetAt) {
+    memoryBuckets.set(key, { count: 1, resetAt: now + windowMs });
+    return { ok: true, remaining: limit - 1, resetAt: now + windowMs };
+  }
+  if (b.count >= limit) {
+    return { ok: false, remaining: 0, resetAt: b.resetAt };
+  }
+  b.count += 1;
+  return { ok: true, remaining: limit - b.count, resetAt: b.resetAt };
 }
 
-export function rateLimitDetailed(
+export async function rateLimit(
   key: string,
   limit: number,
   windowMs: number
-): RateLimitResult {
+): Promise<boolean> {
+  return (await rateLimitDetailed(key, limit, windowMs)).ok;
+}
+
+/**
+ * Fixed-window counter backed by Postgres so limits hold across
+ * serverless/multi-instance deploys. Falls back to a per-instance
+ * in-memory bucket if the DB write fails.
+ */
+export async function rateLimitDetailed(
+  key: string,
+  limit: number,
+  windowMs: number
+): Promise<RateLimitResult> {
   if (
     process.env.E2E_DISABLE_RATE_LIMIT === "1" ||
     process.env.AUTH_SECRET?.includes("e2e-auth-secret")
@@ -43,14 +70,32 @@ export function rateLimitDetailed(
 
   const now = Date.now();
   sweep(now);
-  const b = buckets.get(key);
-  if (!b || now > b.resetAt) {
-    buckets.set(key, { count: 1, resetAt: now + windowMs });
-    return { ok: true, remaining: limit - 1, resetAt: now + windowMs };
+
+  try {
+    // Single atomic upsert: start a new window when the old one expired,
+    // otherwise increment the current counter.
+    const rows = await prisma.$queryRaw<{ count: number; resetAt: Date }[]>`
+      INSERT INTO "RateLimitBucket" ("key", "count", "resetAt")
+      VALUES (${key}, 1, ${new Date(now + windowMs)})
+      ON CONFLICT ("key") DO UPDATE SET
+        "count" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= ${new Date(now)} THEN 1
+          ELSE "RateLimitBucket"."count" + 1
+        END,
+        "resetAt" = CASE
+          WHEN "RateLimitBucket"."resetAt" <= ${new Date(now)} THEN ${new Date(now + windowMs)}
+          ELSE "RateLimitBucket"."resetAt"
+        END
+      RETURNING "count", "resetAt"
+    `;
+    const row = rows[0];
+    if (!row) return memoryRateLimit(key, limit, windowMs, now);
+    return {
+      ok: row.count <= limit,
+      remaining: Math.max(0, limit - row.count),
+      resetAt: row.resetAt.getTime(),
+    };
+  } catch {
+    return memoryRateLimit(key, limit, windowMs, now);
   }
-  if (b.count >= limit) {
-    return { ok: false, remaining: 0, resetAt: b.resetAt };
-  }
-  b.count += 1;
-  return { ok: true, remaining: limit - b.count, resetAt: b.resetAt };
 }

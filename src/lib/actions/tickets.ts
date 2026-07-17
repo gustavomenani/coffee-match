@@ -3,51 +3,11 @@
 import { revalidatePath } from "next/cache";
 import { auth } from "@/lib/auth";
 import { prisma } from "@/lib/prisma";
-import {
-  shouldMarkSoldOut,
-  type Occupancy,
-} from "@/lib/domain/capacity";
-
-function bustEventCaches(slug?: string) {
-  revalidatePath("/eventos");
-  revalidatePath("/");
-  if (slug) revalidatePath(`/eventos/${slug}`);
-}
-
-export type ActionResult = { ok: true } | { ok: false; error: string };
-
-export async function getEventOccupancy(eventId: string): Promise<Occupancy> {
-  const tickets = await prisma.ticket.findMany({
-    where: {
-      eventId,
-      status: { in: ["pending", "paid"] },
-    },
-    select: {
-      status: true,
-      user: { select: { gender: true } },
-    },
-  });
-
-  const occ: Occupancy = {
-    paidMen: 0,
-    paidWomen: 0,
-    pendingMen: 0,
-    pendingWomen: 0,
-  };
-
-  for (const t of tickets) {
-    const isMale = t.user.gender === "male";
-    if (t.status === "paid") {
-      if (isMale) occ.paidMen += 1;
-      else occ.paidWomen += 1;
-    } else {
-      if (isMale) occ.pendingMen += 1;
-      else occ.pendingWomen += 1;
-    }
-  }
-
-  return occ;
-}
+import { shouldMarkSoldOut } from "@/lib/domain/capacity";
+import { getEventOccupancy } from "@/lib/occupancy";
+import { bustEventCaches } from "@/lib/cache-bust";
+import { parseCuid } from "@/lib/security/ids";
+import type { ActionResult } from "@/lib/action-result";
 
 /** Mark published → sold_out when both genders are full; reverse when capacity frees. */
 export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
@@ -76,7 +36,6 @@ export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
 export async function cancelPendingTicket(
   rawTicketId: string
 ): Promise<ActionResult> {
-  const { parseCuid } = await import("@/lib/security/ids");
   const ticketId = parseCuid(rawTicketId);
   if (!ticketId) {
     return { ok: false, error: "Ingresso inválido." };
@@ -144,7 +103,6 @@ export async function getMyTickets() {
 }
 
 export async function getTicketForUser(rawTicketId: string) {
-  const { parseCuid } = await import("@/lib/security/ids");
   const ticketId = parseCuid(rawTicketId);
   if (!ticketId) return null;
 

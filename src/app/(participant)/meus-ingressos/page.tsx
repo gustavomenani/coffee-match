@@ -11,31 +11,48 @@ const statusLabel: Record<string, string> = {
   refunded: "Reembolsado",
 };
 
-export default async function MeusIngressosPage() {
+const PAGE_SIZE = 20;
+
+export default async function MeusIngressosPage({
+  searchParams,
+}: {
+  searchParams: Promise<{ page?: string }>;
+}) {
   const session = await auth();
   if (!session?.user?.id) {
     redirect("/login");
   }
 
-  const tickets = await prisma.ticket.findMany({
-    where: { userId: session.user.id },
-    include: {
-      event: {
-        select: {
-          id: true,
-          title: true,
-          slug: true,
-          venue: true,
-          city: true,
-          startsAt: true,
-          endsAt: true,
-          status: true,
-          session: { select: { status: true } },
+  const query = await searchParams;
+  const requested = Number(query.page ?? "1");
+  const page =
+    Number.isFinite(requested) && requested >= 1 ? Math.floor(requested) : 1;
+
+  const [tickets, total] = await Promise.all([
+    prisma.ticket.findMany({
+      where: { userId: session.user.id },
+      include: {
+        event: {
+          select: {
+            id: true,
+            title: true,
+            slug: true,
+            venue: true,
+            city: true,
+            startsAt: true,
+            endsAt: true,
+            status: true,
+            session: { select: { status: true } },
+          },
         },
       },
-    },
-    orderBy: { createdAt: "desc" },
-  });
+      orderBy: { createdAt: "desc" },
+      skip: (page - 1) * PAGE_SIZE,
+      take: PAGE_SIZE,
+    }),
+    prisma.ticket.count({ where: { userId: session.user.id } }),
+  ]);
+  const totalPages = Math.max(1, Math.ceil(total / PAGE_SIZE));
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
@@ -133,6 +150,37 @@ export default async function MeusIngressosPage() {
           ))}
         </ul>
       )}
+
+      {totalPages > 1 ? (
+        <nav
+          aria-label="Paginação de ingressos"
+          className="mt-8 flex items-center justify-between gap-4"
+        >
+          {page > 1 ? (
+            <Link
+              href={`/meus-ingressos?page=${page - 1}`}
+              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            >
+              ← Anteriores
+            </Link>
+          ) : (
+            <span />
+          )}
+          <span className="text-sm text-[var(--muted)]">
+            Página {page} de {totalPages}
+          </span>
+          {page < totalPages ? (
+            <Link
+              href={`/meus-ingressos?page=${page + 1}`}
+              className="btn btn-secondary !min-h-10 !px-4 !text-sm"
+            >
+              Próximos →
+            </Link>
+          ) : (
+            <span />
+          )}
+        </nav>
+      ) : null}
     </main>
   );
 }
