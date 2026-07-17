@@ -95,6 +95,8 @@ model User {
   tickets          Ticket[]
   votesFrom        Vote[]    @relation("VotesFrom")
   votesTo          Vote[]    @relation("VotesTo")
+  matchesAsA       Match[]   @relation("MatchUserA")
+  matchesAsB       Match[]   @relation("MatchUserB")
   memberships      OrganizationMember[]
   resetTokens      PasswordResetToken[]
   subscription     Subscription?
@@ -105,7 +107,9 @@ model User {
 model PushSubscription {
   id        String   @id @default(cuid())
   userId    String
-  user      User     @relation(fields: [userId], references: [id])
+  // Cascade: device tokens are ephemeral and regenerable, so there is no reason
+  // to block a user delete on them (and every reason not to).
+  user      User     @relation(fields: [userId], references: [id], onDelete: Cascade)
   endpoint  String   @unique
   p256dh    String
   auth      String
@@ -131,7 +135,9 @@ model Subscription {
 model PasswordResetToken {
   id        String    @id @default(cuid())
   userId    String
-  user      User      @relation(fields: [userId], references: [id])
+  // Cascade: a reset token is single-use and short-lived; it must never keep a
+  // user row alive.
+  user      User      @relation(fields: [userId], references: [id], onDelete: Cascade)
   tokenHash String    @unique
   expiresAt DateTime
   usedAt    DateTime?
@@ -242,6 +248,12 @@ model Match {
   userAId   String
   userBId   String
   session   EventSession @relation(fields: [sessionId], references: [id])
+  /// userAId/userBId had no foreign key at all, so nothing guaranteed a match
+  /// pointed at real users — the UI silently dropped unresolvable rows, hiding
+  /// someone's match instead of failing loudly. Cascade: deleting a user takes
+  /// their matches with them (required for any account-erasure path).
+  userA     User         @relation("MatchUserA", fields: [userAId], references: [id], onDelete: Cascade)
+  userB     User         @relation("MatchUserB", fields: [userBId], references: [id], onDelete: Cascade)
   createdAt DateTime     @default(now())
 
   @@unique([sessionId, userAId, userBId])

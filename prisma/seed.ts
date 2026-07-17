@@ -4,6 +4,15 @@ import bcrypt from "bcryptjs";
 const prisma = new PrismaClient();
 
 async function main() {
+  // Never seed a production database. This entrypoint is wired to
+  // `prisma.seed`, so it also runs on `prisma migrate reset` — and its admin
+  // upsert rewrites passwordHash and role on the UPDATE branch, which against a
+  // real database would reset the live admin's password to a value committed in
+  // this repo and re-grant admin even to someone who had been demoted.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run the seed against a production database.");
+  }
+
   const org = await prisma.organization.upsert({
     where: { slug: "coffee-match" },
     update: { name: "Coffee Match" },
@@ -29,22 +38,24 @@ async function main() {
   }
 
   // Cost 10 nos seeds (dados de dev) — alinhado a seed-demo/seed-e2e.
-  const passwordHash = await bcrypt.hash("admin123456", 10);
+  // Overridable so a shared dev environment isn't stuck with the repo default.
+  const adminPassword = process.env.SEED_ADMIN_PASSWORD ?? "admin123456";
+  const passwordHash = await bcrypt.hash(adminPassword, 10);
 
   const admin = await prisma.user.upsert({
     where: { email: "admin@coffeematch.local" },
-    update: {
-      name: "Admin Coffee Match",
-      passwordHash,
-      role: Role.admin,
-    },
+    // Do NOT rewrite passwordHash or role on update — re-seeding must not clobber
+    // an admin who rotated their password. Only ensure the row exists.
+    update: {},
     create: {
       email: "admin@coffeematch.local",
       passwordHash,
       name: "Admin Coffee Match",
       phone: "11999999999",
       gender: Gender.male,
-      birthDate: new Date("1990-01-01"),
+      // Noon São Paulo — the invariant age.ts reads back (midnight UTC would be
+      // read as the previous civil day).
+      birthDate: new Date("1990-01-01T12:00:00-03:00"),
       role: Role.admin,
     },
   });

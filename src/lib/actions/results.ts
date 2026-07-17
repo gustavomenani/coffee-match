@@ -81,38 +81,33 @@ export async function getMyMatches(rawEventId: string): Promise<MyMatchesResult>
   const eventSession = ticket.event.session;
   if (!eventSession) return { ok: false, error: "Sessão não encontrada." };
 
+  // With Match.userA/userB now real relations, the counterpart comes back in one
+  // query via include — no second lookup and no fetch-and-map. The old code
+  // silently `continue`d past a user it couldn't resolve, which hid a match; the
+  // FK now makes an unresolvable row impossible.
+  const uid = session.user.id;
   const matches = await prisma.match.findMany({
     where: {
       sessionId: eventSession.id,
-      OR: [{ userAId: session.user.id }, { userBId: session.user.id }],
+      OR: [{ userAId: uid }, { userBId: uid }],
+    },
+    include: {
+      userA: { select: { id: true, name: true, phone: true, instagram: true } },
+      userB: { select: { id: true, name: true, phone: true, instagram: true } },
     },
   });
 
-  if (matches.length === 0) return { ok: true, matches: [] };
-
-  const otherIds = matches.map((m) =>
-    m.userAId === session.user.id ? m.userBId : m.userAId
-  );
-  const users = await prisma.user.findMany({
-    where: { id: { in: otherIds } },
-    select: { id: true, name: true, phone: true, instagram: true },
-  });
-  const byId = new Map(users.map((u) => [u.id, u]));
-
-  const result: MatchContact[] = [];
-  for (const m of matches) {
-    const otherId = m.userAId === session.user.id ? m.userBId : m.userAId;
-    const other = byId.get(otherId);
-    if (!other) continue;
-    result.push({
+  const result: MatchContact[] = matches.map((m) => {
+    const other = m.userAId === uid ? m.userB : m.userA;
+    return {
       matchId: m.id,
       userId: other.id,
       name: other.name,
       phone: other.phone,
       instagram: other.instagram,
       whatsappUrl: toWhatsappUrl(other.phone),
-    });
-  }
+    };
+  });
 
   return { ok: true, matches: result };
 }

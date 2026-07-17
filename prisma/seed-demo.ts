@@ -127,13 +127,19 @@ async function upsertParticipant(
       gender,
       bio,
       interests,
-      birthDate: new Date(`${birthYear}-05-1${index % 9}`),
+      birthDate: new Date(`${birthYear}-05-1${index % 9}T12:00:00-03:00`),
       instagram: `${name.split(" ")[0].toLowerCase()}.demo`,
     },
   });
 }
 
 async function main() {
+  // Guard: this injects 16 fake users with active subscriptions and a public
+  // live event into the catalog. It must never touch a production database.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run the demo seed against a production database.");
+  }
+
   const org = await prisma.organization.upsert({
     where: { slug: "coffee-match" },
     update: {},

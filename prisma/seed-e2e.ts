@@ -60,7 +60,7 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
       name: "Admin",
       phone: "11999999999",
       gender: Gender.male,
-      birthDate: new Date("1990-01-01"),
+      birthDate: new Date("1990-01-01T12:00:00-03:00"),
       role: Role.admin,
     },
   });
@@ -87,7 +87,7 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
       phone: E2E.manPhone,
       gender: Gender.male,
       role: Role.participant,
-      birthDate: new Date("1995-06-15"),
+      birthDate: new Date("1995-06-15T12:00:00-03:00"),
     },
     create: {
       email: E2E.manEmail,
@@ -95,7 +95,7 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
       name: E2E.manName,
       phone: E2E.manPhone,
       gender: Gender.male,
-      birthDate: new Date("1995-06-15"),
+      birthDate: new Date("1995-06-15T12:00:00-03:00"),
       role: Role.participant,
     },
   });
@@ -108,7 +108,7 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
       phone: E2E.womanPhone,
       gender: Gender.female,
       role: Role.participant,
-      birthDate: new Date("1996-03-20"),
+      birthDate: new Date("1996-03-20T12:00:00-03:00"),
     },
     create: {
       email: E2E.womanEmail,
@@ -116,7 +116,7 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
       name: E2E.womanName,
       phone: E2E.womanPhone,
       gender: Gender.female,
-      birthDate: new Date("1996-03-20"),
+      birthDate: new Date("1996-03-20T12:00:00-03:00"),
       role: Role.participant,
     },
   });
@@ -201,6 +201,10 @@ export async function seedE2eFixtures(): Promise<E2eFixture> {
 }
 
 async function main() {
+  // E2E fixtures wipe and rewrite test data — never against production.
+  if (process.env.NODE_ENV === "production") {
+    throw new Error("Refusing to run the e2e seed against a production database.");
+  }
   const fixture = await seedE2eFixtures();
   console.log(JSON.stringify(fixture, null, 2));
 }
