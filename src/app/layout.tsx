@@ -149,6 +149,12 @@ export default async function RootLayout({
     <html
       lang="pt-BR"
       className={`${display.variable} ${body.variable} h-full`}
+      // globals.css sets `scroll-behavior: smooth` for in-page anchors. Next 16
+      // no longer suppresses that during route transitions on its own, so every
+      // navigation animated a scroll to the top instead of jumping — very
+      // visible leaving the long homepage. This opts back into the old
+      // override: smooth for anchors, instant for navigation.
+      data-scroll-behavior="smooth"
       suppressHydrationWarning
     >
       <head>
