@@ -38,12 +38,13 @@ function setThemeClass(theme: Theme) {
   meta.setAttribute("content", THEME_COLORS[theme]);
 }
 
-let switchTimer: number | undefined;
+let flipTimer: number | undefined;
+let cleanupTimer: number | undefined;
 
 /**
- * Smooth cross-fade of colors via CSS transitions only. The previous
- * View Transitions circular wipe snapshotted the whole page (blurs, grain,
- * gradients) and caused a visible hitch — plain color transitions don't.
+ * GPU-only fade-through: dim the page (compositor opacity — cannot jank),
+ * flip the theme class while dimmed, fade back in. Per-element color
+ * transitions repaint hundreds of nodes per frame and stutter; this doesn't.
  */
 function applyTheme(theme: Theme, animate: boolean) {
   const root = document.documentElement;
@@ -53,13 +54,26 @@ function applyTheme(theme: Theme, animate: boolean) {
     return;
   }
 
-  root.classList.add("theme-switching");
-  void root.offsetHeight;
-  setThemeClass(theme);
-  window.clearTimeout(switchTimer);
-  switchTimer = window.setTimeout(() => {
-    root.classList.remove("theme-switching");
-  }, 450);
+  window.clearTimeout(flipTimer);
+  window.clearTimeout(cleanupTimer);
+
+  // Canvas behind the fading page shows the TARGET theme color,
+  // so the dip already leans toward where we're going.
+  root.style.backgroundColor = THEME_COLORS[theme];
+  root.style.transition = "opacity 150ms ease-out";
+  root.style.opacity = "0.35";
+
+  flipTimer = window.setTimeout(() => {
+    setThemeClass(theme); // instant, hidden by the dim
+    root.style.transition = "opacity 260ms ease-in";
+    root.style.opacity = "1";
+
+    cleanupTimer = window.setTimeout(() => {
+      root.style.removeProperty("transition");
+      root.style.removeProperty("opacity");
+      root.style.removeProperty("background-color");
+    }, 300);
+  }, 160);
 }
 
 const emptySubscribe = () => () => {};

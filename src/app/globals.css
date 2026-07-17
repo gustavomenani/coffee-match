@@ -91,39 +91,11 @@ body {
 }
 
 /*
- * Theme switch — pure CSS color cross-fade.
- * The class is applied by the toggle for the duration of the switch;
- * every surface eases between palettes with no snapshot/jank.
+ * Theme switch — GPU-only fade-through.
+ * The toggle dims the page (compositor-only opacity), flips the theme class
+ * while dimmed (a single instant recalc, invisible at low opacity), then
+ * fades back in. No per-element color transitions → no paint storms.
  */
-html.theme-switching,
-html.theme-switching body,
-html.theme-switching body *:not(svg):not(path):not(circle):not(img) {
-  transition:
-    background-color 0.4s ease-in-out,
-    background 0.4s ease-in-out,
-    color 0.4s ease-in-out,
-    border-color 0.4s ease-in-out,
-    box-shadow 0.4s ease-in-out,
-    fill 0.4s ease-in-out,
-    stroke 0.4s ease-in-out !important;
-}
-
-/* Always-on soft transitions for main chrome (feels smoother without lag) */
-body,
-header,
-footer,
-.surface-card,
-.btn,
-.field,
-.badge,
-.theme-toggle-btn {
-  transition:
-    background-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    background 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    border-color 0.35s cubic-bezier(0.22, 1, 0.36, 1),
-    box-shadow 0.35s cubic-bezier(0.22, 1, 0.36, 1);
-}
 
 .page-glow::before {
   transition: opacity 0.5s cubic-bezier(0.22, 1, 0.36, 1);
@@ -657,10 +629,7 @@ html.dark .btn-outline-on-dark:hover:not(:disabled) {
   footer,
   .surface-card,
   .badge,
-  .theme-toggle-btn,
-  html.theme-switching,
-  html.theme-switching body,
-  html.theme-switching body * {
+  .theme-toggle-btn {
     transition: none !important;
   }
 
