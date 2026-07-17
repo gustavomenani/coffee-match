@@ -19,8 +19,12 @@ const ymdFormatter = new Intl.DateTimeFormat("en-CA", {
 
 /** Dia civil de `d` em São Paulo, como [ano, mês, dia]. */
 function saoPauloYmd(d: Date): [number, number, number] {
-  const [y, m, day] = ymdFormatter.format(d).split("-").map(Number);
-  return [y, m, day];
+  // en-CA always formats a valid Date as YYYY-MM-DD, so the three parts are
+  // present — but read them explicitly rather than trusting a destructure to
+  // fill the tuple. A malformed part becomes NaN, which flows through to
+  // isAtLeast18 as `NaN >= 18` === false, i.e. rejected (fail-closed).
+  const parts = ymdFormatter.format(d).split("-");
+  return [Number(parts[0]), Number(parts[1]), Number(parts[2])];
 }
 
 export function yearsOldOn(birthDate: Date, on: Date): number {

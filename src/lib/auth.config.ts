@@ -51,8 +51,12 @@ export const authConfig = {
     },
     session({ session, token }) {
       if (session.user) {
-        session.user.id = token.id as string;
-        session.user.role = token.role as string;
+        // token.role is optional on the JWT, but Session.user.role is a
+        // required string; default rather than cast undefined into it, so
+        // `session.user.role` is never actually undefined at runtime. Role is
+        // only ever used with === comparisons, but this keeps the type honest.
+        session.user.id = (token.id as string | undefined) ?? "";
+        session.user.role = (token.role as string | undefined) ?? "participant";
       }
       return session;
     },
