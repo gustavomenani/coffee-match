@@ -2,11 +2,9 @@
 
 import {
   useEffect,
-  useRef,
   useState,
   useSyncExternalStore,
   useTransition,
-  type MouseEvent,
 } from "react";
 
 type Theme = "light" | "dark";
@@ -40,23 +38,14 @@ function setThemeClass(theme: Theme) {
   meta.setAttribute("content", THEME_COLORS[theme]);
 }
 
-/** Radius from click point that covers the full viewport */
-function coverRadius(x: number, y: number) {
-  const maxX = Math.max(x, window.innerWidth - x);
-  const maxY = Math.max(y, window.innerHeight - y);
-  return Math.hypot(maxX, maxY);
-}
+let switchTimer: number | undefined;
 
-type ViewTransition = {
-  ready: Promise<void>;
-  finished: Promise<void>;
-};
-
-function applyTheme(
-  theme: Theme,
-  animate: boolean,
-  origin?: { x: number; y: number },
-) {
+/**
+ * Smooth cross-fade of colors via CSS transitions only. The previous
+ * View Transitions circular wipe snapshotted the whole page (blurs, grain,
+ * gradients) and caused a visible hitch — plain color transitions don't.
+ */
+function applyTheme(theme: Theme, animate: boolean) {
   const root = document.documentElement;
 
   if (!animate || prefersReducedMotion()) {
@@ -64,67 +53,13 @@ function applyTheme(
     return;
   }
 
-  const doc = document as Document & {
-    startViewTransition?: (cb: () => void) => ViewTransition;
-  };
-
-  if (typeof doc.startViewTransition === "function") {
-    const x = origin?.x ?? window.innerWidth / 2;
-    const y = origin?.y ?? 48;
-    const radius = coverRadius(x, y);
-
-    root.dataset.themeTransition = theme === "dark" ? "to-dark" : "to-light";
-
-    const transition = doc.startViewTransition(() => {
-      setThemeClass(theme);
-    });
-
-    transition.ready
-      .then(() => {
-        // Circular reveal of the new theme from the toggle
-        root.animate(
-          {
-            clipPath: [
-              `circle(0px at ${x}px ${y}px)`,
-              `circle(${radius}px at ${x}px ${y}px)`,
-            ],
-          },
-          {
-            duration: 520,
-            easing: "cubic-bezier(0.22, 1, 0.36, 1)",
-            pseudoElement: "::view-transition-new(root)",
-          },
-        );
-
-        // Old theme gently recedes (keeps continuity, less harsh flash)
-        root.animate(
-          {
-            opacity: [1, 0.92],
-          },
-          {
-            duration: 420,
-            easing: "cubic-bezier(0.4, 0, 1, 1)",
-            pseudoElement: "::view-transition-old(root)",
-          },
-        );
-      })
-      .catch(() => {
-        /* transition aborted */
-      })
-      .finally(() => {
-        delete root.dataset.themeTransition;
-      });
-
-    return;
-  }
-
-  // Fallback: timed CSS transitions on key surfaces
   root.classList.add("theme-switching");
   void root.offsetHeight;
   setThemeClass(theme);
-  window.setTimeout(() => {
+  window.clearTimeout(switchTimer);
+  switchTimer = window.setTimeout(() => {
     root.classList.remove("theme-switching");
-  }, 480);
+  }, 450);
 }
 
 const emptySubscribe = () => () => {};
@@ -148,30 +83,23 @@ export function ThemeToggle({ className = "" }: { className?: string }) {
     () => false,
   );
   const [, startTransition] = useTransition();
-  const btnRef = useRef<HTMLButtonElement>(null);
 
   useEffect(() => {
     // Script already set the class early; re-sync DOM + meta (idempotent)
     setThemeClass(theme);
   }, [theme]);
 
-  function toggle(e: MouseEvent<HTMLButtonElement>) {
+  function toggle() {
     const next: Theme = theme === "dark" ? "light" : "dark";
-    const rect = btnRef.current?.getBoundingClientRect();
-    const origin = rect
-      ? { x: rect.left + rect.width / 2, y: rect.top + rect.height / 2 }
-      : { x: e.clientX, y: e.clientY };
-
     startTransition(() => {
       setTheme(next);
     });
-    applyTheme(next, true, origin);
+    applyTheme(next, true);
     localStorage.setItem(STORAGE_KEY, next);
   }
 
   return (
     <button
-      ref={btnRef}
       type="button"
       onClick={toggle}
       className={`theme-toggle-btn relative inline-flex h-10 w-10 items-center justify-center overflow-hidden rounded-full border border-[var(--line-strong)] bg-[var(--paper-card)] text-[var(--ink-soft)] shadow-sm transition-[background-color,border-color,color,box-shadow,transform] duration-300 ease-[cubic-bezier(0.2,0,0,1)] hover:border-[color-mix(in_srgb,var(--champagne)_50%,var(--line-strong))] hover:text-[var(--coffee)] active:scale-95 ${className}`}
