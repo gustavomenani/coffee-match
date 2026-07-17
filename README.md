@@ -40,16 +40,16 @@ Porta padrão `5432`. Se estiver ocupada, use **5437**:
 
 ```bash
 # porta 5432
-docker run -d --name Coffee Match-pg \
+docker run -d --name coffee-match-pg \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=Coffee Match \
+  -e POSTGRES_DB=coffeematch \
   -p 5432:5432 \
   postgres:16
 
 # alternativa se 5432 estiver ocupada
-docker run -d --name Coffee Match-pg \
+docker run -d --name coffee-match-pg \
   -e POSTGRES_PASSWORD=postgres \
-  -e POSTGRES_DB=Coffee Match \
+  -e POSTGRES_DB=coffeematch \
   -p 5437:5432 \
   postgres:16
 ```
@@ -63,7 +63,7 @@ cp .env.example .env
 Ajuste `DATABASE_URL` se usar a porta 5437:
 
 ```env
-DATABASE_URL="postgresql://postgres:postgres@localhost:5437/Coffee Match?schema=public"
+DATABASE_URL="postgresql://postgres:postgres@localhost:5437/coffeematch?schema=public"
 ```
 
 Gere um `AUTH_SECRET` real em produção:
