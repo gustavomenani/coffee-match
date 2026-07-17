@@ -19,7 +19,7 @@ export default async function AdminMatchesPage({
         <div className="max-w-xl">
           <Link
             href={`/admin/eventos/${eventId}`}
-            className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+            className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent-text)]"
           >
             ← Evento
           </Link>

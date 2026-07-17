@@ -122,7 +122,7 @@ export default async function AdminDashboardPage() {
       <ul className="mt-10 grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
         {stats.map((stat) => (
           <li key={stat.label} className="surface-card p-6">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
               {stat.label}
             </p>
             <p className="font-display tabular mt-2 text-4xl font-semibold tracking-tight text-[var(--ink)]">
@@ -135,7 +135,7 @@ export default async function AdminDashboardPage() {
 
       {nextEvent ? (
         <div className="surface-card mt-6 p-6 sm:p-7">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
             Próximo evento
           </p>
           <h2 className="font-display mt-2 text-2xl font-semibold tracking-tight text-[var(--ink)]">
@@ -176,7 +176,7 @@ export default async function AdminDashboardPage() {
       <ul className="mt-6 grid gap-4 sm:grid-cols-2">
         <li>
           <Link href="/admin/eventos" className="surface-card surface-card-hover block p-7">
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
               Agenda
             </p>
             <span className="font-display mt-2 block text-2xl font-semibold text-[var(--ink)]">
@@ -192,7 +192,7 @@ export default async function AdminDashboardPage() {
             href="/admin/eventos/novo"
             className="surface-card surface-card-hover block p-7"
           >
-            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+            <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
               Criar
             </p>
             <span className="font-display mt-2 block text-2xl font-semibold text-[var(--ink)]">

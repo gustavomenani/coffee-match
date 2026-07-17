@@ -13,6 +13,11 @@
   --coffee: #b87333;
   --coffee-hot: #c9843f;
   --coffee-deep: #6b3f1f;
+  /* Accent for SMALL text/links. --coffee (#b87333) is only ~3.5:1 on light
+     paper — fails WCAG 1.4.3 for text under 18px. This resolves to the
+     8.28:1 deep tone in light and the 7.4:1 light tone in dark, so both themes
+     pass. Reserve --coffee itself for >=24px display text, icons and fills. */
+  --accent-text: var(--coffee-deep);
   --carmine: var(--coffee);
   --carmine-hot: var(--coffee-hot);
   --carmine-deep: var(--coffee-deep);
@@ -48,6 +53,9 @@ html.dark {
   --coffee: #d4924a;
   --coffee-hot: #e0a55c;
   --coffee-deep: #c9843f;
+  /* In dark mode the bright tone reads better than the deep one and already
+     clears 7:1 on dark paper, so accent text uses --coffee here. */
+  --accent-text: var(--coffee);
   --carmine: var(--coffee);
   --carmine-hot: var(--coffee-hot);
   --carmine-deep: var(--coffee-deep);

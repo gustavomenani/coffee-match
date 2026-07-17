@@ -247,7 +247,7 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
   //    cannot both proceed. The status check above is only a fast path — it
   //    reads outside the transaction, and an unguarded update let a second run
   //    delete the first run's matches, recreate them with new ids, and e-mail
-  //    every voter again.
+  //    every recipient again.
   //  - Read after the claim: while the session is still voting_open, castVote
   //    keeps accepting votes. Anything read before the claim is a snapshot that
   //    can grow under us, and a vote landing in that window would be dropped
@@ -300,13 +300,13 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
       where: { id: eventId },
       data: { status: "closed" },
     });
-    return { pairs, voterIds: [...new Set(votes.map((v) => v.fromUserId))] };
+    return { pairs, recipientIds: presentUserIds };
   });
 
   if (!closed) {
     return { ok: false, error: "A votação não está aberta." };
   }
-  const { pairs, voterIds } = closed;
+  const { pairs, recipientIds } = closed;
 
   await auditLog({
     actorId: admin.user.id,
@@ -314,21 +314,25 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     meta: { eventId, matchCount: pairs.length },
   });
 
-  // Notify everyone who voted that results are out (matches count per user).
+  // Notify everyone who can see results — every present (paid + checked-in)
+  // participant, which is exactly what canViewResults admits. Deriving the list
+  // from the recipients instead dropped anyone whose votes all went to no-shows (so
+  // their votes were filtered out) and anyone who checked in but never voted,
+  // even though both can open the results and the "quem curtiu" list.
   const matchCountByUser = new Map<string, number>();
   for (const p of pairs) {
     matchCountByUser.set(p.userAId, (matchCountByUser.get(p.userAId) ?? 0) + 1);
     matchCountByUser.set(p.userBId, (matchCountByUser.get(p.userBId) ?? 0) + 1);
   }
-  if (voterIds.length > 0) {
-    const voters = await prisma.user.findMany({
-      where: { id: { in: voterIds } },
+  if (recipientIds.length > 0) {
+    const recipients = await prisma.user.findMany({
+      where: { id: { in: recipientIds } },
       select: { id: true, email: true },
     });
 
     // This is the payoff moment of the night and it runs after the transaction
     // committed, with the whole room refreshing their phones. Awaiting an email
-    // round trip plus a push lookup per voter, one at a time, took ~40s with a
+    // round trip plus a push lookup per recipient, one at a time, took ~40s with a
     // full room — past the function timeout, which killed the loop partway: an
     // arbitrary subset notified, no way to tell who, and no way to re-run
     // (the session is closed now, so closeVoting refuses).
@@ -347,21 +351,21 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     };
 
     // Waves run one after another so we never open 100 sockets at once.
-    for (let i = 0; i < voters.length; i += NOTIFY_WAVE_SIZE) {
-      const wave = voters.slice(i, i + NOTIFY_WAVE_SIZE);
+    for (let i = 0; i < recipients.length; i += NOTIFY_WAVE_SIZE) {
+      const wave = recipients.slice(i, i + NOTIFY_WAVE_SIZE);
       await Promise.allSettled(
-        wave.map((voter) =>
+        wave.map((recipient) =>
           sendMatchesReadyEmail({
-            to: voter.email,
+            to: recipient.email,
             eventTitle: event.title,
             eventId,
-            matchCount: matchCountByUser.get(voter.id) ?? 0,
+            matchCount: matchCountByUser.get(recipient.id) ?? 0,
           })
         )
       );
     }
 
-    await sendPushToUsers(voterIds, pushPayloads);
+    await sendPushToUsers(recipientIds, pushPayloads);
   }
 
   revalidatePath(`/admin/eventos/${eventId}/noite`);

@@ -185,7 +185,7 @@ export default async function EventoDetailPage({
       <nav aria-label="Breadcrumb" className="mb-6 text-sm text-[var(--muted)]">
         <ol className="flex flex-wrap items-center gap-1.5">
           <li>
-            <Link href="/" className="font-medium hover:text-[var(--coffee)]">
+            <Link href="/" className="font-medium hover:text-[var(--accent-text)]">
               Início
             </Link>
           </li>
@@ -193,7 +193,7 @@ export default async function EventoDetailPage({
           <li>
             <Link
               href="/eventos"
-              className="font-medium hover:text-[var(--coffee)]"
+              className="font-medium hover:text-[var(--accent-text)]"
             >
               Eventos
             </Link>
@@ -394,7 +394,7 @@ export default async function EventoDetailPage({
                   até {formatDateTimeLong(event.earlyAccessUntil!)}.{" "}
                   <Link
                     href="/assinatura"
-                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
+                    className="font-semibold text-[var(--accent-text)] underline-offset-2 hover:underline"
                   >
                     Assine por R$ 10/mês
                   </Link>
@@ -426,7 +426,7 @@ export default async function EventoDetailPage({
                   Ao comprar, você concorda com as{" "}
                   <Link
                     href="/regras"
-                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
+                    className="font-semibold text-[var(--accent-text)] underline-offset-2 hover:underline"
                   >
                     regras
                   </Link>
@@ -436,7 +436,7 @@ export default async function EventoDetailPage({
                   Condições de{" "}
                   <Link
                     href="/reembolso"
-                    className="font-semibold text-[var(--coffee)] underline-offset-2 hover:underline"
+                    className="font-semibold text-[var(--accent-text)] underline-offset-2 hover:underline"
                   >
                     reembolso
                   </Link>

@@ -18,7 +18,7 @@ export default async function NovoEventoPage({
       <div className="max-w-lg">
         <Link
           href="/admin/eventos"
-          className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+          className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent-text)]"
         >
           ← Eventos
         </Link>

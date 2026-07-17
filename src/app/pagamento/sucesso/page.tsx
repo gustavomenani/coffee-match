@@ -126,7 +126,7 @@ export default async function PagamentoSucessoPage({
                 Mostre este ingresso (ou a tela em{" "}
                 <Link
                   href="/meus-ingressos"
-                  className="font-semibold text-[var(--carmine)] underline-offset-2 hover:underline"
+                  className="font-semibold text-[var(--accent-text)] underline-offset-2 hover:underline"
                 >
                   Meus ingressos
                 </Link>

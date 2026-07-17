@@ -202,7 +202,7 @@ export default async function Home() {
             {events.length > 0 ? (
               <Link
                 href="/eventos"
-                className="group inline-flex items-center gap-1 text-sm font-semibold text-[var(--carmine)] transition-colors hover:text-[var(--coffee-hot)]"
+                className="group inline-flex items-center gap-1 text-sm font-semibold text-[var(--accent-text)] transition-colors hover:text-[var(--coffee-hot)]"
               >
                 Ver todas{" "}
                 <span
@@ -220,7 +220,7 @@ export default async function Home() {
               Agenda em breve.{" "}
               <Link
                 href="/eventos"
-                className="font-semibold text-[var(--carmine)] hover:underline"
+                className="font-semibold text-[var(--accent-text)] hover:underline"
               >
                 Ver eventos
               </Link>

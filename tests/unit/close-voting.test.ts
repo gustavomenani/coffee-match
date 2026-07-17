@@ -189,7 +189,8 @@ describe("closeVoting", () => {
     });
   });
 
-  it("notifies every voter exactly once, with their own match count", async () => {
+  it("notifies each present participant once, with their own match count", async () => {
+    ticketFindMany.mockResolvedValue([ANA, BIA, CAIO].map((userId) => ({ userId })));
     voteFindMany.mockResolvedValue([
       yes(ANA, BIA),
       yes(BIA, ANA),
@@ -215,7 +216,29 @@ describe("closeVoting", () => {
     });
   });
 
-  it("closes a night with zero matches and still tells the voters", async () => {
+  it("also notifies a present participant who only voted for no-shows", async () => {
+    // CAIO checked in and voted, but only for DAVI, who never showed. CAIO's
+    // votes are filtered out of matching (DAVI isn't present), so deriving the
+    // notify list from the voters would drop CAIO — yet he can open the results
+    // and the "quem curtiu" page, so he must still be told.
+    ticketFindMany.mockResolvedValue([ANA, BIA, CAIO].map((userId) => ({ userId })));
+    voteFindMany.mockResolvedValue([yes(ANA, BIA), yes(BIA, ANA)]);
+    userFindMany.mockResolvedValue([
+      { id: ANA, email: "ana@example.com" },
+      { id: BIA, email: "bia@example.com" },
+      { id: CAIO, email: "caio@example.com" },
+    ]);
+
+    await closeVoting(EVENT_ID);
+
+    const notified = sendMatchesReadyEmailMock.mock.calls.map((c) => c[0].to);
+    expect(notified).toContain("caio@example.com");
+    const [pushIds] = sendPushToUsersMock.mock.calls[0];
+    expect([...pushIds].sort()).toEqual([ANA, BIA, CAIO].sort());
+  });
+
+  it("closes a night with zero matches and still tells the room", async () => {
+    ticketFindMany.mockResolvedValue([ANA, BIA].map((userId) => ({ userId })));
     voteFindMany.mockResolvedValue([no(ANA, BIA), no(BIA, ANA)]);
     userFindMany.mockResolvedValue([
       { id: ANA, email: "ana@example.com" },
@@ -231,7 +254,8 @@ describe("closeVoting", () => {
     expect(sendMatchesReadyEmailMock.mock.calls[0][0].matchCount).toBe(0);
   });
 
-  it("sends push for the whole room in one call, not one per voter", async () => {
+  it("sends push for the whole room in one call, not one per user", async () => {
+    ticketFindMany.mockResolvedValue([ANA, BIA].map((userId) => ({ userId })));
     voteFindMany.mockResolvedValue([yes(ANA, BIA), yes(BIA, ANA)]);
     userFindMany.mockResolvedValue([
       { id: ANA, email: "ana@example.com" },

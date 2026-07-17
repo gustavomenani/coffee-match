@@ -42,5 +42,23 @@ self.addEventListener("notificationclick", (event) => {
   event.notification.close();
   const url =
     (event.notification.data && event.notification.data.url) || "/";
-  event.waitUntil(self.clients.openWindow(url));
+  const target = new URL(url, self.location.origin).href;
+
+  // Focus an already-open Coffee Match window (the common case on mobile for a
+  // "results are out" / "spot opened" push) instead of unconditionally spawning
+  // a duplicate tab. Only open a new one when none exists.
+  event.waitUntil(
+    self.clients
+      .matchAll({ type: "window", includeUncontrolled: true })
+      .then((clients) => {
+        for (const client of clients) {
+          if (new URL(client.url).origin === self.location.origin) {
+            return client.focus().then((focused) =>
+              "navigate" in focused ? focused.navigate(target) : focused
+            );
+          }
+        }
+        return self.clients.openWindow(target);
+      })
+  );
 });

@@ -57,7 +57,7 @@ export default async function AdminEventoEditPage({
       <div className="mb-8 max-w-2xl">
         <Link
           href="/admin/eventos"
-          className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+          className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent-text)]"
         >
           ← Eventos
         </Link>

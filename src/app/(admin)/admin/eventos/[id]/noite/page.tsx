@@ -146,7 +146,7 @@ export default async function NoitePage({
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
       <Link
         href={`/admin/eventos/${eventId}`}
-        className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+        className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent-text)]"
       >
         ← Evento
       </Link>
@@ -204,7 +204,7 @@ export default async function NoitePage({
 
       <div className="mt-8 grid gap-4 sm:grid-cols-3">
         <div className="surface-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
             Pagos
           </p>
           <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">
@@ -212,7 +212,7 @@ export default async function NoitePage({
           </p>
         </div>
         <div className="surface-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
             Check-in
           </p>
           <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">
@@ -220,7 +220,7 @@ export default async function NoitePage({
           </p>
         </div>
         <div className="surface-card p-5">
-          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--champagne)]">
+          <p className="text-xs font-semibold uppercase tracking-[0.14em] text-[var(--accent-text)]">
             Faltam
           </p>
           <p className="font-display mt-2 text-3xl font-semibold tabular text-[var(--ink)]">

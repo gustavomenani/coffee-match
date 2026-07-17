@@ -34,7 +34,7 @@ export default async function AdminEventosPage({
         <div>
           <Link
             href="/admin"
-            className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--carmine)]"
+            className="mb-3 inline-block text-sm font-semibold text-[var(--muted)] hover:text-[var(--accent-text)]"
           >
             ← Admin
           </Link>
@@ -100,7 +100,7 @@ export default async function AdminEventosPage({
                   <td className="px-4 py-4 text-right">
                     <Link
                       href={`/admin/eventos/${event.id}`}
-                      className="font-semibold text-[var(--carmine)] hover:underline"
+                      className="font-semibold text-[var(--accent-text)] hover:underline"
                     >
                       Abrir
                     </Link>

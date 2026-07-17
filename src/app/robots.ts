@@ -29,6 +29,11 @@ export default function robots(): MetadataRoute.Robots {
           "/minha-conta/",
           "/meus-ingressos",
           "/meus-ingressos/",
+          // Renders names, phone numbers and WhatsApp links — kept out of the
+          // index alongside its /meus-ingressos sibling (it was added later and
+          // the crawl policy was never updated).
+          "/meus-matches",
+          "/meus-matches/",
           "/evento/",
           "/login",
           "/cadastro",
@@ -39,10 +44,11 @@ export default function robots(): MetadataRoute.Robots {
       {
         userAgent: "GPTBot",
         allow: ["/", "/eventos", "/termos", "/privacidade", "/regras", "/reembolso"],
-        disallow: ["/admin", "/api/", "/minha-conta", "/meus-ingressos", "/evento/", "/login", "/cadastro", "/pagamento/"],
+        disallow: ["/admin", "/api/", "/minha-conta", "/meus-ingressos", "/meus-matches", "/evento/", "/login", "/cadastro", "/pagamento/"],
       },
     ],
     sitemap: absoluteUrl("/sitemap.xml"),
-    host: absoluteUrl("/"),
+    // Bare host, not a URL: the robots `host` directive takes a hostname.
+    host: new URL(absoluteUrl("/")).host,
   };
 }

@@ -96,7 +96,7 @@ export default async function TicketDetailPage({ params }: PageProps) {
       <div className="no-print mb-8">
         <Link
           href="/meus-ingressos"
-          className="text-sm font-semibold text-[var(--muted)] underline-offset-2 transition-colors hover:text-[var(--carmine)] hover:underline"
+          className="text-sm font-semibold text-[var(--muted)] underline-offset-2 transition-colors hover:text-[var(--accent-text)] hover:underline"
         >
           ← Voltar para meus ingressos
         </Link>

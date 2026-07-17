@@ -18,7 +18,10 @@ export async function Header() {
       <div className="mx-auto flex h-[4.25rem] w-full max-w-6xl items-center justify-between gap-3 px-4 sm:px-6">
         <Logo size="md" priority />
 
-        <nav className="flex items-center gap-0.5 text-sm font-medium text-[var(--ink-soft)] sm:gap-1">
+        <nav
+          aria-label="Navegação principal"
+          className="flex items-center gap-0.5 text-sm font-medium text-[var(--ink-soft)] sm:gap-1"
+        >
           <NavLink href="/eventos">Eventos</NavLink>
           <NavLink href="/meus-ingressos" className="hidden sm:inline-flex">
             Ingressos

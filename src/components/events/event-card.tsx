@@ -125,7 +125,7 @@ export function EventCard({ event }: { event: EventCardData }) {
               </span>
             </p>
           </div>
-          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--coffee)]">
+          <span className="inline-flex items-center gap-1 text-sm font-semibold text-[var(--accent-text)]">
             Ver detalhes{" "}
             <span
               aria-hidden

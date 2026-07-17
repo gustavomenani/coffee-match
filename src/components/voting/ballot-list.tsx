@@ -30,6 +30,9 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
   const votedCount = useMemo(() => Object.keys(votes).length, [votes]);
 
   function onVote(toUserId: string, interest: "yes" | "no") {
+    // aria-disabled keeps the button focusable, so it can still be clicked while
+    // a vote is in flight — ignore the re-entry here instead of via `disabled`.
+    if (isPending) return;
     setError(null);
     setPendingId(toUserId);
     startTransition(async () => {
@@ -82,16 +85,27 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
             votação.
           </p>
         )}
+        {/*
+          Always-present live region. The visual progress/completion above is
+          silent to a screen reader; this speaks each vote and the finish. A
+          region rendered only when its text appears is frequently not announced
+          on iOS VoiceOver — the exact audience here.
+        */}
+        <p className="sr-only" role="status" aria-live="polite">
+          {allDone
+            ? "Cédula completa."
+            : `${votedCount} de ${candidates.length} votados.`}
+        </p>
       </div>
 
-      {error ? (
-        <p
-          role="alert"
-          className="flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm"
-        >
-          {error}
-        </p>
-      ) : null}
+      {/* Always present so the alert is announced on insertion, iOS included. */}
+      <div role="alert" aria-live="assertive">
+        {error ? (
+          <p className="flash-error rounded-[var(--radius-sm)] px-3 py-3 text-sm">
+            {error}
+          </p>
+        ) : null}
+      </div>
 
       <ul className="stagger flex flex-col gap-3">
         {candidates.map((person) => {
@@ -109,13 +123,23 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 <button
                   type="button"
                   aria-expanded={expanded}
-                  aria-controls={panelId}
-                  aria-label={`Ver perfil de ${person.name}`}
+                  // aria-controls only when the panel actually exists (expanded).
+                  // Pointing at an absent id is a WCAG 1.3.1 dangling reference.
+                  {...(expanded ? { "aria-controls": panelId } : {})}
                   onClick={() =>
                     setExpandedId(expanded ? null : person.id)
                   }
                   className="flex w-full items-center gap-3 rounded-[var(--radius-sm)] text-left"
                 >
+                  {/*
+                    No aria-label on the button. It overrode name-from-content,
+                    so a screen-reader voter heard only "Ver perfil de {name}"
+                    and lost the age, supporter badge, bio and interests — the
+                    exact information sighted voters use. The visible text is now
+                    the accessible name; an sr-only hint carries the affordance.
+                    transition-[transform,outline] (not transition-all) keeps the
+                    resize off the layout-thrashing path.
+                  */}
                   {person.photoUrl ? (
                     // eslint-disable-next-line @next/next/no-img-element
                     <img
@@ -125,13 +149,13 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                         expanded
                           ? "h-28 w-28 outline-2 outline-[color-mix(in_srgb,var(--champagne)_70%,transparent)] shadow-[var(--shadow-soft)]"
                           : "h-14 w-14 outline-1 outline-[var(--line)]"
-                      } shrink-0 rounded-full object-cover outline transition-all duration-300 ease-out`}
+                      } shrink-0 rounded-full object-cover outline transition-[width,height,outline-color] duration-300 ease-out`}
                     />
                   ) : (
                     <div
                       className={`grid ${
                         expanded ? "h-28 w-28 text-3xl" : "h-14 w-14 text-lg"
-                      } shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-semibold text-white transition-all duration-300 ease-out`}
+                      } shrink-0 place-items-center rounded-full bg-[linear-gradient(145deg,var(--carmine-hot),var(--carmine-deep))] font-semibold text-white transition-[width,height] duration-300 ease-out`}
                     >
                       {person.name.slice(0, 1).toUpperCase()}
                     </div>
@@ -166,6 +190,9 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                       </p>
                     ) : null}
                   </div>
+                  <span className="sr-only">
+                    {expanded ? "— recolher perfil" : "— ver perfil completo"}
+                  </span>
                 </button>
 
                 {expanded ? (
@@ -210,14 +237,23 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 )}
               </div>
 
+              {/*
+                aria-disabled, not disabled: a focused element that becomes
+                `disabled` drops focus to <body>, throwing keyboard/switch users
+                to the top of the page on every vote. This keeps the control
+                focusable and blocks the re-entry inside onVote (guarded on busy)
+                instead.
+              */}
               <div className="grid grid-cols-2 gap-2 sm:flex">
                 <button
                   type="button"
-                  disabled={busy}
+                  aria-disabled={busy}
                   aria-pressed={current === "yes"}
                   aria-label={`Sim para ${person.name}`}
                   onClick={() => onVote(person.id, "yes")}
                   className={`btn tap-target !min-h-12 sm:!min-w-[6.25rem] ${
+                    busy ? "opacity-70" : ""
+                  } ${
                     current === "yes"
                       ? "btn-primary border border-transparent"
                       : "btn-secondary"
@@ -227,11 +263,13 @@ export function BallotList({ eventId, candidates, initialVotes }: Props) {
                 </button>
                 <button
                   type="button"
-                  disabled={busy}
+                  aria-disabled={busy}
                   aria-pressed={current === "no"}
                   aria-label={`Não para ${person.name}`}
                   onClick={() => onVote(person.id, "no")}
                   className={`btn tap-target !min-h-12 sm:!min-w-[6.25rem] ${
+                    busy ? "opacity-70" : ""
+                  } ${
                     current === "no"
                       ? "border border-transparent !bg-[var(--ink)] !text-[var(--paper)]"
                       : "btn-secondary"
