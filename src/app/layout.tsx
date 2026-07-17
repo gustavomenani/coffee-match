@@ -6,6 +6,7 @@ import { MobileDock } from "@/components/layout/mobile-dock";
 import { JsonLd } from "@/components/seo/json-ld";
 import { auth } from "@/lib/auth";
 import { ThemeScript } from "@/components/theme/theme-script";
+import { SwRegister } from "@/components/pwa/sw-register";
 import { SITE, absoluteUrl, orgId, websiteId } from "@/lib/seo";
 import "./globals.css";
 
@@ -160,6 +161,7 @@ export default async function RootLayout({
         suppressHydrationWarning
       >
         <JsonLd data={globalJsonLd} />
+        <SwRegister />
         <Header />
         <div className="flex flex-1 flex-col animate-rise">{children}</div>
         <Footer />

@@ -7,6 +7,8 @@ import { shouldMarkSoldOut } from "@/lib/domain/capacity";
 import { getEventOccupancy } from "@/lib/occupancy";
 import { bustEventCaches } from "@/lib/cache-bust";
 import { parseCuid } from "@/lib/security/ids";
+import { sendSpotOpenedEmail } from "@/lib/notify";
+import { auditLog } from "@/lib/audit";
 import type { ActionResult } from "@/lib/action-result";
 
 /** Mark published → sold_out when both genders are full; reverse when capacity frees. */
@@ -30,7 +32,47 @@ export async function syncEventSoldOutStatus(eventId: string): Promise<void> {
       data: { status: "published" },
     });
     bustEventCaches(event.slug);
+    await notifyWaitlistSpotOpened(event);
   }
+}
+
+/** Notify up to 50 not-yet-notified interested people that a spot opened. */
+async function notifyWaitlistSpotOpened(event: {
+  id: string;
+  title: string;
+  slug: string;
+  city: string;
+}): Promise<void> {
+  const interests = await prisma.eventInterest.findMany({
+    where: { eventId: event.id, notifiedAt: null },
+    take: 50,
+    orderBy: { createdAt: "asc" },
+  });
+  if (interests.length === 0) return;
+
+  for (const interest of interests) {
+    try {
+      await sendSpotOpenedEmail({
+        to: interest.email,
+        eventTitle: event.title,
+        eventSlug: event.slug,
+        city: event.city,
+      });
+    } catch (err) {
+      // sendEmail is already defensive, but one bad recipient must not block the rest.
+      console.error("[waitlist] spot-opened e-mail failed", interest.email, err);
+    }
+  }
+
+  await prisma.eventInterest.updateMany({
+    where: { id: { in: interests.map((i) => i.id) } },
+    data: { notifiedAt: new Date() },
+  });
+
+  await auditLog({
+    action: "event.waitlist_notified",
+    meta: { eventId: event.id, slug: event.slug, notified: interests.length },
+  });
 }
 
 export async function cancelPendingTicket(

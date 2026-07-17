@@ -34,6 +34,7 @@ export const authConfig = {
       const isProtected =
         path.startsWith("/minha-conta") ||
         path.startsWith("/meus-ingressos") ||
+        path.startsWith("/meus-matches") ||
         path.startsWith("/evento/") ||
         isAdminRoute;
 

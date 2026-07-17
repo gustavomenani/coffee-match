@@ -3,26 +3,29 @@ import { SITE } from "@/lib/seo";
 
 export default function manifest(): MetadataRoute.Manifest {
   return {
-    name: SITE.name,
-    short_name: "Coffee Match",
+    name: "Coffee Match",
+    short_name: "CoffeeMatch",
     description: SITE.description,
     start_url: "/",
     display: "standalone",
-    background_color: "#faf6f1",
-    theme_color: "#b87333",
+    background_color: "#1a100c",
+    theme_color: "#faf6f1",
     lang: "pt-BR",
     categories: ["lifestyle", "social"],
+    // O PNG tem ~15% de margem de segurança em volta do logo, então o mesmo
+    // arquivo serve para "any" e "maskable" (o tipo do Next não aceita o
+    // purpose combinado "any maskable").
     icons: [
       {
-        src: "/logo.jpeg",
+        src: "/icon-512.png",
         sizes: "512x512",
-        type: "image/jpeg",
+        type: "image/png",
         purpose: "any",
       },
       {
-        src: "/logo.jpeg",
-        sizes: "192x192",
-        type: "image/jpeg",
+        src: "/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
         purpose: "maskable",
       },
     ],

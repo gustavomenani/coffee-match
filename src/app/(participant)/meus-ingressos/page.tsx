@@ -56,14 +56,21 @@ export default async function MeusIngressosPage({
 
   return (
     <main className="mx-auto w-full max-w-6xl px-4 py-12 sm:px-6 sm:py-16">
-      <div className="mb-10 max-w-2xl">
-        <p className="eyebrow mb-3">Carteira</p>
-        <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
-          Meus ingressos
-        </h1>
-        <p className="mt-3 text-base text-[var(--muted)]">
-          QR da porta, votação e matches — tudo a partir daqui.
-        </p>
+      <div className="mb-10 flex flex-col gap-6 sm:flex-row sm:items-end sm:justify-between">
+        <div className="max-w-2xl">
+          <p className="eyebrow mb-3">Carteira</p>
+          <h1 className="font-display text-4xl font-semibold tracking-tight text-[var(--ink)] sm:text-5xl">
+            Meus ingressos
+          </h1>
+          <p className="mt-3 text-base text-[var(--muted)]">
+            QR da porta, votação e matches — tudo a partir daqui.
+          </p>
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <Link href="/meus-matches" className="btn btn-secondary !min-h-10 !text-sm">
+            Meus matches
+          </Link>
+        </div>
       </div>
 
       {tickets.length === 0 ? (

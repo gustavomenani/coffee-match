@@ -209,6 +209,46 @@ export async function sendEventReminderEmail(input: {
   });
 }
 
+export async function sendSpotOpenedEmail(input: {
+  to: string;
+  eventTitle: string;
+  eventSlug: string;
+  city: string;
+}): Promise<void> {
+  const subject = `Abriu vaga! ${input.eventTitle} | Coffee Match`;
+  const eventUrl = `${appBaseUrl()}/eventos/${input.eventSlug}`;
+
+  const text = [
+    `Olá!`,
+    ``,
+    `Uma vaga acabou de abrir em "${input.eventTitle}" (${input.city}).`,
+    `Corra que é por ordem de chegada — quando lotar, lotou.`,
+    ``,
+    `Garantir minha vaga: ${eventUrl}`,
+    ``,
+    `Coffee Match — conectando pessoas, uma xícara por vez.`,
+  ].join("\n");
+
+  const html = brandedHtml({
+    title: "Abriu vaga! ☕",
+    bodyHtml: [
+      `<p style="margin:0 0 12px">Uma vaga acabou de abrir em <strong>${escapeHtml(input.eventTitle)}</strong> (${escapeHtml(input.city)}).</p>`,
+      `<p style="margin:0">Corra que é por ordem de chegada — quando lotar, lotou.</p>`,
+    ].join(""),
+    ctaLabel: "Garantir minha vaga",
+    ctaUrl: eventUrl,
+  });
+
+  await sendEmail({
+    to: input.to,
+    subject,
+    text,
+    html,
+    auditAction: "notify.spot_opened",
+    auditMeta: { eventSlug: input.eventSlug, eventTitle: input.eventTitle },
+  });
+}
+
 export async function sendMatchesReadyEmail(input: {
   to: string;
   eventTitle: string;

@@ -156,6 +156,8 @@ model EventInterest {
   eventId   String
   event     Event    @relation(fields: [eventId], references: [id])
   email     String
+  /// "spot opened" e-mail dispatched (dedup — one notification per signup).
+  notifiedAt DateTime?
   createdAt DateTime @default(now())
 
   @@unique([eventId, email])

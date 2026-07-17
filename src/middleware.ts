@@ -8,6 +8,7 @@ export const config = {
     "/admin/:path*",
     "/minha-conta/:path*",
     "/meus-ingressos/:path*",
+    "/meus-matches/:path*",
     "/evento/:path*",
   ],
 };

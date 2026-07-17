@@ -11,7 +11,8 @@ const securityHeaders = [
   { key: "X-Permitted-Cross-Domain-Policies", value: "none" },
   {
     key: "Permissions-Policy",
-    value: "camera=(), microphone=(), geolocation=(), payment=(), usb=()",
+    // camera=(self): the admin door check-in scans ticket QR codes
+    value: "camera=(self), microphone=(), geolocation=(), payment=(), usb=()",
   },
   {
     key: "Cross-Origin-Opener-Policy",

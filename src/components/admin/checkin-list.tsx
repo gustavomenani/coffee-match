@@ -5,6 +5,27 @@ import {
   checkInByTicketId,
   checkInTicket,
 } from "@/lib/actions/admin-session";
+import { QrScanner } from "@/components/admin/qr-scanner";
+
+const CUID_SEGMENT = /^[a-z][a-z0-9]{19,39}$/i;
+
+/**
+ * The door QR encodes the raw ticket id (cuid), but tolerate URL payloads
+ * too: pick the last path segment that looks like a cuid.
+ */
+function extractTicketCode(text: string): string {
+  const raw = text.trim();
+  try {
+    const url = new URL(raw);
+    const segments = url.pathname.split("/").filter(Boolean);
+    for (let i = segments.length - 1; i >= 0; i--) {
+      if (CUID_SEGMENT.test(segments[i])) return segments[i];
+    }
+    return raw;
+  } catch {
+    return raw;
+  }
+}
 
 export type CheckInTicketRow = {
   id: string;
@@ -59,14 +80,7 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
     });
   }
 
-  function onCheckInByCode(e: FormEvent) {
-    e.preventDefault();
-    const id = ticketCode.trim();
-    if (!id) {
-      setError("Informe o código do ingresso.");
-      return;
-    }
-
+  function submitCode(id: string) {
     setError(null);
     setSuccess(null);
     setCodePending(true);
@@ -88,10 +102,28 @@ export function CheckInList({ eventId, tickets: initial }: Props) {
     });
   }
 
+  function onCheckInByCode(e: FormEvent) {
+    e.preventDefault();
+    const id = ticketCode.trim();
+    if (!id) {
+      setError("Informe o código do ingresso.");
+      return;
+    }
+    submitCode(id);
+  }
+
+  function onScannedCode(text: string) {
+    const id = extractTicketCode(text);
+    setTicketCode(id);
+    submitCode(id);
+  }
+
   const checkedIn = tickets.filter((t) => t.checkedInAt).length;
 
   return (
     <div className="flex flex-col gap-5">
+      <QrScanner onCode={onScannedCode} />
+
       <form
         onSubmit={onCheckInByCode}
         className="surface-card flex flex-col gap-3 p-4 sm:flex-row sm:items-end sm:p-5"
