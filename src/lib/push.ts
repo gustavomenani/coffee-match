@@ -41,6 +41,34 @@ function ensureWebPush(): boolean {
   return true;
 }
 
+type StoredSubscription = {
+  id: string;
+  endpoint: string;
+  p256dh: string;
+  auth: string;
+};
+
+/** Sends to one endpoint, pruning it when the browser says it is dead. */
+async function sendToSubscription(
+  sub: StoredSubscription,
+  body: string
+): Promise<void> {
+  try {
+    await webpush.sendNotification(
+      { endpoint: sub.endpoint, keys: { p256dh: sub.p256dh, auth: sub.auth } },
+      body
+    );
+  } catch (err) {
+    const statusCode = (err as { statusCode?: number })?.statusCode;
+    if (statusCode === 404 || statusCode === 410) {
+      // Endpoint morto (usuário desinstalou/limpou o navegador): remove.
+      await prisma.pushSubscription.delete({ where: { id: sub.id } }).catch(() => {});
+    } else {
+      console.error("[push] send failed", sub.endpoint, err);
+    }
+  }
+}
+
 /**
  * Sends a Web Push notification to every subscription of a user.
  * Best-effort: dead endpoints (404/410) are pruned, other failures are
@@ -59,30 +87,42 @@ export async function sendPushToUser(
     if (subscriptions.length === 0) return;
 
     const body = JSON.stringify(payload);
-
-    for (const sub of subscriptions) {
-      try {
-        await webpush.sendNotification(
-          {
-            endpoint: sub.endpoint,
-            keys: { p256dh: sub.p256dh, auth: sub.auth },
-          },
-          body
-        );
-      } catch (err) {
-        const statusCode = (err as { statusCode?: number })?.statusCode;
-        if (statusCode === 404 || statusCode === 410) {
-          // Endpoint morto (usuário desinstalou/limpou o navegador): remove.
-          await prisma.pushSubscription
-            .delete({ where: { id: sub.id } })
-            .catch(() => {});
-        } else {
-          console.error("[push] send failed", sub.endpoint, err);
-        }
-      }
-    }
+    await Promise.allSettled(
+      subscriptions.map((sub) => sendToSubscription(sub, body))
+    );
   } catch (err) {
     // Push é best-effort: nunca pode quebrar a ação que o disparou.
     console.error("[push] sendPushToUser failed", userId, err);
+  }
+}
+
+/**
+ * Same as sendPushToUser but for a whole group, in ONE subscription query.
+ *
+ * Calling sendPushToUser in a loop costs a findMany per user; closeVoting does
+ * this for every voter in the room at the moment the whole night is waiting on
+ * it. Payload may vary per user (match counts differ), so it is resolved by a
+ * callback. Never throws.
+ */
+export async function sendPushToUsers(
+  userIds: string[],
+  payloadFor: (userId: string) => PushPayload
+): Promise<void> {
+  try {
+    if (!ensureWebPush()) return;
+    if (userIds.length === 0) return;
+
+    const subscriptions = await prisma.pushSubscription.findMany({
+      where: { userId: { in: userIds } },
+    });
+    if (subscriptions.length === 0) return;
+
+    await Promise.allSettled(
+      subscriptions.map((sub) =>
+        sendToSubscription(sub, JSON.stringify(payloadFor(sub.userId)))
+      )
+    );
+  } catch (err) {
+    console.error("[push] sendPushToUsers failed", err);
   }
 }

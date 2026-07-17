@@ -7,9 +7,12 @@ import { requireAdmin } from "@/lib/authz";
 import { auditLog } from "@/lib/audit";
 import { parseCuid } from "@/lib/security/ids";
 import { sendMatchesReadyEmail } from "@/lib/notify";
-import { sendPushToUser } from "@/lib/push";
+import { sendPushToUsers } from "@/lib/push";
 import type { ActionResult } from "@/lib/action-result";
 import type { CheckInTicketRow } from "@/components/admin/checkin-list";
+
+/** Concurrent e-mails per wave when notifying a whole room. */
+const NOTIFY_WAVE_SIZE = 10;
 
 export type ListCheckInsResult =
   | { ok: true; tickets: CheckInTicketRow[] }
@@ -226,7 +229,23 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     return { ok: false, error: "A votação não está aberta." };
   }
 
-  const votes = await prisma.vote.findMany({ where: { sessionId: session.id } });
+  // Only people actually in the room may match. A ticket refunded between the
+  // vote and the close still had its votes counted, so the refunded person
+  // matched anyway — and their counterpart got their name, phone and WhatsApp
+  // link, while they themselves were locked out of the results.
+  const presentTickets = await prisma.ticket.findMany({
+    where: { eventId, status: "paid", checkedInAt: { not: null } },
+    select: { userId: true },
+  });
+  const presentUserIds = presentTickets.map((t) => t.userId);
+
+  const votes = await prisma.vote.findMany({
+    where: {
+      sessionId: session.id,
+      fromUserId: { in: presentUserIds },
+      toUserId: { in: presentUserIds },
+    },
+  });
   const pairs = computeMutualMatches(
     votes.map((v) => ({
       fromUserId: v.fromUserId,
@@ -235,7 +254,19 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
     }))
   );
 
-  await prisma.$transaction(async (tx) => {
+  // Claiming the session is the FIRST write in the transaction, so a double
+  // click (or two admins, or a retry) cannot both proceed. The status check
+  // above is only a fast path: it read outside the transaction, and the old
+  // unguarded update let a second run delete the first run's matches, recreate
+  // them with new ids, and e-mail every voter a second time — or crash on the
+  // unique constraint mid-night if the two interleaved the other way.
+  const claimed = await prisma.$transaction(async (tx) => {
+    const claim = await tx.eventSession.updateMany({
+      where: { id: session.id, status: "voting_open" },
+      data: { status: "voting_closed", votingClosesAt: new Date() },
+    });
+    if (claim.count === 0) return false;
+
     await tx.match.deleteMany({ where: { sessionId: session.id } });
     if (pairs.length > 0) {
       await tx.match.createMany({
@@ -246,15 +277,16 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
         })),
       });
     }
-    await tx.eventSession.update({
-      where: { id: session.id },
-      data: { status: "voting_closed", votingClosesAt: new Date() },
-    });
     await tx.event.update({
       where: { id: eventId },
       data: { status: "closed" },
     });
+    return true;
   });
+
+  if (!claimed) {
+    return { ok: false, error: "A votação não está aberta." };
+  }
 
   await auditLog({
     actorId: admin.user.id,
@@ -274,23 +306,43 @@ export async function closeVoting(rawEventId: string): Promise<ActionResult> {
       where: { id: { in: voterIds } },
       select: { id: true, email: true },
     });
-    for (const voter of voters) {
-      const matchCount = matchCountByUser.get(voter.id) ?? 0;
-      await sendMatchesReadyEmail({
-        to: voter.email,
-        eventTitle: event.title,
-        eventId,
-        matchCount,
-      });
-      await sendPushToUser(voter.id, {
+
+    // This is the payoff moment of the night and it runs after the transaction
+    // committed, with the whole room refreshing their phones. Awaiting an email
+    // round trip plus a push lookup per voter, one at a time, took ~40s with a
+    // full room — past the function timeout, which killed the loop partway: an
+    // arbitrary subset notified, no way to tell who, and no way to re-run
+    // (the session is closed now, so closeVoting refuses).
+    //
+    // Push goes out in a single query for the whole room; e-mails go in waves.
+    const pushPayloads = (userId: string) => {
+      const matchCount = matchCountByUser.get(userId) ?? 0;
+      return {
         title: "Seus resultados saíram ☕",
         body:
           matchCount > 0
             ? `Você tem ${matchCount} match${matchCount > 1 ? "es" : ""}! Veja quem também disse sim.`
             : "A votação encerrou — veja os resultados.",
         url: `/evento/${eventId}/matches`,
-      });
+      };
+    };
+
+    // Waves run one after another so we never open 100 sockets at once.
+    for (let i = 0; i < voters.length; i += NOTIFY_WAVE_SIZE) {
+      const wave = voters.slice(i, i + NOTIFY_WAVE_SIZE);
+      await Promise.allSettled(
+        wave.map((voter) =>
+          sendMatchesReadyEmail({
+            to: voter.email,
+            eventTitle: event.title,
+            eventId,
+            matchCount: matchCountByUser.get(voter.id) ?? 0,
+          })
+        )
+      );
     }
+
+    await sendPushToUsers(voterIds, pushPayloads);
   }
 
   revalidatePath(`/admin/eventos/${eventId}/noite`);
