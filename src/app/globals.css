@@ -37,6 +37,12 @@
   --radius-md: 16px;
   --radius-lg: 24px;
   --radius-pill: 999px;
+  /* Cinematic easing — a signature expo-out curve reads more luxurious than a
+     generic ease. Used across buttons, cards and reveals so motion feels like
+     one hand designed it. --ease-spring adds a hair of overshoot for delight. */
+  --ease-out: cubic-bezier(0.16, 1, 0.3, 1);
+  --ease-in-out: cubic-bezier(0.65, 0, 0.35, 1);
+  --ease-spring: cubic-bezier(0.34, 1.56, 0.64, 1);
   color-scheme: light;
 }
 
@@ -338,12 +344,15 @@ p,
 
 /* Surfaces */
 .surface-card {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--paper-card) 100%, white) 0%,
-      var(--paper-card) 100%
-    );
+  /* A real top-lit gradient (the old one was color-mix(... 100% ...) = a flat
+     fill dressed as a gradient). This gives cards a subtle sculpted, lit-from-
+     above quality that reads premium. */
+  background: linear-gradient(
+    180deg,
+    color-mix(in srgb, var(--paper-card) 94%, white) 0%,
+    var(--paper-card) 55%,
+    color-mix(in srgb, var(--paper-card) 96%, var(--espresso)) 100%
+  );
   border: 1px solid var(--line);
   border-radius: var(--radius-md);
   box-shadow: var(--shadow-soft);
@@ -409,11 +418,11 @@ p,
   font-weight: 600;
   letter-spacing: 0.01em;
   transition:
-    transform 140ms cubic-bezier(0.2, 0, 0, 1),
-    background-color 180ms cubic-bezier(0.2, 0, 0, 1),
-    box-shadow 180ms cubic-bezier(0.2, 0, 0, 1),
-    border-color 180ms cubic-bezier(0.2, 0, 0, 1),
-    color 180ms cubic-bezier(0.2, 0, 0, 1);
+    transform 220ms var(--ease-spring),
+    background-color 200ms var(--ease-out),
+    box-shadow 220ms var(--ease-out),
+    border-color 200ms var(--ease-out),
+    color 200ms var(--ease-out);
   /* No permanent will-change here: it promoted EVERY button to its own
      compositor layer for the lifetime of the page — a list or dashboard with
      10-20 buttons wastes that much GPU memory on a weak phone. The :active
@@ -422,13 +431,31 @@ p,
   -webkit-tap-highlight-color: transparent;
 }
 
+/* Premium micro-interaction: rise on hover, press on click. The hover lift is
+   the single biggest "this feels expensive" tell and it was missing. */
+.btn-primary:hover:not(:disabled),
+.btn-secondary:hover:not(:disabled),
+.btn-danger:hover:not(:disabled) {
+  transform: translateY(-2px);
+}
+
 .btn:active:not(:disabled) {
-  transform: scale(0.96);
+  transform: translateY(0) scale(0.97);
+  transition-duration: 80ms;
 }
 
 .btn:disabled {
   opacity: 0.55;
   cursor: not-allowed;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .btn-primary:hover:not(:disabled),
+  .btn-secondary:hover:not(:disabled),
+  .btn-danger:hover:not(:disabled),
+  .btn:active:not(:disabled) {
+    transform: none;
+  }
 }
 
 .btn-primary {
@@ -447,6 +474,16 @@ p,
     0 -1px 0 rgba(26, 16, 12, 0.12) inset,
     0 8px 20px color-mix(in srgb, var(--coffee) 28%, transparent),
     0 2px 6px color-mix(in srgb, var(--espresso) 12%, transparent);
+}
+
+/* Deepen the glow as the button rises — the shadow tracks the lift so the
+   elevation reads as real depth, not a flat colour change. */
+.btn-primary:hover:not(:disabled) {
+  box-shadow:
+    0 1px 0 rgba(255, 255, 255, 0.28) inset,
+    0 -1px 0 rgba(26, 16, 12, 0.14) inset,
+    0 14px 32px color-mix(in srgb, var(--coffee) 40%, transparent),
+    0 4px 10px color-mix(in srgb, var(--espresso) 16%, transparent);
 }
 
 .btn-primary::after {
